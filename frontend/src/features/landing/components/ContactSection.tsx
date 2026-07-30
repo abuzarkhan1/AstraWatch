@@ -52,7 +52,7 @@ export default function ContactSection() {
       ref={sectionRef}
       className="min-h-screen mx-auto relative bg-black overflow-x-hidden border-b border-white/10"
     >
-      {/* ── Pricing-style sparkle + grid top background ── */}
+      {/* ── Top Sparkle Grid Background ── */}
       <TimelineContent
         animationNum={4}
         timelineRef={sectionRef}
@@ -68,35 +68,6 @@ export default function ContactSection() {
           className="absolute inset-x-0 bottom-0 h-full w-full [mask-image:radial-gradient(50%_50%,white,transparent_85%)]"
         />
       </TimelineContent>
-
-      {/* ── Pricing-style #3131f5 ring glow ── */}
-      <TimelineContent
-        animationNum={5}
-        timelineRef={sectionRef}
-        customVariants={revealVariants}
-        className="absolute left-0 top-[-114px] w-full h-[113.625vh] flex flex-col items-start justify-start content-start flex-none flex-nowrap gap-2.5 overflow-hidden p-0 z-0 pointer-events-none"
-      >
-        <div className="framer-1i5axl2">
-          <div
-            className="absolute left-[-568px] right-[-568px] top-0 h-[2053px] flex-none rounded-full"
-            style={{ border: '200px solid #3131f5', filter: 'blur(92px)', WebkitFilter: 'blur(92px)' }}
-          />
-          <div
-            className="absolute left-[-568px] right-[-568px] top-0 h-[2053px] flex-none rounded-full"
-            style={{ border: '200px solid #3131f5', filter: 'blur(92px)', WebkitFilter: 'blur(92px)' }}
-          />
-        </div>
-      </TimelineContent>
-
-      {/* ── Pricing-style radial overlay ── */}
-      <div
-        className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)',
-          opacity: 0.4,
-          mixBlendMode: 'screen',
-        }}
-      />
 
       {/* ── 2-Column Layout: text left, card right ── */}
       <div className="max-w-7xl mx-auto px-6 pt-32 pb-24 relative z-50">
@@ -137,7 +108,7 @@ export default function ContactSection() {
           timelineRef={sectionRef}
           customVariants={revealVariants}
         >
-          <div className="relative bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-blue-500/50 rounded-2xl shadow-[0px_-13px_300px_0px_#0900ff] overflow-hidden">
+          <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-2 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] relative overflow-hidden">
 
             {formState === 'sent' ? (
               /* ── Success State ── */
