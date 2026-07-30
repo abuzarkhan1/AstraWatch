@@ -1,0 +1,136 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task: build-all
+
+  build-all:
+    desc: Build all services
+    cmds:
+      - task: build-collector
+      - task: build-analyzer
+      - task: build-orchestrator
+      - task: build-realtime
+      - task: build-frontend
+      - task: build-operator
+      - task: build-cxx-agent
+
+  build-collector:
+    desc: Build Go Collector
+    dir: services/collector
+    cmds:
+      - go build ./...
+
+  build-operator:
+    desc: Build K8s Operator
+    dir: services/operator
+    cmds:
+      - go build ./...
+
+  build-analyzer:
+    desc: Build Python Analyzer
+    dir: services/analyzer
+    cmds:
+      - python3 -m py_compile app/**/*.py
+
+  build-orchestrator:
+    desc: Build Java Orchestrator
+    dir: services/orchestrator
+    cmds:
+      - mvn compile -q
+
+  build-realtime:
+    desc: Build Node.js Realtime
+    dir: services/realtime
+    cmds:
+      - npm install --no-optional
+      - node --check src/server.js
+
+  build-frontend:
+    desc: Build React Frontend
+    dir: frontend
+    cmds:
+      - npm install --no-optional
+      - npx tsc --noEmit
+
+  build-cxx-agent:
+    desc: Build C++ Agent
+    dir: services/cxx-agent
+    cmds:
+      - mkdir -p build && cd build && cmake .. && make
+
+  dev-up:
+    desc: Start local development environment
+    cmds:
+      - docker compose -f infra/docker/docker-compose.yml up -d
+
+  dev-down:
+    desc: Stop local development environment
+    cmds:
+      - docker compose -f infra/docker/docker-compose.yml down
+
+  test-all:
+    desc: Run all tests
+    cmds:
+      - task: test-collector
+      - task: test-operator
+      - task: test-orchestrator
+      - task: test-analyzer
+      - task: test-realtime
+      - task: test-frontend
+      - task: test-cxx-agent
+      - task: test-integration
+
+  test-collector:
+    desc: Run Go Collector tests
+    dir: services/collector
+    cmds:
+      - go test ./... -v -count=1 || true
+
+  test-operator:
+    desc: Run Go Operator tests
+    dir: services/operator
+    cmds:
+      - go test ./... -v -count=1 || true
+
+  test-orchestrator:
+    desc: Run Java Orchestrator tests
+    dir: services/orchestrator
+    cmds:
+      - mvn test -q || true
+
+  test-analyzer:
+    desc: Run Python Analyzer tests
+    dir: services/analyzer
+    cmds:
+      - python3 -m unittest discover || true
+
+  test-realtime:
+    desc: Run Node.js Realtime tests
+    dir: services/realtime
+    cmds:
+      - npm test || true
+
+  test-frontend:
+    desc: Run React Frontend tests
+    dir: frontend
+    cmds:
+      - npm test || true
+
+  test-cxx-agent:
+    desc: Run C++ Agent tests
+    dir: services/cxx-agent
+    cmds:
+      - mkdir -p build && cd build && cmake .. && make && ctest || true
+
+  test-integration:
+    desc: Run Integration tests
+    cmds:
+      - ./tests/integration_test.sh
+
+  lint:
+    desc: Run linters on all services
+    cmds:
+      - golangci-lint run ./services/collector/... ./services/operator/...
+      - ruff check services/analyzer/

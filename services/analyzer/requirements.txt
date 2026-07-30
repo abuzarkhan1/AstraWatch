@@ -1,0 +1,16 @@
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+aiokafka>=0.8.0
+redis>=4.5.0
+numpy>=1.22.0
+scipy>=1.9.0
+scikit-learn>=1.2.0
+pandas
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+prometheus-client>=0.16.0
+httpx>=0.24.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+statsmodels>=0.14.0
+pytest>=7.0.0

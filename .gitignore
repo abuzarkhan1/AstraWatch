@@ -1,0 +1,231 @@
+# =============================================================================
+# AstraWatch — Root .gitignore
+# Covers: Node.js, Python, Go, C/C++, Terraform, Helm, Docker, OS, IDE
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Node.js / npm / Vite / React (frontend/)
+# -----------------------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+build/
+.vite/
+.cache/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# -----------------------------------------------------------------------------
+# Python (services/analyzer/, venv)
+# -----------------------------------------------------------------------------
+venv/
+.venv/
+env/
+.env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+htmlcov/
+.tox/
+.nox/
+pip-log.txt
+pip-delete-this-directory.txt
+.pdm-python
+.pdm-build/
+__pypackages__/
+
+# -----------------------------------------------------------------------------
+# Go (services/collector/, operator/, orchestrator/, realtime/)
+# -----------------------------------------------------------------------------
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Test binary
+*.test
+# Output of `go build` — extensionless binaries at root of service dir
+services/collector/collector
+services/operator/manager
+services/orchestrator/orchestrator
+services/realtime/realtime
+/bin/
+/out/
+# Vendor directory (if not using modules)
+vendor/
+# Java Maven build output
+target/
+*.class
+*.jar
+*.war
+*.ear
+# Go workspace sum file
+go.work.sum
+
+# -----------------------------------------------------------------------------
+# C / C++ (services/cxx-agent/)
+# -----------------------------------------------------------------------------
+*.o
+*.a
+*.out
+*.obj
+*.elf
+*.gch
+*.pch
+*.d
+*.su
+*.idb
+*.pdb
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile.cmake
+_deps/
+build/
+# eBPF compiled objects
+*.bpf.o
+*.skel.h
+
+# -----------------------------------------------------------------------------
+# Terraform (infra/terraform/)
+# -----------------------------------------------------------------------------
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfplan
+*.tfplan.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# -----------------------------------------------------------------------------
+# Helm (infra/helm/)
+# -----------------------------------------------------------------------------
+*.tgz
+charts/*.tgz
+.helm/
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+.dockerignore
+docker-compose.override.yml
+
+# -----------------------------------------------------------------------------
+# Environment Variables & Secrets (NEVER push these)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+*secret*
+*credentials*
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+
+# -----------------------------------------------------------------------------
+# IDE / Editor
+# -----------------------------------------------------------------------------
+# VSCode
+.vscode/
+!.vscode/extensions.json
+# JetBrains (GoLand, PyCharm, CLion)
+.idea/
+*.iml
+*.iws
+*.ipr
+# Vim / Neovim
+*.swp
+*.swo
+*.swn
+Session.vim
+.netrwhist
+# Emacs
+*~
+\#*\#
+.#*
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------------------------------------------------------------
+# OS Generated Files
+# -----------------------------------------------------------------------------
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+# Windows
+Desktop.ini
+$RECYCLE.BIN/
+# Linux
+.directory
+.Trash-*
+
+# -----------------------------------------------------------------------------
+# Logs & Debug
+# -----------------------------------------------------------------------------
+logs/
+*.log
+*.log.*
+
+# -----------------------------------------------------------------------------
+# Test Coverage & Reports
+# -----------------------------------------------------------------------------
+coverage/
+*.lcov
+*.profdata
+*.profraw
+
+# -----------------------------------------------------------------------------
+# Misc
+# -----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.backup
+.cache/
+tmp/
+temp/

@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'astrawatch-collector'
+    static_configs:
+      - targets: ['collector:8080']
+  - job_name: 'astrawatch-cxx-agent'
+    static_configs:
+      - targets: ['cxx-agent:8080']

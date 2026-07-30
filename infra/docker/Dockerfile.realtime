@@ -1,0 +1,8 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY services/realtime/package*.json ./
+RUN npm ci --only=production
+COPY services/realtime/ ./
+
+EXPOSE 3001
+CMD ["node", "src/server.js"]

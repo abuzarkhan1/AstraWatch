@@ -1,0 +1,184 @@
+import React, { useState, useMemo } from 'react';
+import { Search, PhoneCall, HelpCircle } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import VerticalCutReveal from "@/components/ui/vertical-cut-reveal";
+import { BackgroundSnippets } from "@/components/ui/background-snippets";
+
+interface FAQItem {
+  id: string;
+  question: string;
+  answer: string;
+  category: 'eBPF Probes' | 'Auto-Healing' | 'Pricing & Scale' | 'Security';
+}
+
+const FAQS: FAQItem[] = [
+  {
+    id: 'ebpf-overhead',
+    category: 'eBPF Probes',
+    question: 'How does AstraWatch achieve <0.32% CPU overhead without sidecars?',
+    answer: 'AstraWatch uses eBPF CO-RE (Compile Once – Run Everywhere) probes loaded directly into Linux kernel space. Instead of routing traffic through user-space proxies like Envoy or sidecars, telemetry is captured at tracepoints and emitted directly via ring buffers, eliminating memory copying and CPU context switches.'
+  },
+  {
+    id: 'k8s-auto-healing',
+    category: 'Auto-Healing',
+    question: 'Is autonomous K8s auto-healing safe for production environments?',
+    answer: 'Yes! AstraWatch auto-healing rules run via Kubernetes Custom Resource Definitions (CRDs) with strict safety bounds: configurable blast radius caps (e.g. max 10% pod restarts/hr), canary verification checks, and PostgreSQL idempotency locks that prevent cascading execution loops.'
+  },
+  {
+    id: 'clickhouse-retention',
+    category: 'Pricing & Scale',
+    question: 'Why is there zero log ingestion tax or per-gigabyte billing?',
+    answer: 'Unlike traditional APM vendors that charge per gigabyte ingested, AstraWatch stores compressed telemetry inside high-density ClickHouse columnar storage on your own cloud infrastructure or managed cluster. You only pay per node flat rate.'
+  },
+  {
+    id: 'hipaa-security',
+    category: 'Security',
+    question: 'Does telemetry data ever leave our cloud or VPC boundary?',
+    answer: 'No. AstraWatch can be deployed fully on-premises or within your private VPC (AWS EKS, GCP GKE, Azure AKS, Bare-Metal). All ring-buffer data remains within your security perimeter to comply with SOC2 Type II, HIPAA, and GDPR standards.'
+  },
+  {
+    id: 'prometheus-migration',
+    category: 'eBPF Probes',
+    question: 'Can we integrate AstraWatch with existing Grafana or OpenTelemetry pipelines?',
+    answer: 'Absolutely. AstraWatch exports standard OTLP (OpenTelemetry Protocol) metrics, traces, and logs. It seamlessly exposes Prometheus endpoints and integrates into Grafana dashboards without requiring pipeline overhauls.'
+  },
+  {
+    id: 'isolation-forest',
+    category: 'Auto-Healing',
+    question: 'How does the Isolation Forest ML model prevent false positives?',
+    answer: 'The ML engine evaluates telemetry across 12 feature dimensions simultaneously—including socket TCP RTT, EWMA latency drift, and Z-score anomaly confidence. Auto-healing actions are only triggered when ensemble confidence exceeds 85%.'
+  }
+];
+
+export default function FAQSection() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+
+  const categories = ['All', 'eBPF Probes', 'Auto-Healing', 'Pricing & Scale', 'Security'];
+
+  const filteredFaqs = useMemo(() => {
+    return FAQS.filter((faq) => {
+      const matchesSearch =
+        faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = activeCategory === 'All' || faq.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, activeCategory]);
+
+  return (
+    <section id="faq" className="w-full py-24 lg:py-36 relative border-b border-white/10 text-white font-sans overflow-hidden">
+      {/* Background Snippet Component rendering [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,#63e_100%)] */}
+      <BackgroundSnippets />
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        
+        {/* Structural Layout: 2-Column Grid matching faq-section.tsx */}
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+          
+          {/* LEFT COLUMN: Badge, Title, Subtitle, Search, Contact Button */}
+          <div className="flex gap-8 flex-col text-left">
+            <div>
+              <Badge variant="outline" className="gap-2">
+                <HelpCircle className="h-3.5 w-3.5 text-blue-400" />
+                <span>Frequently Asked Questions</span>
+              </Badge>
+            </div>
+
+            <div className="flex gap-4 flex-col">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+                <VerticalCutReveal
+                  splitBy="words"
+                  staggerDuration={0.12}
+                  staggerFrom="first"
+                  reverse={true}
+                  containerClassName="text-left font-bold tracking-tight text-white"
+                  transition={{
+                    type: "spring",
+                    stiffness: 250,
+                    damping: 40,
+                  }}
+                >
+                  Everything You Need to Know
+                </VerticalCutReveal>
+              </h2>
+              <p className="text-base sm:text-lg max-w-xl lg:max-w-lg leading-relaxed text-gray-300 font-light">
+                Discover how AstraWatch eliminates sidecar overhead with kernel-level eBPF probes, sub-second ClickHouse analytics, and autonomous K8s auto-healing.
+              </p>
+            </div>
+
+            {/* Instant Search Bar & Filter Switchers */}
+            <div className="space-y-4 max-w-lg">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search eBPF, ClickHouse, K8s auto-healing..."
+                  className="w-full backdrop-blur-xl bg-white/[0.03] border border-white/15 focus:border-blue-500 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-gray-500 focus:outline-none transition-all shadow-sm"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      activeCategory === cat
+                        ? 'bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-md shadow-blue-800 border border-blue-500'
+                        : 'backdrop-blur-md bg-white/[0.04] text-gray-400 border border-white/10 hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action CTA Button matching provided faq-section.tsx structure */}
+            <div>
+              <a href="mailto:support@astrawatch.io">
+                <Button className="gap-3 rounded-full px-6 py-6" variant="outline">
+                  <span>Any questions? Reach out</span>
+                  <PhoneCall className="w-4 h-4 text-blue-400" />
+                </Button>
+              </a>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Single Vertical Radix Accordion with All FAQs */}
+          <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
+            <Accordion type="single" collapsible defaultValue="ebpf-overhead" className="w-full space-y-2">
+              {filteredFaqs.map((faq) => (
+                <AccordionItem key={faq.id} value={faq.id} className="border-b border-white/10 last:border-none">
+                  <AccordionTrigger className="hover:no-underline py-5 text-left font-bold text-white text-base sm:text-lg">
+                    <div className="flex items-center gap-3 pr-2">
+                      <span className="px-2.5 py-0.5 rounded-full backdrop-blur-md bg-blue-500/10 text-blue-300 font-mono text-[10px] font-bold border border-blue-500/30 shrink-0">
+                        {faq.category}
+                      </span>
+                      <span>{faq.question}</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-300 font-light text-sm leading-relaxed pb-6 pt-1">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+  );
+}

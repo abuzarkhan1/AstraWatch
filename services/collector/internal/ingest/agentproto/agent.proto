@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package astrawatch.agent.v1;
+
+option go_package = "./internal/ingest/agentproto";
+
+import "google/protobuf/timestamp.proto";
+
+service AgentIngest {
+  // Agent streams metric batches to the Collector
+  rpc StreamMetrics(stream MetricBatch) returns (IngestResponse);
+  // Agent sends a single batch (for backlog replay)
+  rpc SendMetricBatch(MetricBatch) returns (IngestResponse);
+  // Health check
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+
+message MetricPoint {
+  string name = 1;
+  double value = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  map<string, string> labels = 4;
+}
+
+message MetricBatch {
+  string agent_id = 1;
+  string hostname = 2;
+  string cluster = 3;
+  repeated MetricPoint metrics = 4;
+  int64 batch_seq = 5;          // monotonic sequence for dedup
+  int64 original_timestamp_ms = 6; // when the batch was created (not when replayed)
+  bool is_backlog = 7;          // true if this is a replayed backlog batch
+  int64 queue_depth = 8;        // remaining entries in local buffer
+}
+
+message IngestResponse {
+  int32 accepted = 1;
+  int32 rejected = 2;
+  string error = 3;
+}
+
+message HealthRequest {
+  string agent_id = 1;
+}
+
+message HealthResponse {
+  string status = 1;            // HEALTHY, DEGRADED, DOWN
+  int64 uptime_seconds = 2;
+  int64 backlog_size = 3;
+  int64 queue_depth = 4;
+  repeated string active_probes = 5;
+}
+
+message AgentIdentity {
+  string agent_id = 1;
+  string hostname = 2;
+  string kernel_version = 3;
+  string agent_version = 4;
+  repeated string supported_probes = 5;
+}
