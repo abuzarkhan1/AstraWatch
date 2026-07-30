@@ -144,7 +144,19 @@ body {
 }
 
 .animate-pulse-slow {
-  animation: pulse-slow 4s ease-in-out infinite;
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Dark Theme Autofill Rule - Prevents Chrome/Safari yellow/white input autofill glow */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #090d16 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #3131f5 !important;
+  border-color: rgba(49, 49, 245, 0.5) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .animate-radar {
