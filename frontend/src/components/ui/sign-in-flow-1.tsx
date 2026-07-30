@@ -246,13 +246,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
           {/* ── LEFT COLUMN: Hero Copy, Badge & Metric Cards ───────────────── */}
           <div className="lg:col-span-7 space-y-8 text-left">
             
-            {/* Pill Badge */}
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-1.5 text-xs font-semibold text-blue-400 shadow-sm shadow-blue-500/20">
-                <Sparkles className="h-4 w-4 text-blue-400" />
-                Autonomous eBPF Telemetry & K8s Auto-Healing
-              </span>
-            </div>
+
 
             {/* H1 Heading */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]">

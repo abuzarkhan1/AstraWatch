@@ -34,12 +34,7 @@ export function HeroSection() {
       animate="visible"
       className="flex min-h-[500px] flex-col items-center justify-center px-4 py-16 text-center text-white relative z-10"
     >
-      <motion.div variants={itemVariants} className="mb-4">
-        <span className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-1.5 text-sm font-medium text-blue-400 shadow-sm shadow-blue-500/20">
-          <Sparkles className="h-4 w-4 text-blue-400" />
-          Autonomous eBPF Telemetry & K8s Auto-Healing
-        </span>
-      </motion.div>
+
 
       <motion.div variants={itemVariants} className="mb-6">
         <VerticalCutReveal

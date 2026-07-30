@@ -44,10 +44,7 @@ export default function FeaturesSection() {
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full backdrop-blur-xl bg-white/[0.04] border border-blue-500/40 text-xs font-semibold text-blue-400 shadow-[0_0_25px_rgba(49,49,245,0.25)]">
-            <Sparkles className="h-4 w-4 text-blue-400" />
-            <span>eBPF + ML + Autonomous Healing</span>
-          </div>
+
 
           <h2 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-tight">
             <VerticalCutReveal
