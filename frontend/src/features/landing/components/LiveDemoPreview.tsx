@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import NumberFlow from '@number-flow/react';
 import { motion } from 'framer-motion';
 import {
   RotateCcw,
@@ -247,7 +248,7 @@ export default function LiveDemoPreview() {
               <p className="text-xs font-semibold text-gray-400 font-mono uppercase tracking-wider">Target Pod CPU</p>
               <div className="flex items-baseline justify-between mt-2">
                 <p className={`text-3xl font-bold font-mono ${cpuVal > 80 ? 'text-red-400' : 'text-blue-400'}`}>
-                  {cpuVal}%
+                  <NumberFlow value={cpuVal} suffix="%" />
                 </p>
                 <span className="text-xs text-gray-500 font-mono">Threshold: 85%</span>
               </div>
@@ -263,7 +264,7 @@ export default function LiveDemoPreview() {
               <p className="text-xs font-semibold text-gray-400 font-mono uppercase tracking-wider">Isolation Forest Score</p>
               <div className="flex items-baseline justify-between mt-2">
                 <p className={`text-3xl font-bold font-mono ${anomalyScore > 0.5 ? 'text-red-400' : 'text-blue-400'}`}>
-                  {anomalyScore.toFixed(2)}
+                  <NumberFlow value={anomalyScore} format={{ maximumFractionDigits: 2 }} />
                 </p>
                 <span className="text-xs text-gray-500 font-mono">Critical: &gt;0.80</span>
               </div>

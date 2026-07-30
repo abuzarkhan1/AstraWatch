@@ -80,6 +80,7 @@ const PricingSwitch = ({ onSwitch }: { onSwitch: (value: string) => void }) => {
     <div className="flex justify-center">
       <div className="relative z-10 mx-auto flex w-fit rounded-full bg-neutral-900 border border-gray-700 p-1">
         <button
+          type="button"
           onClick={() => handleSwitch("0")}
           className={cn(
             "relative z-10 w-fit h-10 rounded-full sm:px-6 px-3 sm:py-2 py-1 font-medium transition-colors cursor-pointer",
@@ -97,6 +98,7 @@ const PricingSwitch = ({ onSwitch }: { onSwitch: (value: string) => void }) => {
         </button>
 
         <button
+          type="button"
           onClick={() => handleSwitch("1")}
           className={cn(
             "relative z-10 w-fit h-10 flex-shrink-0 rounded-full sm:px-6 px-3 sm:py-2 py-1 font-medium transition-colors cursor-pointer",
@@ -238,12 +240,13 @@ export default function PricingSection6() {
 
       <div className="grid md:grid-cols-3 max-w-5xl gap-6 py-12 mx-auto px-4 relative z-10">
         {plans.map((plan, index) => (
-          <TimelineContent
+          <motion.div
             key={plan.name}
-            as="div"
-            animationNum={2 + index}
-            timelineRef={pricingRef}
-            customVariants={revealVariants}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, delay: index * 0.15, ease: "easeOut" }}
+            className="h-full"
           >
             <Card
               className={`relative text-white border-neutral-800 h-full flex flex-col justify-between ${
@@ -262,19 +265,25 @@ export default function PricingSection6() {
                   )}
                 </div>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-semibold">
+                  <span className="text-4xl font-semibold flex items-center">
                     $
                     <NumberFlow
                       format={{
                         currency: "USD",
                       }}
                       value={isYearly ? plan.yearlyPrice : plan.price}
-                      className="text-4xl font-semibold font-mono"
+                      className="text-4xl font-semibold font-mono ml-0.5"
                     />
                   </span>
-                  <span className="text-gray-300 ml-1 font-mono text-sm">
+                  <motion.span
+                    key={isYearly ? "yearly" : "monthly"}
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-gray-300 ml-1 font-mono text-sm"
+                  >
                     /{isYearly ? "year" : "month"}
-                  </span>
+                  </motion.span>
                 </div>
                 <p className="text-sm text-gray-300 mb-4">{plan.description}</p>
               </CardHeader>
@@ -314,7 +323,7 @@ export default function PricingSection6() {
                 </div>
               </CardContent>
             </Card>
-          </TimelineContent>
+          </motion.div>
         ))}
       </div>
     </div>
