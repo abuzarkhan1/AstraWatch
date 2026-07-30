@@ -82,6 +82,7 @@ export const endpoints = {
     login: (data: unknown) => api.post('/api/v1/auth/login', data),
     register: (data: unknown) => api.post('/api/v1/auth/register', data),
     refresh: (data: unknown) => api.post('/api/v1/auth/refresh', data),
+    verifyEmail: (data: unknown) => api.post('/api/v1/auth/verify-email', data),
     me: () => api.get('/api/v1/auth/me'),
   },
   services: {
