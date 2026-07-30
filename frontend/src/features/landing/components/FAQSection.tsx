@@ -80,15 +80,12 @@ export default function FAQSection() {
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
-        {/* Structural Layout: 2-Column Grid matching faq-section.tsx */}
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+        {/* Structural Layout: 2-Column Grid matching Contact & Pricing */}
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
-          {/* LEFT COLUMN: Badge, Title, Subtitle, Search, Contact Button */}
-          <div className="flex gap-8 flex-col text-left">
-
-
-            <div className="flex gap-4 flex-col">
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+          {/* LEFT COLUMN: Title & Subtitle vertically centered */}
+          <div className="flex flex-col gap-6 text-left justify-center self-center">
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
                 <VerticalCutReveal
                   splitBy="words"
                   staggerDuration={0.12}
@@ -108,7 +105,6 @@ export default function FAQSection() {
                 Discover how AstraWatch eliminates sidecar overhead with kernel-level eBPF probes, sub-second ClickHouse analytics, and autonomous K8s auto-healing.
               </p>
             </div>
-          </div>
 
           {/* RIGHT COLUMN: Single Vertical Radix Accordion with All FAQs */}
           <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
