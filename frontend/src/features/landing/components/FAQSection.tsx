@@ -108,52 +108,12 @@ export default function FAQSection() {
                 Discover how AstraWatch eliminates sidecar overhead with kernel-level eBPF probes, sub-second ClickHouse analytics, and autonomous K8s auto-healing.
               </p>
             </div>
-
-            {/* Instant Search Bar & Filter Switchers */}
-            <div className="space-y-4 max-w-lg">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search eBPF, ClickHouse, K8s auto-healing..."
-                  className="w-full backdrop-blur-xl bg-white/[0.03] border border-white/15 focus:border-blue-500 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-gray-500 focus:outline-none transition-all shadow-sm"
-                />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                      activeCategory === cat
-                        ? 'bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-md shadow-blue-800 border border-blue-500'
-                        : 'backdrop-blur-md bg-white/[0.04] text-gray-400 border border-white/10 hover:text-white'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Action CTA Button matching provided faq-section.tsx structure */}
-            <div>
-              <a href="mailto:support@astrawatch.io">
-                <Button className="gap-3 rounded-full px-6 py-6" variant="outline">
-                  <span>Any questions? Reach out</span>
-                  <PhoneCall className="w-4 h-4 text-blue-400" />
-                </Button>
-              </a>
-            </div>
           </div>
 
           {/* RIGHT COLUMN: Single Vertical Radix Accordion with All FAQs */}
           <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
             <Accordion type="single" collapsible defaultValue="ebpf-overhead" className="w-full space-y-2">
-              {filteredFaqs.map((faq) => (
+              {FAQS.map((faq) => (
                 <AccordionItem key={faq.id} value={faq.id} className="border-b border-white/10 last:border-none">
                   <AccordionTrigger className="hover:no-underline py-5 text-left font-bold text-white text-base sm:text-lg">
                     <div className="flex items-center gap-3 pr-2">
