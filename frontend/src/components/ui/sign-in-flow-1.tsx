@@ -272,43 +272,6 @@ export const SignInPage = ({ className }: SignInPageProps) => {
             <p className="text-base sm:text-lg text-gray-300 font-light leading-relaxed max-w-xl">
               Access real-time kernel observability, sub-second ClickHouse columnar telemetry, and Isolation Forest ML auto-healing operators.
             </p>
-
-            {/* Hero Metrics Row (Same as Hero Section) */}
-            <div className="grid sm:grid-cols-3 gap-4 pt-4 border-t border-white/10 font-mono">
-              <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-4 rounded-2xl">
-                <div className="text-2xl font-bold text-white flex items-center gap-1">
-                  <NumberFlow value={10} className="font-bold text-white text-2xl" />M+
-                </div>
-                <div className="text-xs text-gray-400 mt-1">Events / Sec Ingress</div>
-              </div>
-              
-              <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-4 rounded-2xl">
-                <div className="text-2xl font-bold text-blue-400">&lt;0.32%</div>
-                <div className="text-xs text-gray-400 mt-1">Kernel CPU Overhead</div>
-              </div>
-              
-              <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-4 rounded-2xl">
-                <div className="text-2xl font-bold text-emerald-400">1.4s</div>
-                <div className="text-xs text-gray-400 mt-1">Auto-Remediation MTTR</div>
-              </div>
-            </div>
-
-            {/* Trust Pills */}
-            <div className="flex flex-wrap items-center gap-4 text-xs text-gray-400 pt-2">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-blue-400" />
-                <span>SOC2 Type II Compliant</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-blue-400" />
-                <span>HIPAA & GDPR Ready</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Lock className="h-4 w-4 text-blue-400" />
-                <span>256-bit AES Encryption</span>
-              </div>
-            </div>
-
           </div>
 
           {/* ── RIGHT COLUMN: Redesigned Auth Card ─────────────────────────── */}
