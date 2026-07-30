@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import MagneticButton from "@/components/ui/magnetic-button";
 import { Sparkles as SparklesComp } from "@/components/ui/sparkles";
 import { TimelineContent } from "@/components/ui/timeline-animation";
 import { VerticalCutReveal } from "@/components/ui/vertical-cut-reveal";
@@ -279,19 +280,21 @@ export default function PricingSection6() {
               </CardHeader>
 
               <CardContent className="pt-0 flex-1 flex flex-col justify-between">
-                <Link to="/dashboard" className="block w-full mb-6">
-                  <button
-                    className={`w-full p-3.5 text-lg rounded-xl font-bold transition-all cursor-pointer ${
-                      plan.popular
-                        ? "bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800 border border-blue-500 text-white hover:from-blue-600 hover:to-blue-700"
-                        : plan.buttonVariant === "outline"
-                          ? "bg-gradient-to-t from-neutral-950 to-neutral-700 shadow-lg shadow-neutral-900 border border-neutral-700 text-white hover:from-neutral-900 hover:to-neutral-600"
-                          : ""
-                    }`}
-                  >
-                    {plan.buttonText}
-                  </button>
-                </Link>
+                <MagneticButton className="w-full mb-6" strength={0.3}>
+                  <Link to="/dashboard" className="block w-full">
+                    <button
+                      className={`w-full p-3.5 text-lg rounded-xl font-bold transition-all cursor-pointer ${
+                        plan.popular
+                          ? "bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800 border border-blue-500 text-white hover:from-blue-600 hover:to-blue-700"
+                          : plan.buttonVariant === "outline"
+                            ? "bg-gradient-to-t from-neutral-950 to-neutral-700 shadow-lg shadow-neutral-900 border border-neutral-700 text-white hover:from-neutral-900 hover:to-neutral-600"
+                            : ""
+                      }`}
+                    >
+                      {plan.buttonText}
+                    </button>
+                  </Link>
+                </MagneticButton>
 
                 <div className="space-y-3 pt-4 border-t border-neutral-700">
                   <h4 className="font-medium text-base mb-3">

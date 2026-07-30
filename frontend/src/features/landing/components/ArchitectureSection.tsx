@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import MagneticButton from '@/components/ui/magnetic-button';
 import { motion } from 'framer-motion';
 import {
   Cpu,
@@ -236,13 +237,15 @@ export default function ArchitectureSection() {
             </h2>
           </div>
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-gray-200 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-              <span>{isPlaying ? 'Pause Auto-Cycle' : 'Auto-Cycle Pipeline'}</span>
-            </button>
+            <MagneticButton strength={0.25}>
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-gray-200 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                <span>{isPlaying ? 'Pause Auto-Cycle' : 'Auto-Cycle Pipeline'}</span>
+              </button>
+            </MagneticButton>
           </div>
         </div>
 
