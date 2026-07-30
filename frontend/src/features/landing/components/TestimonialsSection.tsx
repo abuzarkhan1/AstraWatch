@@ -91,8 +91,11 @@ export default function TestimonialsSection() {
           {TESTIMONIALS.map((t, idx) => (
             <motion.div
               key={idx}
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.5, delay: idx * 0.1, ease: "easeOut" }}
               whileHover={{ y: -3 }}
-              transition={{ duration: 0.2 }}
               className={`bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-colors duration-200 ${
                 t.featured
                   ? 'md:col-span-2 border-blue-500/50 shadow-2xl shadow-blue-950/40 bg-neutral-900/90'
@@ -117,10 +120,13 @@ export default function TestimonialsSection() {
                 <img
                   src={t.avatar}
                   alt={t.name}
+                  loading="lazy"
+                  width={44}
+                  height={44}
                   className="h-11 w-11 rounded-full object-cover border border-neutral-700"
                 />
                 <div>
-                  <h4 className="text-sm font-bold text-white tracking-tight">{t.name}</h4>
+                  <h3 className="text-sm font-bold text-white tracking-tight">{t.name}</h3>
                   <p className="text-xs text-gray-400 font-mono mt-0.5">{t.role} • {t.company}</p>
                 </div>
               </div>

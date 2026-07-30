@@ -213,18 +213,18 @@ export default function LiveDemoPreview() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-black p-6 rounded-2xl border border-neutral-800">
-              <p className="text-xs font-semibold text-gray-400">Cluster Health Status</p>
+            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-6 rounded-2xl">
+              <p className="text-xs font-semibold text-gray-400 font-mono uppercase tracking-wider">Cluster Health Status</p>
               <div className="flex items-center gap-3 mt-3">
                 {status === 'healthy' && (
                   <>
-                    <span className="h-3 w-3 rounded-full bg-blue-400" />
+                    <span className="h-3 w-3 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(49,49,245,0.8)]" />
                     <span className="text-lg font-bold text-white font-mono">OPTIMAL HEALTH</span>
                   </>
                 )}
                 {status === 'anomaly' && (
                   <>
-                    <span className="h-3 w-3 rounded-full bg-red-500 animate-ping" />
+                    <span className="h-3 w-3 rounded-full bg-red-500 animate-ping shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                     <span className="text-lg font-bold text-red-400 font-mono">ANOMALY CRITICAL</span>
                   </>
                 )}
@@ -243,33 +243,33 @@ export default function LiveDemoPreview() {
               </div>
             </div>
 
-            <div className="bg-black p-6 rounded-2xl border border-neutral-800">
-              <p className="text-xs font-semibold text-gray-400">Target Pod CPU Utilization</p>
+            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-6 rounded-2xl">
+              <p className="text-xs font-semibold text-gray-400 font-mono uppercase tracking-wider">Target Pod CPU</p>
               <div className="flex items-baseline justify-between mt-2">
                 <p className={`text-3xl font-bold font-mono ${cpuVal > 80 ? 'text-red-400' : 'text-blue-400'}`}>
                   {cpuVal}%
                 </p>
                 <span className="text-xs text-gray-500 font-mono">Threshold: 85%</span>
               </div>
-              <div className="w-full bg-neutral-900 h-2 rounded-full mt-3 overflow-hidden border border-neutral-800">
+              <div className="w-full bg-black/60 h-2 rounded-full mt-3 overflow-hidden border border-white/10">
                 <div
-                  className={`h-full transition-all duration-500 ${cpuVal > 80 ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-blue-400'}`}
+                  className={`h-full transition-all duration-500 ${cpuVal > 80 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'bg-gradient-to-r from-blue-500 to-blue-400 shadow-[0_0_8px_rgba(49,49,245,0.6)]'}`}
                   style={{ width: `${cpuVal}%` }}
                 />
               </div>
             </div>
 
-            <div className="bg-black p-6 rounded-2xl border border-neutral-800">
-              <p className="text-xs font-semibold text-gray-400">Isolation Forest Score</p>
+            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-6 rounded-2xl">
+              <p className="text-xs font-semibold text-gray-400 font-mono uppercase tracking-wider">Isolation Forest Score</p>
               <div className="flex items-baseline justify-between mt-2">
                 <p className={`text-3xl font-bold font-mono ${anomalyScore > 0.5 ? 'text-red-400' : 'text-blue-400'}`}>
                   {anomalyScore.toFixed(2)}
                 </p>
                 <span className="text-xs text-gray-500 font-mono">Critical: &gt;0.80</span>
               </div>
-              <div className="w-full bg-neutral-900 h-2 rounded-full mt-3 overflow-hidden border border-neutral-800">
+              <div className="w-full bg-black/60 h-2 rounded-full mt-3 overflow-hidden border border-white/10">
                 <div
-                  className={`h-full transition-all duration-500 ${anomalyScore > 0.5 ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-blue-400'}`}
+                  className={`h-full transition-all duration-500 ${anomalyScore > 0.5 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'bg-gradient-to-r from-blue-500 to-blue-400 shadow-[0_0_8px_rgba(49,49,245,0.6)]'}`}
                   style={{ width: `${anomalyScore * 100}%` }}
                 />
               </div>
@@ -277,7 +277,7 @@ export default function LiveDemoPreview() {
           </div>
 
           {/* Pod Cluster Matrix */}
-          <div className="bg-black p-5 rounded-2xl border border-neutral-800 space-y-4 mb-8 font-mono">
+          <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-5 rounded-2xl space-y-4 mb-8 font-mono">
             <div className="flex items-center justify-between text-xs text-gray-400 pb-2 border-b border-neutral-800">
               <span>Deployment Pod Replicas (payment-api-7d9f)</span>
               <span className="text-blue-400 font-bold text-[11px]">6 REPLICAS ACTIVE</span>
@@ -318,7 +318,7 @@ export default function LiveDemoPreview() {
           </div>
 
           {/* Event Log Terminal */}
-          <div className="bg-black rounded-2xl border border-neutral-800 p-5 font-mono text-xs shadow-inner space-y-3">
+          <div className="backdrop-blur-xl bg-black/70 border border-white/10 rounded-2xl p-5 font-mono text-xs shadow-inner space-y-3">
             <div className="flex flex-wrap items-center justify-between pb-3 border-b border-neutral-800 gap-2 text-gray-400">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1.5 font-bold text-white">

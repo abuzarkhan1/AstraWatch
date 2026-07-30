@@ -6,6 +6,7 @@ import LiveDemoPreview from './components/LiveDemoPreview';
 import PricingSection from './components/PricingSection';
 import TestimonialsSection from './components/TestimonialsSection';
 import FAQSection from './components/FAQSection';
+import ContactSection from './components/ContactSection';
 import LandingFooter from './components/LandingFooter';
 
 export default function LandingPage() {
@@ -42,6 +43,10 @@ export default function LandingPage() {
 
         <div id="faq" className="w-full max-w-full overflow-x-hidden [content-visibility:auto] [contain-intrinsic-size:1px_800px]">
           <FAQSection />
+        </div>
+
+        <div id="contact" className="w-full max-w-full overflow-x-hidden [content-visibility:auto] [contain-intrinsic-size:1px_900px]">
+          <ContactSection />
         </div>
       </main>
 

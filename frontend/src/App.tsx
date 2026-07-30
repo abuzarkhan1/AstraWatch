@@ -23,6 +23,9 @@ const PostmortemsPage = React.lazy(() => import('@/features/postmortems/Postmort
 const SyntheticsPage = React.lazy(() => import('@/features/synthetics/SyntheticsPage'));
 const AdminPage = React.lazy(() => import('@/features/admin/AdminPage'));
 
+import CustomCursor from '@/components/ui/custom-cursor';
+import PageTransition from '@/components/ui/page-transition';
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/landing" replace />;
@@ -38,11 +41,13 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/landing" element={<LandingPage />} />
-        <Route path="/auth/login" element={<AuthPage />} />
-        <Route path="/auth/register" element={<AuthPage />} />
-        <Route path="/" element={<Navigate to="/landing" replace />} />
+      <CustomCursor />
+      <PageTransition>
+        <Routes>
+          <Route path="/landing" element={<LandingPage />} />
+          <Route path="/auth/login" element={<AuthPage />} />
+          <Route path="/auth/register" element={<AuthPage />} />
+          <Route path="/" element={<Navigate to="/landing" replace />} />
         
         <Route
           element={
@@ -68,7 +73,8 @@ export default function App() {
           <Route path="/synthetics" element={<Suspense fallback={<div>Loading...</div>}><SyntheticsPage /></Suspense>} />
           <Route path="/admin" element={<Suspense fallback={<div>Loading...</div>}><AdminPage /></Suspense>} />
         </Route>
-      </Routes>
+        </Routes>
+      </PageTransition>
     </BrowserRouter>
   );
 }
