@@ -300,7 +300,7 @@ export default function ArchitectureSection() {
           </div>
 
           {/* RIGHT COLUMN: Active Step Code Payload Inspector */}
-          <div className="lg:col-span-7 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+          <div className="lg:col-span-7 backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] relative overflow-hidden">
             <div>
               <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-neutral-700">
                 <div className="flex items-center gap-3.5">

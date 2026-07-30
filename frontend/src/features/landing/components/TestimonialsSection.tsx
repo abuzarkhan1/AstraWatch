@@ -96,10 +96,10 @@ export default function TestimonialsSection() {
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, delay: idx * 0.1, ease: "easeOut" }}
               whileHover={{ y: -3 }}
-              className={`bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-colors duration-200 ${
+              className={`backdrop-blur-2xl bg-white/[0.03] border rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] ${
                 t.featured
-                  ? 'md:col-span-2 border-blue-500/50 shadow-2xl shadow-blue-950/40 bg-neutral-900/90'
-                  : 'border-neutral-800 hover:border-blue-500/40 shadow-xl'
+                  ? 'md:col-span-2 border-blue-500/60 shadow-2xl shadow-blue-950/40'
+                  : 'border-white/15 hover:border-blue-500/50'
               }`}
             >
               <div>
