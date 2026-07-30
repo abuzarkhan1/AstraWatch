@@ -67,10 +67,7 @@ export default function TestimonialsSection() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-400 mb-4 shadow-sm shadow-blue-500/20">
-              <Quote className="h-3.5 w-3.5 text-blue-400" />
-              <span>Customer Verification & Impact</span>
-            </div>
+
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.1]">
               Trusted by SRE Leaders Worldwide
             </h2>

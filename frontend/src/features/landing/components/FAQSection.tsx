@@ -85,12 +85,7 @@ export default function FAQSection() {
           
           {/* LEFT COLUMN: Badge, Title, Subtitle, Search, Contact Button */}
           <div className="flex gap-8 flex-col text-left">
-            <div>
-              <Badge variant="outline" className="gap-2">
-                <HelpCircle className="h-3.5 w-3.5 text-blue-400" />
-                <span>Frequently Asked Questions</span>
-              </Badge>
-            </div>
+
 
             <div className="flex gap-4 flex-col">
               <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
