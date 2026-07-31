@@ -44,7 +44,7 @@ function WaterfallView({ spans }: { spans: Span[] }) {
             <div className="flex items-center gap-1 w-48 shrink-0 text-gray-400" style={{ paddingLeft: depth * 16 }}>
               <span className="truncate">{span.operationName}</span>
             </div>
-            <div className="flex-1 h-5 bg-gray-800 rounded relative overflow-hidden">
+            <div className="flex-1 h-5 bg-black/60 border border-white/10 rounded relative overflow-hidden">
               <div
                 className={`absolute h-full rounded ${
                   span.status === 'ERROR' ? 'bg-red-500/60' : 'bg-blue-500/40'
@@ -174,7 +174,7 @@ export default function TraceExplorerPage() {
                     <span className="text-gray-300">{selectedTrace.serviceCount}</span>
                   </div>
                 </div>
-                <div className="border-t border-gray-800 pt-4">
+                <div className="border-t border-white/10 pt-4">
                   <h4 className="text-xs text-gray-500 mb-3">Waterfall</h4>
                   <WaterfallView spans={selectedTrace.spans} />
                 </div>

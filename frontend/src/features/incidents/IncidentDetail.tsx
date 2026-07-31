@@ -36,7 +36,7 @@ export default function IncidentDetail() {
         Back to incidents
       </Link>
 
-      <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+      <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold mb-1">{incident.title || 'Incident'}</h1>
@@ -52,28 +52,28 @@ export default function IncidentDetail() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-800 rounded-lg p-3">
+          <div className="bg-black/60 border border-white/10 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <Clock className="w-3 h-3" />
               State
             </div>
             <span className="text-sm font-medium">{incident.state}</span>
           </div>
-          <div className="bg-gray-800 rounded-lg p-3">
+          <div className="bg-black/60 border border-white/10 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <Clock className="w-3 h-3" />
               Created
             </div>
             <span className="text-sm">{new Date(incident.createdAt).toLocaleString()}</span>
           </div>
-          <div className="bg-gray-800 rounded-lg p-3">
+          <div className="bg-black/60 border border-white/10 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <User className="w-3 h-3" />
               Assigned To
             </div>
             <span className="text-sm">{incident.assignedTo || 'Unassigned'}</span>
           </div>
-          <div className="bg-gray-800 rounded-lg p-3">
+          <div className="bg-black/60 border border-white/10 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <AlertTriangle className="w-3 h-3" />
               Service
@@ -85,13 +85,13 @@ export default function IncidentDetail() {
         {incident.description && (
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-400 mb-2">Description</h3>
-            <p className="text-sm text-gray-300 bg-gray-800 rounded-lg p-3">{incident.description}</p>
+            <p className="text-sm text-gray-300 bg-black/60 border border-white/10 rounded-xl p-3">{incident.description}</p>
           </div>
         )}
       </div>
 
       {timeline && timeline.length > 0 && (
-        <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
           <h2 className="text-sm font-semibold text-gray-300 mb-4">Timeline</h2>
           <div className="space-y-3">
             {timeline.map((event: any) => (
@@ -101,7 +101,7 @@ export default function IncidentDetail() {
                   <span className="text-xs text-gray-500">{new Date(event.createdAt).toLocaleString()}</span>
                   <p className="text-sm text-gray-300 mt-0.5">{event.eventType}</p>
                   {event.payload && (
-                    <pre className="text-xs text-gray-600 mt-1 bg-gray-800 rounded p-2 overflow-x-auto">
+                    <pre className="text-xs text-gray-500 mt-1 bg-black/60 border border-white/10 rounded-lg p-2 overflow-x-auto">
                       {JSON.stringify(JSON.parse(event.payload), null, 2)}
                     </pre>
                   )}

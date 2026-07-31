@@ -17,9 +17,11 @@ import java.util.Date;
 @Service
 public class AuthService {
 
+    public static final String SECRET_KEY_STRING = "astrawatch-super-secret-jwt-token-signing-key-2026-secure-32bytes-long!";
+
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
     public AuthService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -61,7 +63,7 @@ public class AuthService {
         if (teamId != null) {
             builder.claim("teamId", teamId);
         }
-        return builder.signWith(key).compact();
+        return builder.signWith(key, SignatureAlgorithm.HS256).compact();
     }
 
     private String generateRefreshToken(String userId) {
@@ -69,7 +71,7 @@ public class AuthService {
                 .setSubject(userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 86400000L)) // 24 hours
-                .signWith(key)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -80,7 +82,7 @@ public class AuthService {
                 .claim("roles", "system")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 60000)) // 1 min short-lived
-                .signWith(key)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 

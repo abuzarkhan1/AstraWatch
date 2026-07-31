@@ -38,16 +38,16 @@ export default function IncidentsPage() {
           <input
             type="text"
             placeholder="Search incidents..."
-            className="pl-9 pr-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-blue-500 w-64"
+            className="pl-9 pr-4 py-2 bg-neutral-900/90 border border-neutral-700/80 rounded-xl text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 w-64 transition-all"
           />
         </div>
       </div>
 
-      <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-white/10">
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Severity</th>
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Title</th>
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Service</th>
@@ -67,7 +67,7 @@ export default function IncidentsPage() {
                 incidents.map((incident) => (
                   <tr
                     key={incident.id}
-                    className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer transition-colors"
+                    className="border-b border-white/10 hover:bg-white/[0.04] cursor-pointer transition-colors"
                     onClick={() => {
                       setSelectedIncident(incident);
                       navigate(`/incidents/${incident.id}`);

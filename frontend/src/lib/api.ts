@@ -11,7 +11,8 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
-  if (token) {
+  const isAuthRoute = config.url?.includes('/api/v1/auth/login') || config.url?.includes('/api/v1/auth/register');
+  if (token && !isAuthRoute) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -21,22 +22,24 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isAuthRoute = originalRequest?.url?.includes('/api/v1/auth/login') || originalRequest?.url?.includes('/api/v1/auth/register');
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       originalRequest._retry = true;
 
       try {
         const refreshToken = localStorage.getItem('refreshToken');
-        const { data } = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
-          refreshToken,
-        });
-        localStorage.setItem('accessToken', data.accessToken);
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
-        return api(originalRequest);
+        if (refreshToken) {
+          const { data } = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
+            refreshToken,
+          });
+          localStorage.setItem('accessToken', data.accessToken);
+          originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+          return api(originalRequest);
+        }
       } catch {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/auth/login';
       }
     }
 

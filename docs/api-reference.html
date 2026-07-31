@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AstraWatch — API Reference</title>
+<meta name="description" content="Professional interactive API documentation for all AstraWatch microservices."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;background:#000;color:#fff}
+body{font-family:'Inter',system-ui,sans-serif;background:#000;color:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#000}
+::-webkit-scrollbar-thumb{background:#222;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#333}
+
+/* ── CSS VARS ── */
+:root{
+  --blue:#3b82f6;
+  --blue-deep:#3131f5;
+  --blue-mid:#206ce8;
+  --blue-glow:rgba(49,49,245,0.22);
+  --green:#10b981;
+  --red:#ef4444;
+  --amber:#f59e0b;
+  --purple:#a855f7;
+  --indigo:#818cf8;
+  --border:rgba(255,255,255,0.1);
+  --border-bright:rgba(255,255,255,0.15);
+  --glass:rgba(255,255,255,0.03);
+  --glass-dark:rgba(0,0,0,0.7);
+  --sidebar-w:272px;
+  --nav-h:56px;
+  --mono:'JetBrains Mono',monospace;
+}
+
+/* ── LAYOUT ── */
+#shell{display:flex;height:100vh;overflow:hidden;position:relative}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  height:100vh;display:flex;flex-direction:column;
+  background:#050505;
+  border-right:1px solid var(--border);
+  overflow:hidden;
+  transition:width .25s ease;
+  position:relative;z-index:50;
+}
+#sidebar-top{
+  padding:16px 16px 12px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.brand-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.brand-logo{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.brand-logo::before,.brand-logo::after{
+  content:'';position:absolute;width:5px;height:5px;
+  border-radius:50%;background:#fff;opacity:.9;
+}
+.brand-logo::before{top:5px;left:50%;transform:translateX(-50%)}
+.brand-logo::after{bottom:5px;left:50%;transform:translateX(-50%)}
+.brand-logo .dot-l,.brand-logo .dot-r{
+  position:absolute;width:5px;height:5px;
+  border-radius:50%;background:#fff;opacity:.9;
+  top:50%;transform:translateY(-50%);
+}
+.brand-logo .dot-l{left:5px}
+.brand-logo .dot-r{right:5px}
+.brand-name{font-weight:800;font-size:15px;letter-spacing:-.02em}
+.brand-badge{
+  font-size:10px;font-weight:700;letter-spacing:.06em;
+  background:rgba(59,130,246,.15);color:#60a5fa;
+  border:1px solid rgba(59,130,246,.3);border-radius:99px;
+  padding:2px 8px;margin-left:auto;
+}
+#search-wrap{
+  display:flex;align-items:center;gap:7px;
+  background:#0a0a0a;border:1px solid #1a1a1a;
+  border-radius:8px;padding:7px 10px;
+  transition:border-color .2s;
+}
+#search-wrap:focus-within{border-color:rgba(59,130,246,.5)}
+#search-wrap svg{color:#444;flex-shrink:0}
+#search-input{
+  background:transparent;border:none;outline:none;
+  color:#ddd;font-family:'Inter',sans-serif;font-size:12.5px;
+  width:100%;
+}
+#search-input::placeholder{color:#444}
+
+#sidebar-scroll{flex:1;overflow-y:auto;padding:8px 0 60px}
+
+/* sidebar service group */
+.svc-group{margin-bottom:2px}
+.svc-group-header{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px 6px;cursor:pointer;
+  transition:background .12s;
+  border-left:2px solid transparent;
+}
+.svc-group-header:hover{background:rgba(255,255,255,.03)}
+.svc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.svc-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#555;flex:1}
+.svc-count{font-size:9.5px;color:#333;background:#111;border-radius:99px;padding:1px 6px;font-family:var(--mono)}
+.svc-chevron{font-size:9px;color:#333;transition:transform .2s}
+.svc-group.collapsed .svc-chevron{transform:rotate(-90deg)}
+.svc-group.collapsed .svc-group-body{display:none}
+
+.ep-group-label{
+  padding:6px 14px 3px 26px;
+  font-size:9.5px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.08em;color:#333;
+}
+.ep-item{
+  display:flex;align-items:center;gap:7px;
+  padding:5px 12px 5px 26px;cursor:pointer;
+  border-left:2px solid transparent;
+  transition:background .1s,border-color .1s;
+}
+.ep-item:hover{background:rgba(255,255,255,.03)}
+.ep-item.active{background:rgba(59,130,246,.08);border-left-color:#3b82f6}
+.ep-item.active .ep-label{color:#93c5fd}
+.ep-badge{
+  font-family:var(--mono);font-size:8.5px;font-weight:700;
+  padding:2px 5px;border-radius:4px;flex-shrink:0;
+  min-width:36px;text-align:center;letter-spacing:.03em;
+}
+.m-GET{background:rgba(16,185,129,.12);color:#10b981}
+.m-POST{background:rgba(59,130,246,.12);color:#60a5fa}
+.m-PUT{background:rgba(245,158,11,.12);color:#f59e0b}
+.m-PATCH{background:rgba(168,85,247,.12);color:#a855f7}
+.m-DELETE{background:rgba(239,68,68,.12);color:#f87171}
+.m-WS{background:rgba(129,140,248,.12);color:#818cf8}
+.ep-label{font-size:11.5px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;transition:color .1s}
+
+/* ── MAIN ── */
+#main{flex:1;overflow-y:auto;background:#000;position:relative}
+
+/* ambient bg glows */
+.bg-glow-a{
+  position:fixed;top:-200px;left:-300px;
+  width:800px;height:800px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(49,49,245,.08),transparent 70%);
+  pointer-events:none;z-index:0;
+}
+.bg-glow-b{
+  position:fixed;bottom:-200px;right:-200px;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(32,108,232,.06),transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ── TOP NAVBAR ── */
+#topnav{
+  position:sticky;top:0;z-index:40;
+  height:var(--nav-h);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;
+  background:rgba(0,0,0,.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.nav-left{display:flex;align-items:center;gap:12px}
+.nav-breadcrumb{font-size:12px;color:#555;font-family:var(--mono)}
+.nav-breadcrumb span{color:#888}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-url-pill{
+  font-family:var(--mono);font-size:11px;color:#555;
+  background:#0a0a0a;border:1px solid #1a1a1a;
+  border-radius:6px;padding:4px 10px;
+}
+.nav-status{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;color:#10b981;
+  background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);
+  border-radius:99px;padding:3px 10px;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── CONTENT AREA ── */
+#content{max-width:860px;margin:0 auto;padding:32px 24px 100px;position:relative;z-index:1}
+
+/* ── WELCOME ── */
+#welcome{display:flex;flex-direction:column;gap:32px}
+#welcome.hidden{display:none}
+
+.hero-banner{
+  position:relative;overflow:hidden;
+  background:var(--glass);
+  border:1px solid var(--border-bright);
+  border-radius:20px;padding:32px 32px;
+}
+.hero-banner::before{
+  content:'';position:absolute;
+  left:-300px;right:-300px;top:-300px;height:600px;
+  border-radius:50%;
+  border:150px solid #3131f5;
+  filter:blur(80px);opacity:.15;
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);
+  border-radius:99px;padding:4px 12px;
+  font-size:10.5px;font-weight:600;color:#60a5fa;
+  letter-spacing:.05em;margin-bottom:12px;
+  font-family:var(--mono);
+}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:#3b82f6;animation:pulse 2s infinite}
+.hero-h1{
+  font-size:24px;font-weight:700;letter-spacing:-.02em;
+  line-height:1.2;margin-bottom:8px;
+  background:linear-gradient(135deg,#fff 60%,#60a5fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  white-space:nowrap;
+}
+.hero-sub{font-size:13.5px;color:#777;line-height:1.6;max-width:600px}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat-card{
+  background:var(--glass);border:1px solid var(--border);
+  border-radius:16px;padding:20px;
+  transition:border-color .2s,transform .2s;
+}
+.stat-card:hover{border-color:rgba(59,130,246,.3);transform:translateY(-2px)}
+.stat-num{font-size:30px;font-weight:800;letter-spacing:-.04em;color:#3b82f6;font-family:var(--mono)}
+.stat-lbl{font-size:11.5px;color:#555;margin-top:3px}
+
+.section-hd{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:#444;margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-hd::after{content:'';flex:1;height:1px;background:#111}
+
+.svc-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.svc-card{
+  background:rgba(255,255,255,.02);border:none;
+  border-radius:20px;padding:20px;cursor:pointer;
+  transition:transform .2s,background .2s;
+}
+.svc-card:hover{transform:translateY(-3px);background:rgba(59,130,246,.06)}
+.svc-card-icon{
+  width:40px;height:40px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:12px;
+  border:none;
+}
+.svc-card-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.svc-card-sub{font-size:11px;color:#555;line-height:1.5;margin-bottom:10px}
+.svc-card-meta{display:flex;gap:6px;flex-wrap:wrap}
+.mini-tag{
+  font-size:9.5px;padding:2px 7px;border-radius:4px;
+  background:#0d0d0d;color:#444;border:none;
+  font-family:var(--mono);
+}
+
+/* base urls table */
+.info-panel{
+  background:rgba(255,255,255,.02);border:none;
+  border-radius:16px;overflow:hidden;
+}
+.info-panel-hd{
+  padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#444;
+  display:flex;align-items:center;gap:7px;
+}
+.hd-pip{width:5px;height:5px;border-radius:50%;background:#3b82f6}
+.info-panel-body{padding:0}
+.url-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.url-table th{
+  text-align:left;padding:8px 16px;
+  font-size:10px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.07em;color:#333;
+  border-bottom:1px solid #0d0d0d;
+}
+.url-table td{padding:10px 16px;border-bottom:1px solid #0d0d0d;vertical-align:middle}
+.url-table tr:last-child td{border-bottom:none}
+.t-svc{font-family:var(--mono);font-size:11.5px;color:#60a5fa}
+.t-port{font-family:var(--mono);font-size:11.5px;color:#888}
+.t-path{font-family:var(--mono);font-size:11.5px;color:#10b981}
+.t-proto{font-family:var(--mono);font-size:11px;color:#555}
+
+.auth-note{
+  padding:16px;font-size:13px;color:#777;line-height:1.7;
+  border-left:2px solid rgba(59,130,246,.4);margin:16px;
+  background:rgba(59,130,246,.03);border-radius:0 8px 8px 0;
+}
+.auth-note code{
+  font-family:var(--mono);font-size:11.5px;color:#60a5fa;
+  background:rgba(59,130,246,.1);padding:1px 5px;border-radius:3px;
+}
+.mono-block{
+  margin:10px 16px;font-family:var(--mono);font-size:12px;color:#888;
+  background:#070707;border:1px solid #111;border-radius:8px;
+  padding:12px 14px;line-height:1.6;
+}
+
+/* ── ENDPOINT VIEW ── */
+#ep-view{display:none;flex-direction:column;gap:20px}
+#ep-view.visible{display:flex}
+
+.ep-hd{display:flex;flex-direction:column;gap:12px}
+.ep-bc{font-size:11.5px;color:#444;font-family:var(--mono);display:flex;align-items:center;gap:6px}
+.ep-bc span{color:#555}
+.ep-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ep-method{
+  font-family:var(--mono);font-size:12px;font-weight:700;
+  padding:5px 14px;border-radius:8px;flex-shrink:0;
+}
+.ep-path{
+  font-family:var(--mono);font-size:15px;font-weight:500;
+  color:#e2e8f0;word-break:break-all;
+}
+.auth-pill{
+  font-size:10.5px;font-weight:600;padding:4px 12px;
+  border-radius:99px;border:1px solid;flex-shrink:0;
+  display:flex;align-items:center;gap:5px;
+}
+.auth-yes{color:#f59e0b;border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06)}
+.auth-no{color:#10b981;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06)}
+
+.ep-desc{
+  font-size:13.5px;color:#666;line-height:1.75;
+  padding:14px 16px;
+  background:rgba(255,255,255,.02);border:none;
+  border-left:3px solid rgba(59,130,246,.5);
+  border-radius:0 12px 12px 0;
+}
+
+/* glass panels */
+.glass-panel{
+  background:rgba(255,255,255,.02);border:none;
+  border-radius:20px;overflow:hidden;
+  backdrop-filter:blur(12px);
+  box-shadow:0 16px 40px rgba(0,0,0,.5);
+}
+.panel-hd{
+  padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.04);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-hd-left{display:flex;align-items:center;gap:8px}
+.panel-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#444}
+.panel-sub{font-size:11px;color:#333;font-weight:400;text-transform:none;letter-spacing:0}
+.panel-body{padding:0}
+
+/* params table */
+.p-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.p-table th{
+  text-align:left;padding:8px 16px;
+  font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+  color:#333;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.p-table td{padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.02);vertical-align:top}
+.p-table tr:last-child td{border-bottom:none}
+.p-name{font-family:var(--mono);font-size:12px;color:#60a5fa}
+.p-in{font-family:var(--mono);font-size:10px;color:#555;background:#0d0d0d;border:none;border-radius:4px;padding:1px 6px}
+.p-type{font-family:var(--mono);font-size:11px;color:#777}
+.p-desc{color:#555;font-size:12px}
+.req-badge{font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(239,68,68,.1);color:#f87171;border:none}
+.opt-badge{font-size:9px;padding:2px 7px;border-radius:4px;background:#0d0d0d;color:#333;border:none}
+
+/* json code block */
+.code-wrap{margin:0}
+.code-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.code-lang{font-family:var(--mono);font-size:10.5px;color:#333}
+.copy-btn{
+  font-size:10.5px;padding:3px 10px;border-radius:5px;cursor:pointer;
+  border:none;background:#0d0d0d;color:#444;
+  font-family:'Inter',sans-serif;transition:all .15s;
+}
+.copy-btn:hover{color:#ddd;background:#1a1a1a}
+.code-body{
+  padding:14px 16px;font-family:var(--mono);font-size:12px;
+  line-height:1.75;white-space:pre;overflow-x:auto;color:#888;
+  background:#050505;
+}
+.j-key{color:#60a5fa}
+.j-str{color:#86efac}
+.j-num{color:#fb923c}
+.j-bool{color:#c084fc}
+.j-null{color:#555}
+
+/* status pill in response */
+.s-pill{
+  font-family:var(--mono);font-size:10.5px;font-weight:700;
+  padding:3px 9px;border-radius:99px;
+}
+.s-2xx{background:rgba(16,185,129,.12);color:#10b981}
+.s-4xx{background:rgba(239,68,68,.12);color:#f87171}
+.s-5xx{background:rgba(245,158,11,.12);color:#f59e0b}
+
+/* ── TRY IT ── */
+.try-panel{
+  background:rgba(255,255,255,.02);border:none;
+  border-radius:20px;overflow:hidden;
+  box-shadow:0 16px 40px rgba(0,0,0,.5);
+}
+.try-hd{
+  padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.04);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.try-title-row{display:flex;align-items:center;gap:8px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
+.try-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#444}
+.try-body{padding:18px;display:flex;flex-direction:column;gap:14px}
+
+.url-bar{
+  display:flex;align-items:stretch;
+  background:#070707;border:1px solid #1a1a1a;
+  border-radius:10px;overflow:hidden;
+  transition:border-color .2s;
+}
+.url-bar:focus-within{border-color:rgba(59,130,246,.4)}
+.url-method{
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  padding:0 14px;border-right:1px solid #1a1a1a;
+  display:flex;align-items:center;flex-shrink:0;
+  background:rgba(59,130,246,.08);color:#60a5fa;
+}
+.url-input{
+  flex:1;background:transparent;border:none;outline:none;
+  font-family:var(--mono);font-size:12px;color:#ddd;
+  padding:10px 12px;
+}
+.send-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:10px 22px;border-radius:10px;font-size:13px;font-weight:700;
+  cursor:pointer;border:none;outline:none;flex-shrink:0;
+  font-family:'Inter',sans-serif;
+  background:linear-gradient(to top,#3b82f6,#60a5fa);
+  color:#000;
+  box-shadow:0 4px 20px rgba(59,130,246,.35);
+  border:1px solid #3b82f6;
+  transition:opacity .15s,transform .1s;
+}
+.send-btn:hover{opacity:.9}
+.send-btn:active{transform:scale(.97)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.field-lbl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#444}
+.field-input,.field-textarea{
+  width:100%;background:#070707;border:1px solid #1a1a1a;
+  border-radius:8px;padding:9px 12px;
+  font-family:var(--mono);font-size:12px;color:#ddd;
+  outline:none;transition:border-color .2s;
+}
+.field-input:focus,.field-textarea:focus{border-color:rgba(59,130,246,.4)}
+.field-textarea{resize:vertical;min-height:100px;line-height:1.65}
+.param-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.param-key{font-family:var(--mono);font-size:11px;color:#60a5fa;min-width:110px;flex-shrink:0}
+
+.resp-wrap{
+  background:#050505;border:1px solid #111;
+  border-radius:10px;overflow:hidden;
+}
+.resp-meta{
+  padding:8px 12px;border-bottom:1px solid #0d0d0d;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.resp-time{font-family:var(--mono);font-size:10.5px;color:#444}
+.resp-url{font-family:var(--mono);font-size:10.5px;color:#333;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resp-body{
+  padding:14px;font-family:var(--mono);font-size:12px;
+  line-height:1.7;color:#666;white-space:pre-wrap;
+  word-break:break-word;max-height:320px;overflow-y:auto;
+}
+
+.spinner{
+  display:inline-block;width:13px;height:13px;
+  border:2px solid rgba(0,0,0,.3);border-top-color:#000;
+  border-radius:50%;animation:spin .6s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{
+  background:#111;border:1px solid #222;border-radius:12px;
+  padding:11px 16px;font-size:12.5px;color:#ddd;min-width:200px;
+  box-shadow:0 8px 30px rgba(0,0,0,.6);
+  animation:tin .2s ease;
+}
+@keyframes tin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.toast.ok{border-color:rgba(16,185,129,.3);color:#10b981}
+.toast.err{border-color:rgba(239,68,68,.3);color:#f87171}
+
+/* mobile */
+#mob-toggle{
+  display:none;position:fixed;bottom:18px;left:18px;z-index:200;
+  width:42px;height:42px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(to top,#3b82f6,#60a5fa);
+  color:#000;font-size:18px;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(59,130,246,.4);
+}
+@media(max-width:768px){
+  #sidebar{position:fixed;left:-100%;top:0;transition:left .25s;z-index:200}
+  #sidebar.open{left:0}
+  #mob-toggle{display:flex}
+  #content{padding:20px 14px 80px}
+  .hero-h1{font-size:26px}
+}
+</style>
+</head>
+<body>
+<div class="bg-glow-a"></div>
+<div class="bg-glow-b"></div>
+
+<div id="shell">
+<!-- ════════ SIDEBAR ════════ -->
+<nav id="sidebar">
+  <div id="sidebar-top">
+    <div class="brand-row">
+      <div class="brand-logo">
+        <div class="dot-l"></div>
+        <div class="dot-r"></div>
+      </div>
+      <span class="brand-name">AstraWatch</span>
+      <span class="brand-badge">API</span>
+    </div>
+    <div id="search-wrap">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="search-input" type="text" placeholder="Search endpoints…" autocomplete="off"/>
+    </div>
+  </div>
+  <div id="sidebar-scroll"></div>
+</nav>
+
+<!-- ════════ MAIN ════════ -->
+<main id="main">
+  <div id="topnav">
+    <div class="nav-left">
+      <div class="nav-breadcrumb" id="nav-bc"><span>API Reference</span></div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-url-pill" id="nav-url">localhost</div>
+      <div class="nav-status"><div class="status-dot"></div>Live</div>
+    </div>
+  </div>
+  <div id="content">
+
+    <!-- WELCOME -->
+    <div id="welcome">
+      
+      <!-- PLATFORM OVERVIEW HEADER -->
+      <div style="padding:4px 0 8px">
+        <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.02em">Backend Services &amp; Interactive Reference</div>
+        <div style="font-size:13px;color:#777;margin-top:4px">Interactive testing interface, telemetry pipeline specs, and service topology for all 6 microservices.</div>
+      </div>
+
+      <!-- CARD 3: ARCHITECTURE & TOPOLOGY FLOW CARD -->
+      <div class="info-panel">
+        <div class="info-panel-hd"><div class="hd-pip"></div>Service Topology &amp; Interaction Flow</div>
+        <div style="padding:24px">
+          <svg viewBox="0 0 800 380" style="width:100%;height:auto;font-family:Inter,sans-serif">
+            <!-- Background grid -->
+            <defs>
+              <linearGradient id="g-blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient>
+              <linearGradient id="g-purple" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#7e22ce"/></linearGradient>
+              <linearGradient id="g-green" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#047857"/></linearGradient>
+              <linearGradient id="g-amber" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/></linearGradient>
+              <linearGradient id="g-indigo" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#4338ca"/></linearGradient>
+              <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+              </marker>
+            </defs>
+
+            <!-- Agent -->
+            <rect x="20" y="40" width="130" height="70" rx="12" fill="#0d0d0d" stroke="#333" stroke-width="1.5"/>
+            <text x="85" y="70" text-anchor="middle" fill="#fff" font-weight="700" font-size="12">cxx-agent</text>
+            <text x="85" y="88" text-anchor="middle" fill="#888" font-size="10">eBPF / procfs</text>
+
+            <!-- Collector -->
+            <rect x="210" y="40" width="140" height="70" rx="12" fill="#047857" fill-opacity="0.15" stroke="#10b981" stroke-width="1.5"/>
+            <text x="280" y="70" text-anchor="middle" fill="#10b981" font-weight="700" font-size="13">Collector (:8080)</text>
+            <text x="280" y="88" text-anchor="middle" fill="#888" font-size="10">Go Ingestion</text>
+
+            <!-- Kafka -->
+            <rect x="420" y="40" width="160" height="70" rx="12" fill="#b45309" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="500" y="70" text-anchor="middle" fill="#f59e0b" font-weight="700" font-size="13">Kafka (:9092)</text>
+            <text x="500" y="88" text-anchor="middle" fill="#888" font-size="10">6 Event Topics</text>
+
+            <!-- ClickHouse -->
+            <rect x="640" y="40" width="140" height="70" rx="12" fill="#1d4ed8" fill-opacity="0.15" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="710" y="70" text-anchor="middle" fill="#60a5fa" font-weight="700" font-size="13">ClickHouse</text>
+            <text x="710" y="88" text-anchor="middle" fill="#888" font-size="10">Columnar Storage</text>
+
+            <!-- Analyzer -->
+            <rect x="420" y="165" width="160" height="70" rx="12" fill="#7e22ce" fill-opacity="0.15" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="500" y="195" text-anchor="middle" fill="#c084fc" font-weight="700" font-size="13">Analyzer (:8001)</text>
+            <text x="500" y="213" text-anchor="middle" fill="#888" font-size="10">Python ML Engine</text>
+
+            <!-- Orchestrator -->
+            <rect x="210" y="165" width="140" height="70" rx="12" fill="#1d4ed8" fill-opacity="0.15" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="280" y="195" text-anchor="middle" fill="#60a5fa" font-weight="700" font-size="13">Orchestrator (:8081)</text>
+            <text x="280" y="213" text-anchor="middle" fill="#888" font-size="10">Java Spring Control</text>
+
+            <!-- Operator -->
+            <rect x="210" y="290" width="140" height="70" rx="12" fill="#b45309" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="280" y="320" text-anchor="middle" fill="#f59e0b" font-weight="700" font-size="13">Operator (:8082)</text>
+            <text x="280" y="338" text-anchor="middle" fill="#888" font-size="10">Go K8s Controller</text>
+
+            <!-- Realtime -->
+            <rect x="640" y="165" width="140" height="70" rx="12" fill="#4338ca" fill-opacity="0.15" stroke="#818cf8" stroke-width="1.5"/>
+            <text x="710" y="195" text-anchor="middle" fill="#818cf8" font-weight="700" font-size="13">Realtime (:3001)</text>
+            <text x="710" y="213" text-anchor="middle" fill="#888" font-size="10">Node.js Socket.io</text>
+
+            <!-- Postgres -->
+            <rect x="20" y="165" width="130" height="70" rx="12" fill="#0d0d0d" stroke="#333" stroke-width="1.5"/>
+            <text x="85" y="195" text-anchor="middle" fill="#fff" font-weight="700" font-size="12">PostgreSQL</text>
+            <text x="85" y="213" text-anchor="middle" fill="#888" font-size="10">Relational Store</text>
+
+            <!-- Arrows -->
+            <!-- Agent -> Collector -->
+            <path d="M 150 75 L 210 75" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <!-- Collector -> Kafka -->
+            <path d="M 350 75 L 420 75" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <!-- Kafka -> ClickHouse -->
+            <path d="M 580 75 L 640 75" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <!-- Kafka -> Analyzer -->
+            <path d="M 500 110 L 500 165" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <!-- Kafka -> Realtime -->
+            <path d="M 580 200 L 640 200" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <!-- Analyzer -> Orchestrator -->
+            <path d="M 420 200 L 350 200" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <!-- Orchestrator -> Postgres -->
+            <path d="M 210 200 L 150 200" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <!-- Orchestrator -> Operator -->
+            <path d="M 280 235 L 280 290" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- CARD 4: MICROSERVICES CARD -->
+      <div class="info-panel">
+        <div class="info-panel-hd"><div class="hd-pip"></div>Microservice Inventory</div>
+        <div style="padding:16px">
+          <div class="svc-cards" id="svc-cards"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-hd">Base URLs &amp; Infrastructure Ports</div>
+        <div class="info-panel">
+          <div class="info-panel-hd"><div class="hd-pip"></div>Endpoints &amp; Ports</div>
+          <div class="info-panel-body">
+            <table class="url-table">
+              <thead><tr><th>Service</th><th>Port</th><th>Base Path</th><th>Protocol</th><th>Role</th></tr></thead>
+              <tbody>
+                <tr><td class="t-svc">collector</td><td class="t-port">:8080</td><td class="t-path">/v1</td><td class="t-proto">HTTP REST</td><td>Telemetry Ingestion &amp; Catalog</td></tr>
+                <tr><td class="t-svc">analyzer</td><td class="t-port">:8001</td><td class="t-path">/v1</td><td class="t-proto">HTTP REST</td><td>ML Anomaly Detection &amp; Root Cause</td></tr>
+                <tr><td class="t-svc">orchestrator</td><td class="t-port">:8081</td><td class="t-path">/api/v1</td><td class="t-proto">HTTP REST</td><td>Control Plane, Auth &amp; Incident Engine</td></tr>
+                <tr><td class="t-svc">operator</td><td class="t-port">:8082</td><td class="t-path">/api/v1</td><td class="t-proto">HTTP REST</td><td>K8s Controller &amp; Remediations</td></tr>
+                <tr><td class="t-svc">realtime</td><td class="t-port">:3001</td><td class="t-path">/</td><td class="t-proto">Socket.io WS</td><td>Live WebSocket Telemetry Stream</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-hd">Authentication &amp; Security</div>
+        <div class="info-panel">
+          <div class="info-panel-hd"><div class="hd-pip"></div>Bearer Token Security</div>
+          <div class="auth-note">
+            Protected endpoints require a Bearer JWT issued by <code>POST /api/v1/auth/login</code> on Orchestrator (<code>:8081</code>). High-throughput ingestion routes on Collector (<code>:8080</code>) are unauthenticated.
+          </div>
+          <div class="mono-block">Authorization: Bearer &lt;your_access_token&gt;</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENDPOINT VIEW -->
+    <div id="ep-view"></div>
+  </div>
+</main>
+</div>
+
+<button id="mob-toggle" onclick="toggleSidebar()">☰</button>
+<div id="toasts"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA REGISTRY
+// ══════════════════════════════════════════════
+const S = [
+  { id:'collector', name:'Collector', sub:'Go · Telemetry Ingest + Service Catalog', port:8080, base:'http://localhost:8080', color:'#10b981', groups:[
+    { label:'Telemetry Ingest', eps:[
+      { id:'ci1', m:'POST', path:'/v1/ingest/metrics/batch', name:'Ingest Metrics Batch', auth:false,
+        desc:'Ingests batches of time-series metric data points from eBPF agents or SDKs. Publishes to Kafka topic <strong>raw-metrics</strong>. Unauthenticated for high-throughput agent traffic.',
+        params:[], body:{s:'Array of metric data points', ex:'[\n  {\n    "serviceId": "svc-001",\n    "metricName": "cpu_usage",\n    "value": 72.3,\n    "timestamp": "2026-01-01T00:00:00Z",\n    "labels": { "host": "node-1", "env": "prod" }\n  }\n]'},
+        resp:{code:202, ex:'{ "ingested": 1, "failed": 0 }'}},
+      { id:'ci2', m:'POST', path:'/v1/ingest/logs', name:'Ingest Log Events', auth:false,
+        desc:'Ingests structured log events from services and agents. Publishes to Kafka topic <strong>raw-logs</strong>. Unauthenticated.',
+        params:[], body:{s:'Log entry payload', ex:'{\n  "serviceId": "svc-001",\n  "level": "ERROR",\n  "message": "Connection timeout to DB",\n  "timestamp": "2026-01-01T00:00:00Z",\n  "traceId": "trace-abc123",\n  "labels": { "host": "node-1" }\n}'},
+        resp:{code:202, ex:'{ "status": "accepted" }'}},
+      { id:'ci3', m:'POST', path:'/v1/ingest/traces', name:'Ingest Distributed Traces', auth:false,
+        desc:'Accepts OpenTelemetry-compatible trace spans. Publishes to Kafka topic <strong>raw-traces</strong>. Unauthenticated.',
+        params:[], body:{s:'Trace span payload', ex:'{\n  "traceId": "abc123",\n  "spanId": "span001",\n  "serviceId": "svc-001",\n  "operationName": "db.query",\n  "startTime": "2026-01-01T00:00:00Z",\n  "duration": 45,\n  "status": "OK"\n}'},
+        resp:{code:202, ex:'{ "status": "accepted" }'}},
+      { id:'ci4', m:'POST', path:'/v1/agent/metrics', name:'Agent Host Metrics Push', auth:false,
+        desc:'Accepts host-level metrics (CPU, memory, disk, network) from the C++ eBPF agent via ring buffer. Unauthenticated.',
+        params:[], body:{s:'Agent metrics batch', ex:'{\n  "agentId": "agent-node-1",\n  "metrics": [\n    { "name": "cpu_percent", "value": 65.2 },\n    { "name": "mem_used_bytes", "value": 4294967296 }\n  ],\n  "timestamp": "2026-01-01T00:00:00Z"\n}'},
+        resp:{code:200, ex:'{ "status": "ok" }'}},
+    ]},
+    { label:'Query', eps:[
+      { id:'cq1', m:'GET', path:'/v1/query/metrics', name:'Query Metrics', auth:true,
+        desc:'Queries aggregated time-series metrics stored in ClickHouse. Supports service filtering and time range selection.',
+        params:[{n:'serviceId',i:'query',t:'string (UUID)',r:true,d:'Target service identifier'},{n:'metric',i:'query',t:'string',r:false,d:'Metric name filter (e.g. cpu_usage)'},{n:'from',i:'query',t:'ISO8601',r:false,d:'Start of time range'},{n:'to',i:'query',t:'ISO8601',r:false,d:'End of time range'},{n:'limit',i:'query',t:'integer',r:false,d:'Max results (default 1000)'}],
+        body:null,
+        resp:{code:200, ex:'{\n  "data": [\n    { "timestamp": "2026-01-01T00:00:00Z", "metricName": "cpu_usage", "value": 72.3, "serviceId": "svc-001" }\n  ],\n  "total": 1\n}'}},
+      { id:'cq2', m:'GET', path:'/v1/query/logs', name:'Query Logs', auth:true,
+        desc:'Queries structured log events from ClickHouse with full-text search and severity filtering.',
+        params:[{n:'serviceId',i:'query',t:'string (UUID)',r:true,d:'Target service'},{n:'level',i:'query',t:'string',r:false,d:'DEBUG | INFO | WARN | ERROR'},{n:'search',i:'query',t:'string',r:false,d:'Full-text search string'},{n:'from',i:'query',t:'ISO8601',r:false,d:'Start time'},{n:'to',i:'query',t:'ISO8601',r:false,d:'End time'}],
+        body:null,
+        resp:{code:200, ex:'{\n  "data": [\n    { "timestamp": "2026-01-01T00:00:00Z", "level": "ERROR", "message": "DB timeout", "serviceId": "svc-001" }\n  ],\n  "total": 1\n}'}},
+      { id:'cq3', m:'GET', path:'/v1/query/traces', name:'Query Traces', auth:true,
+        desc:'Fetches distributed trace spans from ClickHouse. Filter by traceId or serviceId.',
+        params:[{n:'serviceId',i:'query',t:'string (UUID)',r:false,d:'Service filter'},{n:'traceId',i:'query',t:'string',r:false,d:'Exact trace ID lookup'},{n:'from',i:'query',t:'ISO8601',r:false,d:'Start time'}],
+        body:null,
+        resp:{code:200, ex:'{\n  "data": [\n    { "traceId": "abc123", "spanId": "span001", "duration": 45, "status": "OK" }\n  ]\n}'}},
+    ]},
+    { label:'Service Catalog', eps:[
+      { id:'cs1', m:'GET', path:'/v1/services', name:'List Services', auth:true,
+        desc:'Returns all services registered in the AstraWatch service catalog.',
+        params:[{n:'teamId',i:'query',t:'string (UUID)',r:false,d:'Filter by team'},{n:'env',i:'query',t:'string',r:false,d:'prod | staging | dev'}],
+        body:null,
+        resp:{code:200, ex:'{\n  "services": [\n    { "id": "svc-001", "name": "payment-service", "team": "platform", "env": "prod", "tier": "T1" }\n  ]\n}'}},
+      { id:'cs2', m:'POST', path:'/v1/services', name:'Register Service', auth:true,
+        desc:'Registers a new service in the catalog with metadata, SLO tier, and ownership.',
+        params:[], body:{s:'Service registration payload', ex:'{\n  "name": "payment-service",\n  "team": "platform-team",\n  "env": "prod",\n  "tier": "T1",\n  "language": "go",\n  "repository": "https://github.com/org/payment"\n}'},
+        resp:{code:201, ex:'{ "id": "svc-001", "name": "payment-service", "createdAt": "2026-01-01T00:00:00Z" }'}},
+      { id:'cs3', m:'GET', path:'/v1/services/:id', name:'Get Service', auth:true,
+        desc:'Retrieves full metadata for a single service by ID.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Service ID'}],
+        body:null,
+        resp:{code:200, ex:'{\n  "id": "svc-001",\n  "name": "payment-service",\n  "team": "platform",\n  "tier": "T1",\n  "healthScore": 94.2,\n  "dependencies": ["auth-service", "db-service"]\n}'}},
+      { id:'cs4', m:'PUT', path:'/v1/services/:id', name:'Update Service', auth:true,
+        desc:'Updates service metadata in the catalog.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Service ID'}],
+        body:{s:'Updated fields', ex:'{ "team": "new-team", "tier": "T2" }'},
+        resp:{code:200, ex:'{ "id": "svc-001", "team": "new-team", "tier": "T2" }'}},
+      { id:'cs5', m:'GET', path:'/v1/services/:id/dependencies', name:'Get Dependencies', auth:true,
+        desc:'Returns upstream and downstream service dependency graph.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Service ID'}],
+        body:null,
+        resp:{code:200, ex:'{ "upstream": ["auth-service"], "downstream": ["email-service", "ledger-service"] }'}},
+      { id:'cs6', m:'POST', path:'/v1/services/:id/scorecard', name:'Submit Scorecard', auth:true,
+        desc:'Submits or updates a service maturity scorecard with production readiness scores.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Service ID'}],
+        body:{s:'Scorecard payload', ex:'{ "observability": 85, "reliability": 90, "security": 78, "documentation": 60 }'},
+        resp:{code:200, ex:'{ "serviceId": "svc-001", "overallScore": 78.25, "updatedAt": "2026-01-01T00:00:00Z" }'}},
+    ]},
+    { label:'Health', eps:[
+      { id:'ch1', m:'GET', path:'/healthz', name:'Health Check', auth:false,
+        desc:'Liveness and readiness probe. Returns service status, Kafka connectivity, and ClickHouse connectivity.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "status": "ok", "kafka": "connected", "clickhouse": "connected", "uptime": 3600 }'}},
+    ]},
+  ]},
+
+  { id:'analyzer', name:'Analyzer', sub:'Python · ML Anomaly Detection', port:8001, base:'http://localhost:8001', color:'#a855f7', groups:[
+    { label:'Anomaly Detection', eps:[
+      { id:'ad1', m:'POST', path:'/v1/anomaly/detect', name:'Detect Anomalies', auth:true,
+        desc:'Runs real-time anomaly detection using an Isolation Forest + LSTM Autoencoder ensemble. Returns anomaly scores and detected outliers.',
+        params:[], body:{s:'Metric batch for scoring', ex:'{\n  "serviceId": "svc-001",\n  "metricName": "cpu_usage",\n  "values": [72.3, 74.1, 73.8, 95.4, 96.2, 97.1],\n  "timestamps": [\n    "2026-01-01T00:00:00Z", "2026-01-01T00:01:00Z",\n    "2026-01-01T00:02:00Z", "2026-01-01T00:03:00Z",\n    "2026-01-01T00:04:00Z", "2026-01-01T00:05:00Z"\n  ]\n}'},
+        resp:{code:200, ex:'{\n  "anomalies": [\n    { "timestamp": "2026-01-01T00:03:00Z", "value": 95.4, "score": -0.42, "isAnomaly": true }\n  ],\n  "modelUsed": "isolation_forest",\n  "processingMs": 12\n}'}},
+      { id:'ad2', m:'POST', path:'/v1/anomaly/root-cause', name:'Root Cause Analysis', auth:true,
+        desc:'Performs probabilistic root cause analysis across correlated services and metrics using Bayesian correlation and SHAP feature importance.',
+        params:[], body:{s:'Incident context for RCA', ex:'{\n  "serviceId": "svc-001",\n  "incidentId": "inc-xyz",\n  "anomalyTimestamp": "2026-01-01T00:03:00Z",\n  "metrics": ["cpu_usage", "mem_usage", "latency_p99"],\n  "lookbackMinutes": 30\n}'},
+        resp:{code:200, ex:'{\n  "rootCauses": [\n    {\n      "component": "payment-db",\n      "probability": 0.87,\n      "evidence": ["Latency spike correlates with query slowdown"],\n      "recommendation": "Scale DB replicas or optimize slow query"\n    }\n  ]\n}'}},
+      { id:'ad3', m:'POST', path:'/v1/anomaly/feedback', name:'Submit Feedback', auth:true,
+        desc:'Labels anomalies as true/false positives. Feedback persists in PostgreSQL and triggers model retraining jobs.',
+        params:[], body:{s:'Feedback payload', ex:'{\n  "anomalyId": "anom-001",\n  "serviceId": "svc-001",\n  "feedback": "false_positive",\n  "comment": "Scheduled batch job caused the spike",\n  "rating": 2\n}'},
+        resp:{code:200, ex:'{ "id": "fb-001", "anomalyId": "anom-001", "feedback": "false_positive", "savedAt": "2026-01-01T00:00:00Z" }'}},
+      { id:'ad4', m:'GET', path:'/v1/anomaly/list', name:'List Anomalies', auth:true,
+        desc:'Retrieves a paginated list of detected anomalies with optional service and time range filters.',
+        params:[{n:'serviceId',i:'query',t:'string (UUID)',r:false,d:'Filter by service'},{n:'from',i:'query',t:'ISO8601',r:false,d:'Start time'},{n:'to',i:'query',t:'ISO8601',r:false,d:'End time'},{n:'page',i:'query',t:'integer',r:false,d:'Page (default 1)'},{n:'limit',i:'query',t:'integer',r:false,d:'Per page (default 50)'}],
+        body:null,
+        resp:{code:200, ex:'{ "anomalies": [{ "id": "anom-001", "serviceId": "svc-001", "score": -0.51, "detectedAt": "2026-01-01T00:03:00Z" }], "total": 42 }'}},
+    ]},
+    { label:'Models', eps:[
+      { id:'am1', m:'GET', path:'/v1/models', name:'List Models', auth:true,
+        desc:'Returns metadata for all trained ML models — version, accuracy, training date, and active status.',
+        params:[], body:null,
+        resp:{code:200, ex:'{\n  "models": [\n    { "name": "isolation_forest", "version": "1.3.0", "accuracy": 0.94, "status": "active" },\n    { "name": "lstm_autoencoder", "version": "2.1.0", "accuracy": 0.91, "status": "active" }\n  ]\n}'}},
+      { id:'am2', m:'POST', path:'/v1/models/retrain', name:'Trigger Retraining', auth:true,
+        desc:'Triggers an async model retraining job using accumulated feedback data from PostgreSQL. Returns a job ID.',
+        params:[], body:{s:'Retraining config', ex:'{ "modelName": "isolation_forest", "serviceId": "svc-001", "lookbackDays": 30 }'},
+        resp:{code:202, ex:'{ "jobId": "job-train-001", "status": "queued", "estimatedMinutes": 5 }'}},
+      { id:'am3', m:'POST', path:'/v1/predict', name:'Direct Prediction', auth:true,
+        desc:'Runs a direct prediction on provided feature vectors using a specified model.',
+        params:[], body:{s:'Prediction request', ex:'{ "model": "isolation_forest", "features": [72.3, 0.85, 145.2, 3.1], "serviceId": "svc-001" }'},
+        resp:{code:200, ex:'{ "prediction": 1, "score": -0.23, "confidence": 0.91, "model": "isolation_forest" }'}},
+    ]},
+    { label:'Health', eps:[
+      { id:'ah1', m:'GET', path:'/v1/health', name:'Health Check', auth:false,
+        desc:'Returns analyzer health, loaded model names, ClickHouse and PostgreSQL connectivity.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "status": "healthy", "modelsLoaded": ["isolation_forest", "lstm_autoencoder"], "clickhouse": "connected", "postgres": "connected" }'}},
+    ]},
+  ]},
+
+  { id:'orchestrator', name:'Orchestrator', sub:'Java Spring Boot · Incident & Auth Management', port:8081, base:'http://localhost:8081', color:'#3b82f6', groups:[
+    { label:'Authentication', eps:[
+      { id:'oa1', m:'POST', path:'/api/v1/auth/login', name:'Login', auth:false,
+        desc:'Authenticates user credentials and returns JWT access + refresh tokens.',
+        params:[], body:{s:'Login credentials', ex:'{ "email": "admin@astrawatch.io", "password": "secret" }'},
+        resp:{code:200, ex:'{ "success": true, "data": { "accessToken": "eyJ...", "refreshToken": "rjt..." }, "meta": { "traceId": "tr-001" } }'}},
+      { id:'oa2', m:'POST', path:'/api/v1/auth/register', name:'Register', auth:false,
+        desc:'Registers a new user account.',
+        params:[], body:{s:'Registration payload', ex:'{ "email": "user@example.com", "password": "StrongPass123!" }'},
+        resp:{code:201, ex:'{ "success": true, "data": { "userId": "usr-001", "requiresVerification": true } }'}},
+      { id:'oa3', m:'POST', path:'/api/v1/auth/refresh', name:'Refresh Token', auth:false,
+        desc:'Refreshes JWT access token using a valid refresh token.',
+        params:[], body:{s:'Refresh token', ex:'{ "refreshToken": "rjt..." }'},
+        resp:{code:200, ex:'{ "success": true, "data": { "accessToken": "eyJ...", "refreshToken": "rjt_new..." } }'}},
+      { id:'oa4', m:'POST', path:'/api/v1/auth/logout', name:'Logout', auth:false,
+        desc:'Logs out the current user session.',
+        params:[], body:null, resp:{code:204, ex:''}},
+      { id:'oa5', m:'GET', path:'/api/v1/auth/me', name:'Current User', auth:false,
+        desc:'Returns current authenticated user profile, roles, and permissions.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "data": { "userId": "usr-001", "email": "admin@astrawatch.io", "roles": ["ADMIN"], "permissions": ["incidents:write"] } }'}},
+      { id:'oa6', m:'POST', path:'/api/v1/auth/forgot-password', name:'Forgot Password', auth:false,
+        desc:'Triggers a password reset email workflow.',
+        params:[], body:{s:'Email', ex:'{ "email": "user@example.com" }'},
+        resp:{code:202, ex:''}},
+      { id:'oa7', m:'POST', path:'/api/v1/auth/reset-password', name:'Reset Password', auth:false,
+        desc:'Resets password using a valid reset token.',
+        params:[], body:{s:'Reset payload', ex:'{ "token": "rst-tok-001", "newPassword": "NewSecure123!" }'},
+        resp:{code:200, ex:'{ "data": { "success": true } }'}},
+      { id:'oa8', m:'POST', path:'/api/v1/auth/mfa/setup', name:'MFA Setup', auth:false,
+        desc:'Initializes TOTP MFA and returns QR code URL and backup codes.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "data": { "secret": "JBSWY3DPEHPK3PXP", "qrCodeUrl": "otpauth://...", "backupCodes": ["123456"] } }'}},
+      { id:'oa9', m:'POST', path:'/api/v1/auth/mfa/verify', name:'MFA Verify', auth:false,
+        desc:'Verifies a TOTP code and enables MFA on the account.',
+        params:[], body:{s:'TOTP code', ex:'{ "code": "123456" }'},
+        resp:{code:200, ex:'{ "data": { "enabled": true } }'}},
+      { id:'oa10', m:'GET', path:'/api/v1/auth/sessions', name:'List Sessions', auth:false,
+        desc:'Lists all active login sessions for the current user.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "data": { "sessions": [{ "id": "sess-001", "device": "Chrome/Mac", "ip": "192.168.1.1", "lastActive": "2026-01-01T00:00:00Z" }] } }'}},
+      { id:'oa11', m:'DELETE', path:'/api/v1/auth/sessions/:id', name:'Revoke Session', auth:false,
+        desc:'Terminates a specific session by ID.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Session ID to revoke'}],
+        body:null, resp:{code:204, ex:''}},
+      { id:'oa12', m:'POST', path:'/api/v1/auth/api-keys', name:'Create API Key', auth:false,
+        desc:'Generates a new API key for programmatic access.',
+        params:[], body:{s:'API key config', ex:'{ "name": "ci-deploy-key", "roles": ["metrics:read"] }'},
+        resp:{code:201, ex:'{ "data": { "id": "key-001", "key": "aw_live_abc123", "createdAt": "2026-01-01T00:00:00Z" } }'}},
+      { id:'oa13', m:'GET', path:'/api/v1/auth/api-keys', name:'List API Keys', auth:false,
+        desc:'Lists all API keys for the current user/org.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "data": { "keys": [{ "id": "key-001", "name": "ci-deploy-key", "createdAt": "2026-01-01T00:00:00Z" }] } }'}},
+      { id:'oa14', m:'POST', path:'/api/v1/auth/invite', name:'Invite User', auth:false,
+        desc:'Invites a user to the platform by email.',
+        params:[], body:{s:'Invitation payload', ex:'{ "email": "colleague@company.com", "role": "DEVELOPER" }'},
+        resp:{code:200, ex:'{ "data": { "inviteId": "inv-001" } }'}},
+      { id:'oa15', m:'POST', path:'/api/v1/auth/switch-team', name:'Switch Team', auth:false,
+        desc:'Switches active team/org scope and issues a new scoped token.',
+        params:[], body:{s:'Team switch payload', ex:'{ "teamId": "team-001", "accessToken": "eyJ..." }'},
+        resp:{code:200, ex:'{ "data": { "accessToken": "eyJ_scoped..." } }'}},
+    ]},
+    { label:'Incidents', eps:[
+      { id:'oi1', m:'POST', path:'/api/v1/incidents', name:'Create Incident', auth:true,
+        desc:'Creates a new incident with severity level, affected service, and description.',
+        params:[], body:{s:'Incident payload', ex:'{ "serviceId": "svc-001", "anomalyId": "anom-001", "severity": "HIGH", "title": "Payment service latency spike", "description": "P99 latency exceeds 5s threshold" }'},
+        resp:{code:201, ex:'{ "id": "inc-001", "severity": "HIGH", "state": "OPEN", "createdAt": "2026-01-01T00:00:00Z" }'}},
+      { id:'oi2', m:'GET', path:'/api/v1/incidents', name:'List Incidents', auth:true,
+        desc:'Lists all incidents, optionally filtered by service.',
+        params:[{n:'serviceId',i:'query',t:'string (UUID)',r:false,d:'Filter by service'}],
+        body:null,
+        resp:{code:200, ex:'[{ "id": "inc-001", "title": "Payment latency", "severity": "HIGH", "state": "OPEN" }]'}},
+      { id:'oi3', m:'GET', path:'/api/v1/incidents/:id', name:'Get Incident', auth:true,
+        desc:'Fetches detailed view of a single incident including assignment and state.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:null,
+        resp:{code:200, ex:'{ "id": "inc-001", "serviceId": "svc-001", "severity": "HIGH", "state": "INVESTIGATING", "title": "Payment latency spike", "assignedTo": "usr-001" }'}},
+      { id:'oi4', m:'POST', path:'/api/v1/incidents/:id/assign', name:'Assign Incident', auth:true,
+        desc:'Assigns incident ownership to a user.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:{s:'Assignee', ex:'{ "userId": "usr-001" }'},
+        resp:{code:200, ex:'{ "id": "inc-001", "assignedTo": "usr-001" }'}},
+      { id:'oi5', m:'POST', path:'/api/v1/incidents/:id/resolve', name:'Resolve Incident', auth:true,
+        desc:'Resolves an incident with a resolution note. Transitions state to RESOLVED.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:{s:'Resolution note', ex:'{ "resolutionNote": "Rolled back faulty deployment v2.3.1" }'},
+        resp:{code:200, ex:'{ "id": "inc-001", "state": "RESOLVED", "resolvedAt": "2026-01-01T01:00:00Z" }'}},
+      { id:'oi6', m:'POST', path:'/api/v1/incidents/:id/escalate', name:'Escalate Incident', auth:true,
+        desc:'Escalates incident to specified user or on-call tier.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:{s:'Escalation details', ex:'{ "escalateTo": "oncall-lead", "reason": "No response after 30 minutes" }'},
+        resp:{code:200, ex:'{ "id": "inc-001", "state": "ESCALATED" }'}},
+      { id:'oi7', m:'GET', path:'/api/v1/incidents/:id/timeline', name:'Incident Timeline', auth:true,
+        desc:'Fetches the full timeline event log for an incident.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:null,
+        resp:{code:200, ex:'[{ "id": 1, "eventType": "CREATED", "payload": "{}", "createdAt": "2026-01-01T00:00:00Z" }]'}},
+      { id:'oi8', m:'PATCH', path:'/api/v1/incidents/:id/transition', name:'Transition State', auth:true,
+        desc:'Triggers a Spring StateMachine lifecycle event to transition incident state.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:{s:'Lifecycle event', ex:'{ "event": "INVESTIGATE" }'},
+        resp:{code:200, ex:'{ "id": "inc-001", "state": "INVESTIGATING" }'}},
+    ]},
+    { label:'Auto-Healing', eps:[
+      { id:'oh1', m:'POST', path:'/api/v1/healing/trigger', name:'Trigger Healing', auth:true,
+        desc:'Triggers an automated or manual remediation healing workflow for an incident. Risk score determines if approval is required.',
+        params:[], body:{s:'Healing trigger', ex:'{ "incidentId": "inc-001", "actionType": "RESTART_POD", "parameters": { "namespace": "production", "deployment": "payment-service" } }'},
+        resp:{code:200, ex:'{ "id": "heal-001", "actionType": "RESTART_POD", "riskScore": 25, "status": "PENDING_APPROVAL" }'}},
+      { id:'oh2', m:'POST', path:'/api/v1/healing/approve/:actionId', name:'Approve Healing', auth:true,
+        desc:'Approves execution of a pending healing action.',
+        params:[{n:'actionId',i:'path',t:'string (UUID)',r:true,d:'Healing action ID'}],
+        body:{s:'Approver', ex:'{ "approvedBy": "usr-001" }'},
+        resp:{code:200, ex:'{ "id": "heal-001", "status": "EXECUTING", "approvedBy": "usr-001" }'}},
+      { id:'oh3', m:'POST', path:'/api/v1/healing/rollback/:actionId', name:'Rollback Healing', auth:true,
+        desc:'Executes a rollback for a previously applied healing action.',
+        params:[{n:'actionId',i:'path',t:'string (UUID)',r:true,d:'Healing action to rollback'}],
+        body:{s:'Rollback reason', ex:'{ "reason": "Healing action worsened the situation" }'},
+        resp:{code:200, ex:'{ "id": "heal-001", "status": "ROLLED_BACK" }'}},
+      { id:'oh4', m:'GET', path:'/api/v1/healing/history', name:'Healing History', auth:true,
+        desc:'Returns historical record of all executed healing actions.',
+        params:[{n:'serviceId',i:'query',t:'string (UUID)',r:false,d:'Service filter'}],
+        body:null,
+        resp:{code:200, ex:'{ "actions": [{ "id": "heal-001", "actionType": "RESTART_POD", "status": "COMPLETED", "riskScore": 25 }] }'}},
+      { id:'oh5', m:'GET', path:'/api/v1/healing/:actionId/validation', name:'Healing Validation', auth:true,
+        desc:'Evaluates before/after metric comparison to validate healing effectiveness.',
+        params:[{n:'actionId',i:'path',t:'string (UUID)',r:true,d:'Healing action ID'}],
+        body:null,
+        resp:{code:200, ex:'{ "data": { "beforeMetrics": { "cpu": 97.1 }, "afterMetrics": { "cpu": 45.2 }, "passed": true } }'}},
+    ]},
+    { label:'Notifications', eps:[
+      { id:'on1', m:'GET', path:'/api/v1/notifications/channels', name:'List Channels', auth:true,
+        desc:'Lists all notification channels (Slack, PagerDuty, Email, Webhook).',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "channels": [{ "id": "ch-001", "name": "#alerts", "type": "SLACK", "isEnabled": true }] }'}},
+      { id:'on2', m:'POST', path:'/api/v1/notifications/channels', name:'Create Channel', auth:true,
+        desc:'Creates a new notification destination channel.',
+        params:[], body:{s:'Channel config', ex:'{ "name": "#prod-alerts", "type": "SLACK", "config": "{ \\"webhookUrl\\": \\"https://hooks.slack.com/...\\" }", "isEnabled": true }'},
+        resp:{code:201, ex:'{ "id": "ch-002", "name": "#prod-alerts", "type": "SLACK" }'}},
+      { id:'on3', m:'POST', path:'/api/v1/notifications/channels/:id/test', name:'Test Channel', auth:true,
+        desc:'Dispatches a test notification to verify channel integration.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Channel ID'}],
+        body:null,
+        resp:{code:200, ex:'{ "delivered": true, "responseCode": 200 }'}},
+      { id:'on4', m:'GET', path:'/api/v1/notifications/maintenance-windows', name:'List Maintenance Windows', auth:true,
+        desc:'Lists scheduled maintenance windows for notification suppression.',
+        params:[{n:'active',i:'query',t:'boolean',r:false,d:'Filter to active windows only'}],
+        body:null,
+        resp:{code:200, ex:'{ "windows": [{ "id": "mw-001", "reason": "DB upgrade", "startedAt": "2026-01-01T02:00:00Z", "endedAt": "2026-01-01T04:00:00Z" }] }'}},
+      { id:'on5', m:'GET', path:'/api/v1/notifications/preferences', name:'Get Preferences', auth:true,
+        desc:'Retrieves personal notification preferences for a user.',
+        params:[{n:'userId',i:'query',t:'string (UUID)',r:true,d:'User ID'}],
+        body:null,
+        resp:{code:200, ex:'[{ "channelType": "SLACK", "severityMin": "HIGH", "isEnabled": true, "quietHoursStart": "22:00", "quietHoursEnd": "07:00" }]'}},
+    ]},
+    { label:'SLO', eps:[
+      { id:'os1', m:'GET', path:'/api/v1/slo/:serviceId', name:'Get SLO Metrics', auth:true,
+        desc:'Returns SLO metrics: current attainment percentage, error budget remaining, and burn rate.',
+        params:[{n:'serviceId',i:'path',t:'string (UUID)',r:true,d:'Service ID'}],
+        body:null,
+        resp:{code:200, ex:'{ "serviceId": "svc-001", "sloTarget": 99.9, "currentAttainment": 99.7, "errorBudgetRemaining": 0.12, "burnRate": 2.4 }'}},
+      { id:'os2', m:'POST', path:'/api/v1/slo', name:'Define SLO', auth:true,
+        desc:'Defines a new Service Level Objective for a service.',
+        params:[], body:{s:'SLO definition', ex:'{ "serviceId": "svc-001", "metric": "availability", "targetPercentage": 99.9, "windowDays": 30 }'},
+        resp:{code:201, ex:'{ "id": "slo-001", "serviceId": "svc-001", "targetPercentage": 99.9, "windowDays": 30 }'}},
+    ]},
+    { label:'Runbooks', eps:[
+      { id:'or1', m:'GET', path:'/api/v1/runbooks', name:'List Runbooks', auth:true,
+        desc:'Lists all automated runbooks, optionally filtered by service.',
+        params:[{n:'serviceId',i:'query',t:'string (UUID)',r:false,d:'Service filter'}],
+        body:null,
+        resp:{code:200, ex:'{ "runbooks": [{ "id": "rb-001", "title": "DB Failover", "actionType": "FAILOVER", "currentRevision": 3 }] }'}},
+      { id:'or2', m:'POST', path:'/api/v1/runbooks', name:'Create Runbook', auth:true,
+        desc:'Creates a new executable runbook with step definitions.',
+        params:[], body:{s:'Runbook definition', ex:'{ "serviceId": "svc-001", "title": "DB Failover", "description": "Failover to standby DB", "steps": "[{ \\"step\\": 1, \\"action\\": \\"promote_replica\\" }]", "actionType": "FAILOVER" }'},
+        resp:{code:201, ex:'{ "id": "rb-001", "title": "DB Failover", "currentRevision": 1 }'}},
+      { id:'or3', m:'POST', path:'/api/v1/runbooks/:id/execute', name:'Execute Runbook', auth:true,
+        desc:'Asynchronously triggers execution of a runbook with parameters.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Runbook ID'}],
+        body:{s:'Execution params', ex:'{ "namespace": "production", "dryRun": false }'},
+        resp:{code:202, ex:'{ "executionId": "exec-001" }'}},
+    ]},
+    { label:'Status Page', eps:[
+      { id:'osp1', m:'GET', path:'/api/v1/status-page', name:'Get Status Page', auth:true,
+        desc:'Retrieves full status page: component statuses, active incidents, and uptime percentage.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "components": [{ "name": "API Gateway", "status": "OPERATIONAL" }, { "name": "Payment", "status": "DEGRADED_PERFORMANCE" }], "uptime": 99.7 }'}},
+      { id:'osp2', m:'POST', path:'/api/v1/status-page/components', name:'Add Component', auth:true,
+        desc:'Adds a new component to the status page.',
+        params:[], body:{s:'Component payload', ex:'{ "name": "API Gateway", "description": "Main API entry point", "groupName": "Infrastructure", "status": "OPERATIONAL", "displayOrder": 1 }'},
+        resp:{code:201, ex:'{ "id": "comp-001", "name": "API Gateway", "status": "OPERATIONAL" }'}},
+      { id:'osp3', m:'PUT', path:'/api/v1/status-page/components/:id/status', name:'Update Component Status', auth:true,
+        desc:'Updates a component\'s operational status on the status page.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Component ID'}],
+        body:{s:'New status', ex:'{ "status": "PARTIAL_OUTAGE" }'},
+        resp:{code:200, ex:'{ "id": "comp-001", "status": "PARTIAL_OUTAGE" }'}},
+    ]},
+    { label:'Postmortems', eps:[
+      { id:'opm1', m:'POST', path:'/api/v1/incidents/:id/postmortem', name:'Create Postmortem', auth:true,
+        desc:'Creates a postmortem document for a resolved incident.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:{s:'Postmortem content', ex:'{ "summary": "DB connection pool exhaustion", "contributingFactors": "Missing index on orders table", "lessonsLearned": "Add query performance monitoring", "severityWasAccurate": true }'},
+        resp:{code:201, ex:'{ "id": "pm-001", "incidentId": "inc-001", "summary": "DB connection pool exhaustion" }'}},
+      { id:'opm2', m:'GET', path:'/api/v1/incidents/:id/postmortem', name:'Get Postmortem', auth:true,
+        desc:'Retrieves the postmortem report for an incident.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:null,
+        resp:{code:200, ex:'{ "id": "pm-001", "summary": "DB connection pool exhaustion", "lessonsLearned": "Add query monitoring", "createdAt": "2026-01-01T00:00:00Z" }'}},
+      { id:'opm3', m:'POST', path:'/api/v1/incidents/:id/postmortem/export', name:'Export Postmortem', auth:true,
+        desc:'Exports the postmortem to Markdown or PDF format.',
+        params:[{n:'id',i:'path',t:'string (UUID)',r:true,d:'Incident ID'}],
+        body:{s:'Export format', ex:'{ "format": "markdown" }'},
+        resp:{code:200, ex:'{ "content": "# Postmortem: inc-001\\n\\n## Summary\\n...", "format": "markdown" }'}},
+    ]},
+    { label:'On-Call & Synthetics', eps:[
+      { id:'ooc1', m:'GET', path:'/api/v1/oncall/schedules', name:'List On-Call Schedules', auth:true,
+        desc:'Lists all on-call rotation schedules.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "schedules": [{ "id": "oc-001", "name": "Platform On-Call", "rotation": "weekly" }] }'}},
+      { id:'ooc2', m:'POST', path:'/api/v1/oncall/schedules', name:'Create Schedule', auth:true,
+        desc:'Creates a new on-call rotation schedule.',
+        params:[], body:{s:'Schedule config', ex:'{ "name": "Platform On-Call", "rotation": "weekly", "members": ["usr-001", "usr-002"] }'},
+        resp:{code:201, ex:'{ "id": "oc-001", "name": "Platform On-Call" }'}},
+      { id:'osy1', m:'GET', path:'/api/v1/synthetics/checks', name:'List Synthetic Checks', auth:true,
+        desc:'Lists all synthetic monitoring probes (HTTP, DNS, TCP).',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "checks": [{ "id": "chk-001", "type": "HTTP", "url": "https://api.example.com/health", "interval": 60, "lastResult": "OK" }] }'}},
+      { id:'osy2', m:'POST', path:'/api/v1/synthetics/checks', name:'Create Synthetic Check', auth:true,
+        desc:'Configures a new synthetic monitoring probe with assertions.',
+        params:[], body:{s:'Check config', ex:'{ "type": "HTTP", "url": "https://api.example.com/health", "interval": 60, "timeout": 10, "assertions": [{ "type": "status_code", "value": 200 }] }'},
+        resp:{code:201, ex:'{ "id": "chk-001", "type": "HTTP", "url": "https://api.example.com/health" }'}},
+    ]},
+  ]},
+
+  { id:'operator', name:'Operator', sub:'Go · Kubernetes Auto-Healing Controller', port:8082, base:'http://localhost:8082', color:'#f59e0b', groups:[
+    { label:'AutoHealingRules', eps:[
+      { id:'opr1', m:'GET', path:'/api/v1/rules', name:'List Rules', auth:true,
+        desc:'Returns all AutoHealingRule custom resources from the Kubernetes cluster.',
+        params:[{n:'namespace',i:'query',t:'string',r:false,d:'K8s namespace (default: all)'}],
+        body:null,
+        resp:{code:200, ex:'{ "rules": [{ "name": "restart-on-oom", "namespace": "production", "spec": { "targetDeployment": "payment-service", "trigger": "OOMKilled", "action": "RESTART" } }] }'}},
+      { id:'opr2', m:'POST', path:'/api/v1/rules', name:'Create Rule', auth:true,
+        desc:'Applies a new AutoHealingRule CRD to the Kubernetes cluster.',
+        params:[], body:{s:'AutoHealingRule spec', ex:'{ "name": "restart-on-oom", "namespace": "production", "spec": { "targetDeployment": "payment-service", "trigger": "OOMKilled", "action": "RESTART_POD", "blastRadius": 1, "cooldownSeconds": 300 } }'},
+        resp:{code:201, ex:'{ "name": "restart-on-oom", "status": "Created" }'}},
+      { id:'opr3', m:'GET', path:'/api/v1/rules/:name', name:'Get Rule', auth:true,
+        desc:'Fetches a specific AutoHealingRule by name from the Kubernetes API.',
+        params:[{n:'name',i:'path',t:'string',r:true,d:'Rule name'},{n:'namespace',i:'query',t:'string',r:false,d:'K8s namespace'}],
+        body:null,
+        resp:{code:200, ex:'{ "name": "restart-on-oom", "spec": { "trigger": "OOMKilled", "action": "RESTART_POD" }, "status": { "lastExecuted": "2026-01-01T00:00:00Z", "phase": "Active" } }'}},
+      { id:'opr4', m:'PUT', path:'/api/v1/rules/:name', name:'Update Rule', auth:true,
+        desc:'Updates an existing AutoHealingRule CRD spec.',
+        params:[{n:'name',i:'path',t:'string',r:true,d:'Rule name'}],
+        body:{s:'Updated spec', ex:'{ "spec": { "blastRadius": 2, "cooldownSeconds": 600 } }'},
+        resp:{code:200, ex:'{ "name": "restart-on-oom", "status": "Updated" }'}},
+      { id:'opr5', m:'DELETE', path:'/api/v1/rules/:name', name:'Delete Rule', auth:true,
+        desc:'Removes an AutoHealingRule CRD from the Kubernetes cluster.',
+        params:[{n:'name',i:'path',t:'string',r:true,d:'Rule name'}],
+        body:null, resp:{code:204, ex:''}},
+    ]},
+    { label:'Execution', eps:[
+      { id:'opx1', m:'POST', path:'/api/v1/execute/restart', name:'Execute Pod Restart', auth:true,
+        desc:'Directly triggers a pod restart for a deployment. Enforces blast-radius limits.',
+        params:[], body:{s:'Restart target', ex:'{ "namespace": "production", "deployment": "payment-service", "reason": "OOMKilled detected" }'},
+        resp:{code:200, ex:'{ "status": "restarted", "podsAffected": 1, "namespace": "production" }'}},
+      { id:'opx2', m:'POST', path:'/api/v1/execute/scale', name:'Execute Scale', auth:true,
+        desc:'Scales a deployment replica count via the Kubernetes API.',
+        params:[], body:{s:'Scale config', ex:'{ "namespace": "production", "deployment": "payment-service", "replicas": 5 }'},
+        resp:{code:200, ex:'{ "status": "scaled", "replicas": 5, "deployment": "payment-service" }'}},
+      { id:'opx3', m:'POST', path:'/api/v1/execute/rollout', name:'Execute Rollout Restart', auth:true,
+        desc:'Triggers a rolling restart of a deployment via Kubernetes rollout.',
+        params:[], body:{s:'Rollout target', ex:'{ "namespace": "production", "deployment": "payment-service" }'},
+        resp:{code:200, ex:'{ "status": "rollout_started", "deployment": "payment-service" }'}},
+    ]},
+    { label:'Health', eps:[
+      { id:'oph1', m:'GET', path:'/api/v1/health', name:'Health Check', auth:false,
+        desc:'Returns operator health and Kubernetes API server connectivity.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "status": "ok", "k8sConnected": true, "rulesManaged": 12, "lastReconcileAt": "2026-01-01T00:00:00Z" }'}},
+      { id:'oph2', m:'GET', path:'/metrics', name:'Prometheus Metrics', auth:false,
+        desc:'Exposes Prometheus-format metrics for reconciliation loop, healing counts, and error rates.',
+        params:[], body:null,
+        resp:{code:200, ex:'# HELP autohealingrule_reconcile_total Total reconciliation loops\n# TYPE autohealingrule_reconcile_total counter\nautohealingrule_reconcile_total 1423'}},
+    ]},
+  ]},
+
+  { id:'realtime', name:'Realtime Gateway', sub:'Node.js · Socket.io WebSocket', port:3001, base:'http://localhost:3001', color:'#818cf8', groups:[
+    { label:'WebSocket Events', eps:[
+      { id:'rt1', m:'WS', path:'/', name:'Socket.io Connection', auth:true,
+        desc:'Establish a Socket.io WebSocket connection. Provide JWT in the auth handshake. Client is scoped to their tenant and service rooms automatically on connect.',
+        params:[{n:'auth.token',i:'handshake',t:'string',r:true,d:'JWT Bearer token'}],
+        body:null,
+        resp:{code:200, ex:'{ "event": "connected", "socketId": "sock-abc123", "rooms": ["tenant:org-001", "service:svc-001"] }'}},
+      { id:'rt2', m:'WS', path:'/subscribe:metrics', name:'Subscribe to Metrics', auth:true,
+        desc:'Emits <code>subscribe:metrics</code> event to receive a real-time metric stream for a service. Deduplication is enforced via Kafka offset-based cache keys.',
+        params:[{n:'serviceId',i:'event',t:'string (UUID)',r:true,d:'Service to subscribe to'}],
+        body:{s:'Subscription payload', ex:'{ "serviceId": "svc-001", "metricNames": ["cpu_usage", "mem_usage"] }'},
+        resp:{code:200, ex:'{ "event": "metrics:update", "data": { "serviceId": "svc-001", "metricName": "cpu_usage", "value": 72.3, "timestamp": "2026-01-01T00:00:00Z" } }'}},
+      { id:'rt3', m:'WS', path:'/subscribe:anomalies', name:'Subscribe to Anomalies', auth:true,
+        desc:'Subscribes to real-time anomaly detection event stream from the Kafka <strong>anomaly-events</strong> topic.',
+        params:[{n:'serviceId',i:'event',t:'string (UUID)',r:true,d:'Service to subscribe to'}],
+        body:{s:'Subscription payload', ex:'{ "serviceId": "svc-001" }'},
+        resp:{code:200, ex:'{ "event": "anomaly:detected", "data": { "serviceId": "svc-001", "metricName": "latency_p99", "score": -0.72 } }'}},
+      { id:'rt4', m:'WS', path:'/subscribe:incidents', name:'Subscribe to Incidents', auth:true,
+        desc:'Subscribes to real-time incident lifecycle events from Kafka <strong>incident-events</strong> topic.',
+        params:[{n:'orgId',i:'event',t:'string (UUID)',r:true,d:'Organization to subscribe to'}],
+        body:{s:'Subscription payload', ex:'{ "orgId": "org-001" }'},
+        resp:{code:200, ex:'{ "event": "incident:created", "data": { "id": "inc-001", "severity": "HIGH", "title": "Payment service latency spike" } }'}},
+      { id:'rt5', m:'WS', path:'/subscribe:healing', name:'Subscribe to Healing Events', auth:true,
+        desc:'Subscribes to real-time auto-healing action events from Kafka <strong>healing-events</strong> topic.',
+        params:[{n:'orgId',i:'event',t:'string (UUID)',r:true,d:'Organization to subscribe to'}],
+        body:{s:'Subscription payload', ex:'{ "orgId": "org-001" }'},
+        resp:{code:200, ex:'{ "event": "healing:executed", "data": { "actionId": "heal-001", "actionType": "RESTART_POD", "status": "COMPLETED" } }'}},
+    ]},
+    { label:'HTTP Endpoints', eps:[
+      { id:'rth1', m:'GET', path:'/health', name:'Gateway Health', auth:false,
+        desc:'Returns Socket.io gateway health, Kafka consumer group lag, and active connection count.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "status": "ok", "connections": 42, "kafkaLag": { "raw-metrics": 0, "anomaly-events": 0 }, "uptime": 7200 }'}},
+      { id:'rth2', m:'GET', path:'/api/connections', name:'Active Connections', auth:true,
+        desc:'Returns count and tenant breakdown of active Socket.io connections.',
+        params:[], body:null,
+        resp:{code:200, ex:'{ "total": 42, "byTenant": { "org-001": 38, "org-002": 4 } }'}},
+    ]},
+  ]},
+];
+
+// ── state
+let curSvc = null, curEp = null;
+const baseUrls = {};
+S.forEach(s => { baseUrls[s.id] = s.base; });
+
+// ── build sidebar
+function buildSidebar(){
+  const el = document.getElementById('sidebar-scroll');
+  el.innerHTML = '';
+  S.forEach(svc => {
+    const tot = svc.groups.reduce((a,g)=>a+g.eps.length,0);
+    const sec = document.createElement('div');
+    sec.className = 'svc-group'; sec.dataset.svc = svc.id;
+    const hd = document.createElement('div');
+    hd.className = 'svc-group-header';
+    hd.innerHTML = `<div class="svc-dot" style="background:${svc.color}"></div><div class="svc-label">${svc.name}</div><div class="svc-count">${tot}</div><div class="svc-chevron">▼</div>`;
+    hd.onclick = () => sec.classList.toggle('collapsed');
+    const body = document.createElement('div');
+    body.className = 'svc-group-body';
+    svc.groups.forEach(g => {
+      const gl = document.createElement('div'); gl.className = 'ep-group-label'; gl.textContent = g.label;
+      body.appendChild(gl);
+      g.eps.forEach(ep => {
+        const item = document.createElement('div');
+        item.className = 'ep-item'; item.dataset.id = ep.id;
+        item.innerHTML = `<span class="ep-badge m-${ep.m}">${ep.m}</span><span class="ep-label">${ep.name}</span>`;
+        item.onclick = () => showEp(svc, ep);
+        body.appendChild(item);
+      });
+    });
+    sec.appendChild(hd); sec.appendChild(body);
+    el.appendChild(sec);
+  });
+}
+
+// ── build welcome service cards
+function buildSvcCards(){
+  const el = document.getElementById('svc-cards');
+  S.forEach(svc => {
+    const tot = svc.groups.reduce((a,g)=>a+g.eps.length,0);
+    const c = document.createElement('div'); c.className = 'svc-card';
+    c.innerHTML = `
+      <div class="svc-card-icon" style="background:${svc.color}18;border-color:${svc.color}44;color:${svc.color}">
+        ${svcIcon(svc.id)}
+      </div>
+      <div class="svc-card-name">${svc.name}</div>
+      <div class="svc-card-sub">${svc.sub}</div>
+      <div class="svc-card-meta">
+        <span class="mini-tag">${tot} endpoints</span>
+        <span class="mini-tag" style="color:${svc.color};border-color:${svc.color}33">:${svc.port}</span>
+      </div>`;
+    c.onclick = () => { const g=svc.groups[0]; showEp(svc,g.eps[0]); };
+    el.appendChild(c);
+  });
+}
+
+function svcIcon(id){
+  const icons = {
+    collector: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4.9 19.1C3.1 17.3 2 14.8 2 12s1.1-5.3 2.9-7.1M19.1 4.9C20.9 6.7 22 9.2 22 12s-1.1 5.3-2.9 7.1M7.8 16.2C6.7 15.1 6 13.6 6 12s.7-3.1 1.8-4.2M16.2 7.8C17.3 8.9 18 10.4 18 12s-.7 3.1-1.8 4.2"/><circle cx="12" cy="12" r="2"/></svg>`,
+    analyzer: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>`,
+    orchestrator: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3"/><path d="M12 2v7M12 15v7M2 12h7M15 12h7"/></svg>`,
+    operator: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+    realtime: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`
+  };
+  return icons[id] || `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`;
+}
+
+// ── show endpoint
+function showEp(svc, ep){
+  curSvc = svc; curEp = ep;
+  document.querySelectorAll('.ep-item').forEach(e=>e.classList.remove('active'));
+  const active = document.querySelector(`.ep-item[data-id="${ep.id}"]`);
+  if(active){
+    active.classList.add('active');
+    active.scrollIntoView({block:'nearest'});
+    active.closest('.svc-group')?.classList.remove('collapsed');
+  }
+  document.getElementById('welcome').classList.add('hidden');
+  const view = document.getElementById('ep-view');
+  view.className = 'visible';
+  view.style.display = 'flex';
+  document.getElementById('nav-url').textContent = baseUrls[svc.id] || svc.base;
+  document.getElementById('nav-bc').innerHTML = `<span style="color:#333">${svc.name}</span>&nbsp;›&nbsp;<span>${ep.name}</span>`;
+  view.innerHTML = renderEp(svc, ep);
+  document.getElementById('main').scrollTo({top:0,behavior:'smooth'});
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function renderEp(svc, ep){
+  const pathParams = (ep.params||[]).filter(p=>p.i==='path');
+  const queryParams = (ep.params||[]).filter(p=>p.i==='query');
+  const isAuth = ep.auth;
+  const fullUrl = (baseUrls[svc.id]||svc.base) + ep.path;
+
+  let paramsHtml = '';
+  if(ep.params && ep.params.length){
+    paramsHtml = `
+    <div class="glass-panel">
+      <div class="panel-hd">
+        <div class="panel-hd-left"><div class="hd-pip"></div><div class="panel-title">Parameters</div></div>
+      </div>
+      <div class="panel-body">
+        <table class="p-table">
+          <thead><tr><th>Name</th><th>In</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            ${ep.params.map(p=>`<tr>
+              <td><span class="p-name">${p.n}</span></td>
+              <td><span class="p-in">${p.i}</span></td>
+              <td><span class="p-type">${p.t}</span></td>
+              <td>${p.r?'<span class="req-badge">required</span>':'<span class="opt-badge">optional</span>'}</td>
+              <td><span class="p-desc">${p.d}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  let bodyHtml = '';
+  if(ep.body){
+    bodyHtml = `
+    <div class="glass-panel">
+      <div class="panel-hd">
+        <div class="panel-hd-left"><div class="hd-pip"></div><div class="panel-title">Request Body</div></div>
+        <div class="panel-sub">${ep.body.s}</div>
+      </div>
+      <div class="code-wrap">
+        <div class="code-toolbar">
+          <span class="code-lang">application/json</span>
+          <button class="copy-btn" onclick="copyTxt(this,\`${esc(ep.body.ex)}\`)">Copy</button>
+        </div>
+        <div class="code-body">${hl(ep.body.ex)}</div>
+      </div>
+    </div>`;
+  }
+
+  let respHtml = '';
+  if(ep.resp){
+    const sc = ep.resp.code<300?'s-2xx':ep.resp.code<500?'s-4xx':'s-5xx';
+    respHtml = `
+    <div class="glass-panel">
+      <div class="panel-hd">
+        <div class="panel-hd-left"><div class="hd-pip" style="background:#10b981"></div><div class="panel-title">Response</div></div>
+        <span class="s-pill ${sc}">${ep.resp.code}</span>
+      </div>
+      <div class="code-wrap">
+        <div class="code-toolbar">
+          <span class="code-lang">application/json</span>
+          <button class="copy-btn" onclick="copyTxt(this,\`${esc(ep.resp.ex)}\`)">Copy</button>
+        </div>
+        <div class="code-body">${ep.resp.ex?hl(ep.resp.ex):'<span style="color:#333">No content</span>'}</div>
+      </div>
+    </div>`;
+  }
+
+  let tryAuth = isAuth ? `
+    <div class="field-group" style="display:flex;flex-direction:column;gap:6px">
+      <div class="field-lbl">Bearer Token</div>
+      <input class="field-input" id="tok-${ep.id}" type="password" placeholder="Paste JWT access token…"/>
+    </div>` : '';
+
+  let tryPath = pathParams.length ? `
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="field-lbl">Path Parameters</div>
+      ${pathParams.map(p=>`
+        <div class="param-row">
+          <span class="param-key">:${p.n}</span>
+          <input class="field-input" id="pp-${ep.id}-${p.n}" type="text" placeholder="${p.t}" style="flex:1"/>
+        </div>`).join('')}
+    </div>` : '';
+
+  let tryQuery = queryParams.length ? `
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="field-lbl">Query Parameters</div>
+      ${queryParams.map(p=>`
+        <div class="param-row">
+          <span class="param-key" style="color:#777">${p.n}</span>
+          <input class="field-input" id="qp-${ep.id}-${p.n}" type="text" placeholder="${p.t}" style="flex:1"/>
+        </div>`).join('')}
+    </div>` : '';
+
+  let tryBody = ep.body ? `
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="field-lbl">Request Body (JSON)</div>
+      <textarea class="field-textarea" id="bd-${ep.id}" rows="6">${ep.body.ex}</textarea>
+    </div>` : '';
+
+  return `
+  <div class="ep-hd">
+    <div class="ep-bc"><span>${svc.name}</span>&nbsp;›&nbsp;<span>${ep.name}</span></div>
+    <div class="ep-title">
+      <span class="ep-method m-${ep.m}">${ep.m}</span>
+      <span class="ep-path">${ep.path}</span>
+      ${isAuth
+        ? '<span class="auth-pill auth-yes">🔒 JWT Required</span>'
+        : '<span class="auth-pill auth-no">🌐 Public</span>'}
+    </div>
+  </div>
+  <div class="ep-desc">${ep.desc}</div>
+  ${paramsHtml}
+  ${bodyHtml}
+  ${respHtml}
+  <div class="try-panel">
+    <div class="try-hd">
+      <div class="try-title-row"><div class="live-dot"></div><div class="try-title">Try It Live</div></div>
+      <span style="font-family:var(--mono);font-size:10.5px;color:#333">:${svc.port}</span>
+    </div>
+    <div class="try-body">
+      <div style="display:flex;align-items:stretch;gap:10px">
+        <div class="url-bar" style="flex:1">
+          <div class="url-method m-${ep.m}" style="background:rgba(59,130,246,.08)">${ep.m}</div>
+          <input class="url-input" id="url-${ep.id}" value="${fullUrl}"/>
+        </div>
+        <button class="send-btn" id="send-${ep.id}" onclick="sendReq('${svc.id}','${ep.id}')">Send</button>
+      </div>
+      ${tryAuth}${tryPath}${tryQuery}${tryBody}
+      <div id="resp-${ep.id}" style="display:none">
+        <div class="field-lbl" style="margin-bottom:6px">Response</div>
+        <div class="resp-wrap">
+          <div class="resp-meta" id="resp-meta-${ep.id}"></div>
+          <div class="resp-body" id="resp-body-${ep.id}"></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── live request
+async function sendReq(svcId, epId){
+  const svc = S.find(s=>s.id===svcId);
+  let ep = null;
+  for(const g of svc.groups){ ep = g.eps.find(e=>e.id===epId); if(ep) break; }
+  const btn = document.getElementById(`send-${ep.id}`);
+  const respDiv = document.getElementById(`resp-${ep.id}`);
+  const respMeta = document.getElementById(`resp-meta-${ep.id}`);
+  const respBody = document.getElementById(`resp-body-${ep.id}`);
+  if(btn){ btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true; }
+  try {
+    let url = document.getElementById(`url-${ep.id}`)?.value || (baseUrls[svcId]+ep.path);
+    (ep.params||[]).filter(p=>p.i==='path').forEach(p=>{
+      const v = document.getElementById(`pp-${ep.id}-${p.n}`)?.value;
+      if(v) url = url.replace(':'+p.n, encodeURIComponent(v));
+    });
+    const qps = [];
+    (ep.params||[]).filter(p=>p.i==='query').forEach(p=>{
+      const v = document.getElementById(`qp-${ep.id}-${p.n}`)?.value;
+      if(v) qps.push(`${encodeURIComponent(p.n)}=${encodeURIComponent(v)}`);
+    });
+    if(qps.length) url += '?'+qps.join('&');
+    const hdrs = {'Content-Type':'application/json','Accept':'application/json'};
+    const tok = document.getElementById(`tok-${ep.id}`)?.value;
+    if(tok) hdrs['Authorization']='Bearer '+tok;
+    let body = undefined;
+    if(ep.body){ const v=document.getElementById(`bd-${ep.id}`)?.value; if(v&&v.trim()) body=v.trim(); }
+    const m = ep.m === 'WS' ? 'GET' : ep.m;
+    const t0 = Date.now();
+    const res = await fetch(url,{method:m,headers:hdrs,...(body?{body}:{})});
+    const ms = Date.now()-t0;
+    let txt = await res.text();
+    try { txt = JSON.stringify(JSON.parse(txt),null,2); } catch{}
+    const sc = res.status<300?'s-2xx':res.status<500?'s-4xx':'s-5xx';
+    respMeta.innerHTML = `<span class="s-pill ${sc}">${res.status} ${res.statusText}</span><span class="resp-time">${ms}ms</span><span class="resp-url">${url}</span>`;
+    respBody.textContent = txt||'(empty)';
+    respDiv.style.display='block';
+    toast(res.ok?`✓ ${res.status} ${res.statusText}`:`✗ ${res.status} ${res.statusText}`,res.ok?'ok':'err');
+  } catch(e){
+    respMeta.innerHTML=`<span class="s-pill" style="background:rgba(239,68,68,.12);color:#f87171">Network Error</span>`;
+    respBody.textContent=e.message.includes('Failed to fetch')?'Connection refused — is the service running?':e.message;
+    respDiv.style.display='block';
+    toast('✗ Network Error','err');
+  } finally {
+    if(btn){ btn.innerHTML='Send'; btn.disabled=false; }
+  }
+}
+
+// ── search
+document.getElementById('search-input').addEventListener('input',function(){
+  const q = this.value.toLowerCase().trim();
+  document.querySelectorAll('.svc-group').forEach(sec=>{
+    let vis = false;
+    sec.querySelectorAll('.ep-item').forEach(item=>{
+      const lbl = item.querySelector('.ep-label').textContent.toLowerCase();
+      const m = item.querySelector('.ep-badge').textContent.toLowerCase();
+      const match = !q||lbl.includes(q)||m.includes(q)||item.dataset.id.includes(q);
+      item.style.display=match?'flex':'none';
+      if(match) vis=true;
+    });
+    sec.style.display=(vis||!q)?'block':'none';
+    if(q&&vis) sec.classList.remove('collapsed');
+  });
+});
+
+// ── syntax highlight
+function hl(str){
+  if(!str||!str.trim()) return '';
+  return esc2(str)
+    .replace(/"([^"]+)"(?=\s*:)/g,'<span class="j-key">"$1"</span>')
+    .replace(/:\s*"([^"]*)"/g,(m,v)=>': <span class="j-str">"'+v+'"</span>')
+    .replace(/:\s*(\d+\.?\d*)/g,(m,v)=>': <span class="j-num">'+v+'</span>')
+    .replace(/:\s*(true|false)/g,(m,v)=>': <span class="j-bool">'+v+'</span>')
+    .replace(/:\s*null/g,': <span class="j-null">null</span>');
+}
+function esc2(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$'); }
+
+function copyTxt(btn,txt){
+  navigator.clipboard.writeText(txt).then(()=>{
+    const o=btn.textContent; btn.textContent='Copied!'; btn.style.color='#10b981';
+    setTimeout(()=>{btn.textContent=o;btn.style.color='';},1500);
+  });
+}
+
+function toast(msg,type=''){
+  const tc=document.getElementById('toasts');
+  const t=document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
+  tc.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';},2200);
+  setTimeout(()=>t.remove(),2500);
+}
+
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
+
+buildSidebar();
+buildSvcCards();
+</script>
+</body>
+</html>

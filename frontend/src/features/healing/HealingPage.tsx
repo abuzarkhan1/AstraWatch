@@ -40,25 +40,25 @@ export default function HealingPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
           <div className="text-2xl font-bold text-blue-500">{actions.length}</div>
           <div className="text-sm text-gray-500 mt-1">Total Actions</div>
         </div>
-        <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
           <div className="text-2xl font-bold text-green-500">{completed}</div>
           <div className="text-sm text-gray-500 mt-1">Completed</div>
         </div>
-        <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
           <div className="text-2xl font-bold text-yellow-500">{pending}</div>
           <div className="text-sm text-gray-500 mt-1">Pending / Approved</div>
         </div>
       </div>
 
-      <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-white/10">
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider">Action</th>
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider">Risk Score</th>
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider">Status</th>
@@ -75,7 +75,7 @@ export default function HealingPage() {
                 actions.map((action: any) => {
                   const Icon: any = statusIcons[action.status] || Shield;
                   return (
-                    <tr key={action.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <tr key={action.id} className="border-b border-white/10 hover:bg-white/[0.04]">
                       <td className="px-4 py-3">
                         <span className="text-sm text-gray-300">{action.actionType}</span>
                       </td>

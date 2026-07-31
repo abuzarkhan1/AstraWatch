@@ -4,7 +4,7 @@ export default function StatusPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Status Page</h1>
-      <div className="bg-gray-900 p-6 rounded-lg border border-gray-800">
+      <div className="backdrop-blur-2xl bg-white/[0.03] p-6 rounded-3xl border border-white/15 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
         <p className="text-gray-400">Admin and public status view configuration goes here.</p>
       </div>
     </div>

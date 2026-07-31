@@ -206,7 +206,7 @@ func loadConfig() Config {
 		ClickHouseUser:    getEnv("CLICKHOUSE_USER", "default"),
 		ClickHousePassword: getEnv("CLICKHOUSE_PASSWORD", ""),
 		RedisAddr:         getEnv("REDIS_ADDR", "localhost:6379"),
-		JWTSecret:         getEnv("JWT_SECRET", "dev-secret-change-in-production"),
+		JWTSecret:         getEnv("JWT_SECRET", "astrawatch-super-secret-jwt-token-signing-key-2026-secure-32bytes-long!"),
 	}
 }
 

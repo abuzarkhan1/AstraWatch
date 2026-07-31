@@ -1,0 +1,514 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AstraWatch Operator API",
+    "description": "Official OpenAPI 3.0 specification for AstraWatch autonomous telemetry, anomaly detection, incident orchestration, and K8s self-healing microservices.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AstraWatch Engineering",
+      "url": "https://astrawatch.io"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/v1",
+      "description": "Collector Service (:8080)"
+    },
+    {
+      "url": "http://localhost:8001/v1",
+      "description": "Analyzer Service (:8001)"
+    },
+    {
+      "url": "http://localhost:8081/api/v1",
+      "description": "Orchestrator Service (:8081)"
+    },
+    {
+      "url": "http://localhost:8082/api/v1",
+      "description": "K8s Operator Service (:8082)"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Realtime Gateway (:3001)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Operator: AutoHealingRules",
+      "description": "Go · Kubernetes Auto-Healing Controller - AutoHealingRules"
+    },
+    {
+      "name": "Operator: Execution",
+      "description": "Go · Kubernetes Auto-Healing Controller - Execution"
+    },
+    {
+      "name": "Operator: Health",
+      "description": "Go · Kubernetes Auto-Healing Controller - Health"
+    }
+  ],
+  "paths": {
+    "/api/v1/rules": {
+      "get": {
+        "tags": [
+          "Operator: AutoHealingRules"
+        ],
+        "summary": "List Rules",
+        "description": "Returns all AutoHealingRule custom resources from the Kubernetes cluster.",
+        "operationId": "opr1",
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "query",
+            "required": false,
+            "description": "K8s namespace (default: all)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "rules": [
+                    {
+                      "name": "restart-on-oom",
+                      "namespace": "production",
+                      "spec": {
+                        "targetDeployment": "payment-service",
+                        "trigger": "OOMKilled",
+                        "action": "RESTART"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Operator: AutoHealingRules"
+        ],
+        "summary": "Create Rule",
+        "description": "Applies a new AutoHealingRule CRD to the Kubernetes cluster.",
+        "operationId": "opr2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "name": "restart-on-oom",
+                  "status": "Created"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "AutoHealingRule spec",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "restart-on-oom",
+                "namespace": "production",
+                "spec": {
+                  "targetDeployment": "payment-service",
+                  "trigger": "OOMKilled",
+                  "action": "RESTART_POD",
+                  "blastRadius": 1,
+                  "cooldownSeconds": 300
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rules/:name": {
+      "get": {
+        "tags": [
+          "Operator: AutoHealingRules"
+        ],
+        "summary": "Get Rule",
+        "description": "Fetches a specific AutoHealingRule by name from the Kubernetes API.",
+        "operationId": "opr3",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "Rule name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "namespace",
+            "in": "query",
+            "required": false,
+            "description": "K8s namespace",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "name": "restart-on-oom",
+                  "spec": {
+                    "trigger": "OOMKilled",
+                    "action": "RESTART_POD"
+                  },
+                  "status": {
+                    "lastExecuted": "2026-01-01T00:00:00Z",
+                    "phase": "Active"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Operator: AutoHealingRules"
+        ],
+        "summary": "Update Rule",
+        "description": "Updates an existing AutoHealingRule CRD spec.",
+        "operationId": "opr4",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "Rule name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "name": "restart-on-oom",
+                  "status": "Updated"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Updated spec",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "spec": {
+                  "blastRadius": 2,
+                  "cooldownSeconds": 600
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Operator: AutoHealingRules"
+        ],
+        "summary": "Delete Rule",
+        "description": "Removes an AutoHealingRule CRD from the Kubernetes cluster.",
+        "operationId": "opr5",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "Rule name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": ""
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/execute/restart": {
+      "post": {
+        "tags": [
+          "Operator: Execution"
+        ],
+        "summary": "Execute Pod Restart",
+        "description": "Directly triggers a pod restart for a deployment. Enforces blast-radius limits.",
+        "operationId": "opx1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "restarted",
+                  "podsAffected": 1,
+                  "namespace": "production"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Restart target",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "namespace": "production",
+                "deployment": "payment-service",
+                "reason": "OOMKilled detected"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execute/scale": {
+      "post": {
+        "tags": [
+          "Operator: Execution"
+        ],
+        "summary": "Execute Scale",
+        "description": "Scales a deployment replica count via the Kubernetes API.",
+        "operationId": "opx2",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "scaled",
+                  "replicas": 5,
+                  "deployment": "payment-service"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Scale config",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "namespace": "production",
+                "deployment": "payment-service",
+                "replicas": 5
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/execute/rollout": {
+      "post": {
+        "tags": [
+          "Operator: Execution"
+        ],
+        "summary": "Execute Rollout Restart",
+        "description": "Triggers a rolling restart of a deployment via Kubernetes rollout.",
+        "operationId": "opx3",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "rollout_started",
+                  "deployment": "payment-service"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Rollout target",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "namespace": "production",
+                "deployment": "payment-service"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Operator: Health"
+        ],
+        "summary": "Health Check",
+        "description": "Returns operator health and Kubernetes API server connectivity.",
+        "operationId": "oph1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "ok",
+                  "k8sConnected": true,
+                  "rulesManaged": 12,
+                  "lastReconcileAt": "2026-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": [
+          "Operator: Health"
+        ],
+        "summary": "Prometheus Metrics",
+        "description": "Exposes Prometheus-format metrics for reconciliation loop, healing counts, and error rates.",
+        "operationId": "oph2",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": "# HELP autohealingrule_reconcile_total Total reconciliation loops\n# TYPE autohealingrule_reconcile_total counter\nautohealingrule_reconcile_total 1423"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your Bearer JWT token issued by POST /api/v1/auth/login"
+      }
+    },
+    "schemas": {}
+  }
+}

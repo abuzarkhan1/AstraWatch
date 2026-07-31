@@ -249,9 +249,9 @@ export default function PricingSection6() {
             className="h-full"
           >
             <Card
-              className={`relative text-white border-neutral-800 h-full flex flex-col justify-between ${
+              className={`relative rounded-lg! text-white! border-neutral-800! h-full flex flex-col justify-between ${
                 plan.popular
-                  ? "bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 shadow-[0px_-13px_300px_0px_#0900ff] z-20 border-blue-500/50"
+                  ? "bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 shadow-[0px_-13px_300px_0px_#0900ff] z-20 border-blue-500/50!"
                   : "bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 z-10"
               }`}
             >

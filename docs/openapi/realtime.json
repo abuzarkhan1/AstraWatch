@@ -1,0 +1,415 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AstraWatch Realtime Gateway API",
+    "description": "Official OpenAPI 3.0 specification for AstraWatch autonomous telemetry, anomaly detection, incident orchestration, and K8s self-healing microservices.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AstraWatch Engineering",
+      "url": "https://astrawatch.io"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/v1",
+      "description": "Collector Service (:8080)"
+    },
+    {
+      "url": "http://localhost:8001/v1",
+      "description": "Analyzer Service (:8001)"
+    },
+    {
+      "url": "http://localhost:8081/api/v1",
+      "description": "Orchestrator Service (:8081)"
+    },
+    {
+      "url": "http://localhost:8082/api/v1",
+      "description": "K8s Operator Service (:8082)"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Realtime Gateway (:3001)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Realtime Gateway: WebSocket Events",
+      "description": "Node.js · Socket.io WebSocket - WebSocket Events"
+    },
+    {
+      "name": "Realtime Gateway: HTTP Endpoints",
+      "description": "Node.js · Socket.io WebSocket - HTTP Endpoints"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Realtime Gateway: WebSocket Events"
+        ],
+        "summary": "Socket.io Connection",
+        "description": "Establish a Socket.io WebSocket connection. Provide JWT in the auth handshake. Client is scoped to their tenant and service rooms automatically on connect.",
+        "operationId": "rt1",
+        "parameters": [
+          {
+            "name": "auth.token",
+            "in": "query",
+            "required": true,
+            "description": "JWT Bearer token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "event": "connected",
+                  "socketId": "sock-abc123",
+                  "rooms": [
+                    "tenant:org-001",
+                    "service:svc-001"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/subscribe:metrics": {
+      "get": {
+        "tags": [
+          "Realtime Gateway: WebSocket Events"
+        ],
+        "summary": "Subscribe to Metrics",
+        "description": "Emits <code>subscribe:metrics</code> event to receive a real-time metric stream for a service. Deduplication is enforced via Kafka offset-based cache keys.",
+        "operationId": "rt2",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": true,
+            "description": "Service to subscribe to",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "event": "metrics:update",
+                  "data": {
+                    "serviceId": "svc-001",
+                    "metricName": "cpu_usage",
+                    "value": 72.3,
+                    "timestamp": "2026-01-01T00:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Subscription payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "serviceId": "svc-001",
+                "metricNames": [
+                  "cpu_usage",
+                  "mem_usage"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscribe:anomalies": {
+      "get": {
+        "tags": [
+          "Realtime Gateway: WebSocket Events"
+        ],
+        "summary": "Subscribe to Anomalies",
+        "description": "Subscribes to real-time anomaly detection event stream from the Kafka <strong>anomaly-events</strong> topic.",
+        "operationId": "rt3",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": true,
+            "description": "Service to subscribe to",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "event": "anomaly:detected",
+                  "data": {
+                    "serviceId": "svc-001",
+                    "metricName": "latency_p99",
+                    "score": -0.72
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Subscription payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "serviceId": "svc-001"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscribe:incidents": {
+      "get": {
+        "tags": [
+          "Realtime Gateway: WebSocket Events"
+        ],
+        "summary": "Subscribe to Incidents",
+        "description": "Subscribes to real-time incident lifecycle events from Kafka <strong>incident-events</strong> topic.",
+        "operationId": "rt4",
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "query",
+            "required": true,
+            "description": "Organization to subscribe to",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "event": "incident:created",
+                  "data": {
+                    "id": "inc-001",
+                    "severity": "HIGH",
+                    "title": "Payment service latency spike"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Subscription payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "orgId": "org-001"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscribe:healing": {
+      "get": {
+        "tags": [
+          "Realtime Gateway: WebSocket Events"
+        ],
+        "summary": "Subscribe to Healing Events",
+        "description": "Subscribes to real-time auto-healing action events from Kafka <strong>healing-events</strong> topic.",
+        "operationId": "rt5",
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "query",
+            "required": true,
+            "description": "Organization to subscribe to",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "event": "healing:executed",
+                  "data": {
+                    "actionId": "heal-001",
+                    "actionType": "RESTART_POD",
+                    "status": "COMPLETED"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Subscription payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "orgId": "org-001"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Realtime Gateway: HTTP Endpoints"
+        ],
+        "summary": "Gateway Health",
+        "description": "Returns Socket.io gateway health, Kafka consumer group lag, and active connection count.",
+        "operationId": "rth1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "ok",
+                  "connections": 42,
+                  "kafkaLag": {
+                    "raw-metrics": 0,
+                    "anomaly-events": 0
+                  },
+                  "uptime": 7200
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/connections": {
+      "get": {
+        "tags": [
+          "Realtime Gateway: HTTP Endpoints"
+        ],
+        "summary": "Active Connections",
+        "description": "Returns count and tenant breakdown of active Socket.io connections.",
+        "operationId": "rth2",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "total": 42,
+                  "byTenant": {
+                    "org-001": 38,
+                    "org-002": 4
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your Bearer JWT token issued by POST /api/v1/auth/login"
+      }
+    },
+    "schemas": {}
+  }
+}

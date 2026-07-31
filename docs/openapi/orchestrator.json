@@ -1,0 +1,2304 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AstraWatch Orchestrator API",
+    "description": "Official OpenAPI 3.0 specification for AstraWatch autonomous telemetry, anomaly detection, incident orchestration, and K8s self-healing microservices.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AstraWatch Engineering",
+      "url": "https://astrawatch.io"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/v1",
+      "description": "Collector Service (:8080)"
+    },
+    {
+      "url": "http://localhost:8001/v1",
+      "description": "Analyzer Service (:8001)"
+    },
+    {
+      "url": "http://localhost:8081/api/v1",
+      "description": "Orchestrator Service (:8081)"
+    },
+    {
+      "url": "http://localhost:8082/api/v1",
+      "description": "K8s Operator Service (:8082)"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Realtime Gateway (:3001)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Orchestrator: Authentication",
+      "description": "Java Spring Boot · Incident & Auth Management - Authentication"
+    },
+    {
+      "name": "Orchestrator: Incidents",
+      "description": "Java Spring Boot · Incident & Auth Management - Incidents"
+    },
+    {
+      "name": "Orchestrator: Auto-Healing",
+      "description": "Java Spring Boot · Incident & Auth Management - Auto-Healing"
+    },
+    {
+      "name": "Orchestrator: Notifications",
+      "description": "Java Spring Boot · Incident & Auth Management - Notifications"
+    },
+    {
+      "name": "Orchestrator: SLO",
+      "description": "Java Spring Boot · Incident & Auth Management - SLO"
+    },
+    {
+      "name": "Orchestrator: Runbooks",
+      "description": "Java Spring Boot · Incident & Auth Management - Runbooks"
+    },
+    {
+      "name": "Orchestrator: Status Page",
+      "description": "Java Spring Boot · Incident & Auth Management - Status Page"
+    },
+    {
+      "name": "Orchestrator: Postmortems",
+      "description": "Java Spring Boot · Incident & Auth Management - Postmortems"
+    },
+    {
+      "name": "Orchestrator: On-Call & Synthetics",
+      "description": "Java Spring Boot · Incident & Auth Management - On-Call & Synthetics"
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Login",
+        "description": "Authenticates user credentials and returns JWT access + refresh tokens.",
+        "operationId": "oa1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "accessToken": "eyJ...",
+                    "refreshToken": "rjt..."
+                  },
+                  "meta": {
+                    "traceId": "tr-001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Login credentials",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "admin@astrawatch.io",
+                "password": "secret"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Register",
+        "description": "Registers a new user account.",
+        "operationId": "oa2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "userId": "usr-001",
+                    "requiresVerification": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Registration payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "user@example.com",
+                "password": "StrongPass123!"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Refresh Token",
+        "description": "Refreshes JWT access token using a valid refresh token.",
+        "operationId": "oa3",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "accessToken": "eyJ...",
+                    "refreshToken": "rjt_new..."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Refresh token",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "refreshToken": "rjt..."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Logout",
+        "description": "Logs out the current user session.",
+        "operationId": "oa4",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Current User",
+        "description": "Returns current authenticated user profile, roles, and permissions.",
+        "operationId": "oa5",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "userId": "usr-001",
+                    "email": "admin@astrawatch.io",
+                    "roles": [
+                      "ADMIN"
+                    ],
+                    "permissions": [
+                      "incidents:write"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Forgot Password",
+        "description": "Triggers a password reset email workflow.",
+        "operationId": "oa6",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": ""
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Email",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "user@example.com"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Reset Password",
+        "description": "Resets password using a valid reset token.",
+        "operationId": "oa7",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "success": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Reset payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "token": "rst-tok-001",
+                "newPassword": "NewSecure123!"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/setup": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "MFA Setup",
+        "description": "Initializes TOTP MFA and returns QR code URL and backup codes.",
+        "operationId": "oa8",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "secret": "JBSWY3DPEHPK3PXP",
+                    "qrCodeUrl": "otpauth://...",
+                    "backupCodes": [
+                      "123456"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/verify": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "MFA Verify",
+        "description": "Verifies a TOTP code and enables MFA on the account.",
+        "operationId": "oa9",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "enabled": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "TOTP code",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "code": "123456"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sessions": {
+      "get": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "List Sessions",
+        "description": "Lists all active login sessions for the current user.",
+        "operationId": "oa10",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "sessions": [
+                      {
+                        "id": "sess-001",
+                        "device": "Chrome/Mac",
+                        "ip": "192.168.1.1",
+                        "lastActive": "2026-01-01T00:00:00Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sessions/:id": {
+      "delete": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Revoke Session",
+        "description": "Terminates a specific session by ID.",
+        "operationId": "oa11",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Session ID to revoke",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/api-keys": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Create API Key",
+        "description": "Generates a new API key for programmatic access.",
+        "operationId": "oa12",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "key-001",
+                    "key": "aw_live_abc123",
+                    "createdAt": "2026-01-01T00:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "API key config",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "ci-deploy-key",
+                "roles": [
+                  "metrics:read"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "List API Keys",
+        "description": "Lists all API keys for the current user/org.",
+        "operationId": "oa13",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "keys": [
+                      {
+                        "id": "key-001",
+                        "name": "ci-deploy-key",
+                        "createdAt": "2026-01-01T00:00:00Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/invite": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Invite User",
+        "description": "Invites a user to the platform by email.",
+        "operationId": "oa14",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "inviteId": "inv-001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Invitation payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "colleague@company.com",
+                "role": "DEVELOPER"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/switch-team": {
+      "post": {
+        "tags": [
+          "Orchestrator: Authentication"
+        ],
+        "summary": "Switch Team",
+        "description": "Switches active team/org scope and issues a new scoped token.",
+        "operationId": "oa15",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "accessToken": "eyJ_scoped..."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Team switch payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "teamId": "team-001",
+                "accessToken": "eyJ..."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents": {
+      "post": {
+        "tags": [
+          "Orchestrator: Incidents"
+        ],
+        "summary": "Create Incident",
+        "description": "Creates a new incident with severity level, affected service, and description.",
+        "operationId": "oi1",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "inc-001",
+                  "severity": "HIGH",
+                  "state": "OPEN",
+                  "createdAt": "2026-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Incident payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "serviceId": "svc-001",
+                "anomalyId": "anom-001",
+                "severity": "HIGH",
+                "title": "Payment service latency spike",
+                "description": "P99 latency exceeds 5s threshold"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Orchestrator: Incidents"
+        ],
+        "summary": "List Incidents",
+        "description": "Lists all incidents, optionally filtered by service.",
+        "operationId": "oi2",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by service",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": [
+                  {
+                    "id": "inc-001",
+                    "title": "Payment latency",
+                    "severity": "HIGH",
+                    "state": "OPEN"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/incidents/:id": {
+      "get": {
+        "tags": [
+          "Orchestrator: Incidents"
+        ],
+        "summary": "Get Incident",
+        "description": "Fetches detailed view of a single incident including assignment and state.",
+        "operationId": "oi3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "inc-001",
+                  "serviceId": "svc-001",
+                  "severity": "HIGH",
+                  "state": "INVESTIGATING",
+                  "title": "Payment latency spike",
+                  "assignedTo": "usr-001"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/incidents/:id/assign": {
+      "post": {
+        "tags": [
+          "Orchestrator: Incidents"
+        ],
+        "summary": "Assign Incident",
+        "description": "Assigns incident ownership to a user.",
+        "operationId": "oi4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "inc-001",
+                  "assignedTo": "usr-001"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Assignee",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "userId": "usr-001"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/:id/resolve": {
+      "post": {
+        "tags": [
+          "Orchestrator: Incidents"
+        ],
+        "summary": "Resolve Incident",
+        "description": "Resolves an incident with a resolution note. Transitions state to RESOLVED.",
+        "operationId": "oi5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "inc-001",
+                  "state": "RESOLVED",
+                  "resolvedAt": "2026-01-01T01:00:00Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Resolution note",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "resolutionNote": "Rolled back faulty deployment v2.3.1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/:id/escalate": {
+      "post": {
+        "tags": [
+          "Orchestrator: Incidents"
+        ],
+        "summary": "Escalate Incident",
+        "description": "Escalates incident to specified user or on-call tier.",
+        "operationId": "oi6",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "inc-001",
+                  "state": "ESCALATED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Escalation details",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "escalateTo": "oncall-lead",
+                "reason": "No response after 30 minutes"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/:id/timeline": {
+      "get": {
+        "tags": [
+          "Orchestrator: Incidents"
+        ],
+        "summary": "Incident Timeline",
+        "description": "Fetches the full timeline event log for an incident.",
+        "operationId": "oi7",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "eventType": "CREATED",
+                    "payload": "{}",
+                    "createdAt": "2026-01-01T00:00:00Z"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/incidents/:id/transition": {
+      "patch": {
+        "tags": [
+          "Orchestrator: Incidents"
+        ],
+        "summary": "Transition State",
+        "description": "Triggers a Spring StateMachine lifecycle event to transition incident state.",
+        "operationId": "oi8",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "inc-001",
+                  "state": "INVESTIGATING"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Lifecycle event",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "event": "INVESTIGATE"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/healing/trigger": {
+      "post": {
+        "tags": [
+          "Orchestrator: Auto-Healing"
+        ],
+        "summary": "Trigger Healing",
+        "description": "Triggers an automated or manual remediation healing workflow for an incident. Risk score determines if approval is required.",
+        "operationId": "oh1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "heal-001",
+                  "actionType": "RESTART_POD",
+                  "riskScore": 25,
+                  "status": "PENDING_APPROVAL"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Healing trigger",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "incidentId": "inc-001",
+                "actionType": "RESTART_POD",
+                "parameters": {
+                  "namespace": "production",
+                  "deployment": "payment-service"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/healing/approve/:actionId": {
+      "post": {
+        "tags": [
+          "Orchestrator: Auto-Healing"
+        ],
+        "summary": "Approve Healing",
+        "description": "Approves execution of a pending healing action.",
+        "operationId": "oh2",
+        "parameters": [
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "description": "Healing action ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "heal-001",
+                  "status": "EXECUTING",
+                  "approvedBy": "usr-001"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Approver",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "approvedBy": "usr-001"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/healing/rollback/:actionId": {
+      "post": {
+        "tags": [
+          "Orchestrator: Auto-Healing"
+        ],
+        "summary": "Rollback Healing",
+        "description": "Executes a rollback for a previously applied healing action.",
+        "operationId": "oh3",
+        "parameters": [
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "description": "Healing action to rollback",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "heal-001",
+                  "status": "ROLLED_BACK"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Rollback reason",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "reason": "Healing action worsened the situation"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/healing/history": {
+      "get": {
+        "tags": [
+          "Orchestrator: Auto-Healing"
+        ],
+        "summary": "Healing History",
+        "description": "Returns historical record of all executed healing actions.",
+        "operationId": "oh4",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": false,
+            "description": "Service filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "actions": [
+                    {
+                      "id": "heal-001",
+                      "actionType": "RESTART_POD",
+                      "status": "COMPLETED",
+                      "riskScore": 25
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/healing/:actionId/validation": {
+      "get": {
+        "tags": [
+          "Orchestrator: Auto-Healing"
+        ],
+        "summary": "Healing Validation",
+        "description": "Evaluates before/after metric comparison to validate healing effectiveness.",
+        "operationId": "oh5",
+        "parameters": [
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "description": "Healing action ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "beforeMetrics": {
+                      "cpu": 97.1
+                    },
+                    "afterMetrics": {
+                      "cpu": 45.2
+                    },
+                    "passed": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/channels": {
+      "get": {
+        "tags": [
+          "Orchestrator: Notifications"
+        ],
+        "summary": "List Channels",
+        "description": "Lists all notification channels (Slack, PagerDuty, Email, Webhook).",
+        "operationId": "on1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "channels": [
+                    {
+                      "id": "ch-001",
+                      "name": "#alerts",
+                      "type": "SLACK",
+                      "isEnabled": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Orchestrator: Notifications"
+        ],
+        "summary": "Create Channel",
+        "description": "Creates a new notification destination channel.",
+        "operationId": "on2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "ch-002",
+                  "name": "#prod-alerts",
+                  "type": "SLACK"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Channel config",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "#prod-alerts",
+                "type": "SLACK",
+                "config": "{ \"webhookUrl\": \"https://hooks.slack.com/...\" }",
+                "isEnabled": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/channels/:id/test": {
+      "post": {
+        "tags": [
+          "Orchestrator: Notifications"
+        ],
+        "summary": "Test Channel",
+        "description": "Dispatches a test notification to verify channel integration.",
+        "operationId": "on3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "delivered": true,
+                  "responseCode": 200
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/maintenance-windows": {
+      "get": {
+        "tags": [
+          "Orchestrator: Notifications"
+        ],
+        "summary": "List Maintenance Windows",
+        "description": "Lists scheduled maintenance windows for notification suppression.",
+        "operationId": "on4",
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "description": "Filter to active windows only",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "windows": [
+                    {
+                      "id": "mw-001",
+                      "reason": "DB upgrade",
+                      "startedAt": "2026-01-01T02:00:00Z",
+                      "endedAt": "2026-01-01T04:00:00Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/preferences": {
+      "get": {
+        "tags": [
+          "Orchestrator: Notifications"
+        ],
+        "summary": "Get Preferences",
+        "description": "Retrieves personal notification preferences for a user.",
+        "operationId": "on5",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": [
+                  {
+                    "channelType": "SLACK",
+                    "severityMin": "HIGH",
+                    "isEnabled": true,
+                    "quietHoursStart": "22:00",
+                    "quietHoursEnd": "07:00"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slo/:serviceId": {
+      "get": {
+        "tags": [
+          "Orchestrator: SLO"
+        ],
+        "summary": "Get SLO Metrics",
+        "description": "Returns SLO metrics: current attainment percentage, error budget remaining, and burn rate.",
+        "operationId": "os1",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "description": "Service ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "serviceId": "svc-001",
+                  "sloTarget": 99.9,
+                  "currentAttainment": 99.7,
+                  "errorBudgetRemaining": 0.12,
+                  "burnRate": 2.4
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slo": {
+      "post": {
+        "tags": [
+          "Orchestrator: SLO"
+        ],
+        "summary": "Define SLO",
+        "description": "Defines a new Service Level Objective for a service.",
+        "operationId": "os2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "slo-001",
+                  "serviceId": "svc-001",
+                  "targetPercentage": 99.9,
+                  "windowDays": 30
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "SLO definition",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "serviceId": "svc-001",
+                "metric": "availability",
+                "targetPercentage": 99.9,
+                "windowDays": 30
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runbooks": {
+      "get": {
+        "tags": [
+          "Orchestrator: Runbooks"
+        ],
+        "summary": "List Runbooks",
+        "description": "Lists all automated runbooks, optionally filtered by service.",
+        "operationId": "or1",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": false,
+            "description": "Service filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "runbooks": [
+                    {
+                      "id": "rb-001",
+                      "title": "DB Failover",
+                      "actionType": "FAILOVER",
+                      "currentRevision": 3
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Orchestrator: Runbooks"
+        ],
+        "summary": "Create Runbook",
+        "description": "Creates a new executable runbook with step definitions.",
+        "operationId": "or2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "rb-001",
+                  "title": "DB Failover",
+                  "currentRevision": 1
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Runbook definition",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "serviceId": "svc-001",
+                "title": "DB Failover",
+                "description": "Failover to standby DB",
+                "steps": "[{ \"step\": 1, \"action\": \"promote_replica\" }]",
+                "actionType": "FAILOVER"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runbooks/:id/execute": {
+      "post": {
+        "tags": [
+          "Orchestrator: Runbooks"
+        ],
+        "summary": "Execute Runbook",
+        "description": "Asynchronously triggers execution of a runbook with parameters.",
+        "operationId": "or3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Runbook ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "executionId": "exec-001"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Execution params",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "namespace": "production",
+                "dryRun": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status-page": {
+      "get": {
+        "tags": [
+          "Orchestrator: Status Page"
+        ],
+        "summary": "Get Status Page",
+        "description": "Retrieves full status page: component statuses, active incidents, and uptime percentage.",
+        "operationId": "osp1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "components": [
+                    {
+                      "name": "API Gateway",
+                      "status": "OPERATIONAL"
+                    },
+                    {
+                      "name": "Payment",
+                      "status": "DEGRADED_PERFORMANCE"
+                    }
+                  ],
+                  "uptime": 99.7
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/status-page/components": {
+      "post": {
+        "tags": [
+          "Orchestrator: Status Page"
+        ],
+        "summary": "Add Component",
+        "description": "Adds a new component to the status page.",
+        "operationId": "osp2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "comp-001",
+                  "name": "API Gateway",
+                  "status": "OPERATIONAL"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Component payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "API Gateway",
+                "description": "Main API entry point",
+                "groupName": "Infrastructure",
+                "status": "OPERATIONAL",
+                "displayOrder": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status-page/components/:id/status": {
+      "put": {
+        "tags": [
+          "Orchestrator: Status Page"
+        ],
+        "summary": "Update Component Status",
+        "description": "Updates a component's operational status on the status page.",
+        "operationId": "osp3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Component ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "comp-001",
+                  "status": "PARTIAL_OUTAGE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "New status",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "status": "PARTIAL_OUTAGE"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/:id/postmortem": {
+      "post": {
+        "tags": [
+          "Orchestrator: Postmortems"
+        ],
+        "summary": "Create Postmortem",
+        "description": "Creates a postmortem document for a resolved incident.",
+        "operationId": "opm1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "pm-001",
+                  "incidentId": "inc-001",
+                  "summary": "DB connection pool exhaustion"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Postmortem content",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "summary": "DB connection pool exhaustion",
+                "contributingFactors": "Missing index on orders table",
+                "lessonsLearned": "Add query performance monitoring",
+                "severityWasAccurate": true
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Orchestrator: Postmortems"
+        ],
+        "summary": "Get Postmortem",
+        "description": "Retrieves the postmortem report for an incident.",
+        "operationId": "opm2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "pm-001",
+                  "summary": "DB connection pool exhaustion",
+                  "lessonsLearned": "Add query monitoring",
+                  "createdAt": "2026-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/incidents/:id/postmortem/export": {
+      "post": {
+        "tags": [
+          "Orchestrator: Postmortems"
+        ],
+        "summary": "Export Postmortem",
+        "description": "Exports the postmortem to Markdown or PDF format.",
+        "operationId": "opm3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "content": "# Postmortem: inc-001\n\n## Summary\n...",
+                  "format": "markdown"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Export format",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "format": "markdown"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/oncall/schedules": {
+      "get": {
+        "tags": [
+          "Orchestrator: On-Call & Synthetics"
+        ],
+        "summary": "List On-Call Schedules",
+        "description": "Lists all on-call rotation schedules.",
+        "operationId": "ooc1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "schedules": [
+                    {
+                      "id": "oc-001",
+                      "name": "Platform On-Call",
+                      "rotation": "weekly"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Orchestrator: On-Call & Synthetics"
+        ],
+        "summary": "Create Schedule",
+        "description": "Creates a new on-call rotation schedule.",
+        "operationId": "ooc2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "oc-001",
+                  "name": "Platform On-Call"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Schedule config",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Platform On-Call",
+                "rotation": "weekly",
+                "members": [
+                  "usr-001",
+                  "usr-002"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/synthetics/checks": {
+      "get": {
+        "tags": [
+          "Orchestrator: On-Call & Synthetics"
+        ],
+        "summary": "List Synthetic Checks",
+        "description": "Lists all synthetic monitoring probes (HTTP, DNS, TCP).",
+        "operationId": "osy1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "checks": [
+                    {
+                      "id": "chk-001",
+                      "type": "HTTP",
+                      "url": "https://api.example.com/health",
+                      "interval": 60,
+                      "lastResult": "OK"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Orchestrator: On-Call & Synthetics"
+        ],
+        "summary": "Create Synthetic Check",
+        "description": "Configures a new synthetic monitoring probe with assertions.",
+        "operationId": "osy2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "chk-001",
+                  "type": "HTTP",
+                  "url": "https://api.example.com/health"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Check config",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "type": "HTTP",
+                "url": "https://api.example.com/health",
+                "interval": 60,
+                "timeout": 10,
+                "assertions": [
+                  {
+                    "type": "status_code",
+                    "value": 200
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your Bearer JWT token issued by POST /api/v1/auth/login"
+      }
+    },
+    "schemas": {}
+  }
+}

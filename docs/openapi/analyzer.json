@@ -1,0 +1,511 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AstraWatch Analyzer API",
+    "description": "Official OpenAPI 3.0 specification for AstraWatch autonomous telemetry, anomaly detection, incident orchestration, and K8s self-healing microservices.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AstraWatch Engineering",
+      "url": "https://astrawatch.io"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/v1",
+      "description": "Collector Service (:8080)"
+    },
+    {
+      "url": "http://localhost:8001/v1",
+      "description": "Analyzer Service (:8001)"
+    },
+    {
+      "url": "http://localhost:8081/api/v1",
+      "description": "Orchestrator Service (:8081)"
+    },
+    {
+      "url": "http://localhost:8082/api/v1",
+      "description": "K8s Operator Service (:8082)"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Realtime Gateway (:3001)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Analyzer: Anomaly Detection",
+      "description": "Python · ML Anomaly Detection - Anomaly Detection"
+    },
+    {
+      "name": "Analyzer: Models",
+      "description": "Python · ML Anomaly Detection - Models"
+    },
+    {
+      "name": "Analyzer: Health",
+      "description": "Python · ML Anomaly Detection - Health"
+    }
+  ],
+  "paths": {
+    "/v1/anomaly/detect": {
+      "post": {
+        "tags": [
+          "Analyzer: Anomaly Detection"
+        ],
+        "summary": "Detect Anomalies",
+        "description": "Runs real-time anomaly detection using an Isolation Forest + LSTM Autoencoder ensemble. Returns anomaly scores and detected outliers.",
+        "operationId": "ad1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "anomalies": [
+                    {
+                      "timestamp": "2026-01-01T00:03:00Z",
+                      "value": 95.4,
+                      "score": -0.42,
+                      "isAnomaly": true
+                    }
+                  ],
+                  "modelUsed": "isolation_forest",
+                  "processingMs": 12
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Metric batch for scoring",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "serviceId": "svc-001",
+                "metricName": "cpu_usage",
+                "values": [
+                  72.3,
+                  74.1,
+                  73.8,
+                  95.4,
+                  96.2,
+                  97.1
+                ],
+                "timestamps": [
+                  "2026-01-01T00:00:00Z",
+                  "2026-01-01T00:01:00Z",
+                  "2026-01-01T00:02:00Z",
+                  "2026-01-01T00:03:00Z",
+                  "2026-01-01T00:04:00Z",
+                  "2026-01-01T00:05:00Z"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/anomaly/root-cause": {
+      "post": {
+        "tags": [
+          "Analyzer: Anomaly Detection"
+        ],
+        "summary": "Root Cause Analysis",
+        "description": "Performs probabilistic root cause analysis across correlated services and metrics using Bayesian correlation and SHAP feature importance.",
+        "operationId": "ad2",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "rootCauses": [
+                    {
+                      "component": "payment-db",
+                      "probability": 0.87,
+                      "evidence": [
+                        "Latency spike correlates with query slowdown"
+                      ],
+                      "recommendation": "Scale DB replicas or optimize slow query"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Incident context for RCA",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "serviceId": "svc-001",
+                "incidentId": "inc-xyz",
+                "anomalyTimestamp": "2026-01-01T00:03:00Z",
+                "metrics": [
+                  "cpu_usage",
+                  "mem_usage",
+                  "latency_p99"
+                ],
+                "lookbackMinutes": 30
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/anomaly/feedback": {
+      "post": {
+        "tags": [
+          "Analyzer: Anomaly Detection"
+        ],
+        "summary": "Submit Feedback",
+        "description": "Labels anomalies as true/false positives. Feedback persists in PostgreSQL and triggers model retraining jobs.",
+        "operationId": "ad3",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "fb-001",
+                  "anomalyId": "anom-001",
+                  "feedback": "false_positive",
+                  "savedAt": "2026-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Feedback payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "anomalyId": "anom-001",
+                "serviceId": "svc-001",
+                "feedback": "false_positive",
+                "comment": "Scheduled batch job caused the spike",
+                "rating": 2
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/anomaly/list": {
+      "get": {
+        "tags": [
+          "Analyzer: Anomaly Detection"
+        ],
+        "summary": "List Anomalies",
+        "description": "Retrieves a paginated list of detected anomalies with optional service and time range filters.",
+        "operationId": "ad4",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by service",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Start time",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "End time",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page (default 1)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Per page (default 50)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "anomalies": [
+                    {
+                      "id": "anom-001",
+                      "serviceId": "svc-001",
+                      "score": -0.51,
+                      "detectedAt": "2026-01-01T00:03:00Z"
+                    }
+                  ],
+                  "total": 42
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "tags": [
+          "Analyzer: Models"
+        ],
+        "summary": "List Models",
+        "description": "Returns metadata for all trained ML models — version, accuracy, training date, and active status.",
+        "operationId": "am1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "models": [
+                    {
+                      "name": "isolation_forest",
+                      "version": "1.3.0",
+                      "accuracy": 0.94,
+                      "status": "active"
+                    },
+                    {
+                      "name": "lstm_autoencoder",
+                      "version": "2.1.0",
+                      "accuracy": 0.91,
+                      "status": "active"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/models/retrain": {
+      "post": {
+        "tags": [
+          "Analyzer: Models"
+        ],
+        "summary": "Trigger Retraining",
+        "description": "Triggers an async model retraining job using accumulated feedback data from PostgreSQL. Returns a job ID.",
+        "operationId": "am2",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "jobId": "job-train-001",
+                  "status": "queued",
+                  "estimatedMinutes": 5
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Retraining config",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "modelName": "isolation_forest",
+                "serviceId": "svc-001",
+                "lookbackDays": 30
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/predict": {
+      "post": {
+        "tags": [
+          "Analyzer: Models"
+        ],
+        "summary": "Direct Prediction",
+        "description": "Runs a direct prediction on provided feature vectors using a specified model.",
+        "operationId": "am3",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "prediction": 1,
+                  "score": -0.23,
+                  "confidence": 0.91,
+                  "model": "isolation_forest"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Prediction request",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "model": "isolation_forest",
+                "features": [
+                  72.3,
+                  0.85,
+                  145.2,
+                  3.1
+                ],
+                "serviceId": "svc-001"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "Analyzer: Health"
+        ],
+        "summary": "Health Check",
+        "description": "Returns analyzer health, loaded model names, ClickHouse and PostgreSQL connectivity.",
+        "operationId": "ah1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "healthy",
+                  "modelsLoaded": [
+                    "isolation_forest",
+                    "lstm_autoencoder"
+                  ],
+                  "clickhouse": "connected",
+                  "postgres": "connected"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your Bearer JWT token issued by POST /api/v1/auth/login"
+      }
+    },
+    "schemas": {}
+  }
+}

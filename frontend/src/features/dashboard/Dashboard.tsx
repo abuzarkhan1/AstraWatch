@@ -12,7 +12,7 @@ function StatCard({ icon: Icon, label, value, change, color }: {
   color: string;
 }) {
   return (
-    <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+    <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] hover:border-blue-500/40 transition-colors">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>
         <Icon className={`w-5 h-5 ${color}`} />
@@ -109,13 +109,13 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
           <h2 className="text-sm font-semibold text-gray-300 mb-4">Recent Incidents</h2>
           {incidents.slice(0, 5).map((incident) => (
             <a
               key={incident.id}
               href={`/incidents/${incident.id}`}
-              className="flex items-center justify-between py-2.5 border-b border-gray-800 last:border-0 hover:bg-gray-800/50 px-2 rounded transition-colors"
+              className="flex items-center justify-between py-2.5 border-b border-white/10 last:border-0 hover:bg-white/[0.04] px-2 rounded-lg transition-colors"
             >
               <div className="flex items-center gap-3">
                 <div className={`w-2 h-2 rounded-full ${
@@ -130,7 +130,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
+        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
           <h2 className="text-sm font-semibold text-gray-300 mb-4">Service Health</h2>
           <div className="space-y-2">
             {services.slice(0, 8).map((service) => (

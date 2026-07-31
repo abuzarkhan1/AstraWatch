@@ -1,5 +1,0 @@
-replicaCount: 1
-image:
-  repository: astrawatch/frontend
-  pullPolicy: IfNotPresent
-  tag: "latest"

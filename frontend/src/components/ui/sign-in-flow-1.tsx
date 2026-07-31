@@ -119,25 +119,25 @@ export const SignInPage = ({ className }: SignInPageProps) => {
       const { endpoints } = await import('@/lib/api');
       
       if (mode === "login") {
-        try {
-          const res = await endpoints.auth.login({ email, password: password || "password123" });
-          const token = res.data?.data?.accessToken || res.data?.accessToken || 'demo-jwt-token-astrawatch';
-          const refreshToken = res.data?.data?.refreshToken || 'demo-refresh-token';
+        const res = await endpoints.auth.login({ email: email.trim(), password });
+        const token = res.data?.data?.accessToken || res.data?.accessToken;
+        const refreshToken = res.data?.data?.refreshToken || res.data?.refreshToken;
+        if (token) {
           localStorage.setItem('accessToken', token);
-          localStorage.setItem('refreshToken', refreshToken);
-        } catch {
-          localStorage.setItem('accessToken', 'demo-jwt-token-astrawatch');
-          localStorage.setItem('refreshToken', 'demo-refresh-token');
+          if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
         }
-        setStep("code");
+        window.location.href = '/dashboard';
       } else {
-        try {
-          await endpoints.auth.register({ email, password: password || "password123" });
-        } catch {}
-        setStep("code");
+        await endpoints.auth.register({ email: email.trim(), password });
+        const res = await endpoints.auth.login({ email: email.trim(), password });
+        const token = res.data?.data?.accessToken || res.data?.accessToken;
+        if (token) {
+          localStorage.setItem('accessToken', token);
+        }
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
-      setErrorMsg(err?.response?.data?.error || "Authentication failed. Please check your credentials.");
+      setErrorMsg(err?.response?.data?.error || err?.response?.data?.data?.error || "Authentication failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }

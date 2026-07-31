@@ -255,4 +255,21 @@ class RealtimeGateway {
   }
 }
 
+import http from 'http';
+const server = http.createServer((req, res) => {
+  if (req.url === '/health' || req.url === '/v1/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', service: 'realtime', uptime: process.uptime() }));
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
+
+const gateway = new RealtimeGateway(server);
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  logger.info(`Realtime gateway listening on port ${PORT}`);
+});
+
 export default RealtimeGateway;

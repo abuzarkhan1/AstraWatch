@@ -1,0 +1,844 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AstraWatch Collector API",
+    "description": "Official OpenAPI 3.0 specification for AstraWatch autonomous telemetry, anomaly detection, incident orchestration, and K8s self-healing microservices.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AstraWatch Engineering",
+      "url": "https://astrawatch.io"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/v1",
+      "description": "Collector Service (:8080)"
+    },
+    {
+      "url": "http://localhost:8001/v1",
+      "description": "Analyzer Service (:8001)"
+    },
+    {
+      "url": "http://localhost:8081/api/v1",
+      "description": "Orchestrator Service (:8081)"
+    },
+    {
+      "url": "http://localhost:8082/api/v1",
+      "description": "K8s Operator Service (:8082)"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Realtime Gateway (:3001)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Collector: Telemetry Ingest",
+      "description": "Go · Telemetry Ingest + Service Catalog - Telemetry Ingest"
+    },
+    {
+      "name": "Collector: Query",
+      "description": "Go · Telemetry Ingest + Service Catalog - Query"
+    },
+    {
+      "name": "Collector: Service Catalog",
+      "description": "Go · Telemetry Ingest + Service Catalog - Service Catalog"
+    },
+    {
+      "name": "Collector: Health",
+      "description": "Go · Telemetry Ingest + Service Catalog - Health"
+    }
+  ],
+  "paths": {
+    "/v1/ingest/metrics/batch": {
+      "post": {
+        "tags": [
+          "Collector: Telemetry Ingest"
+        ],
+        "summary": "Ingest Metrics Batch",
+        "description": "Ingests batches of time-series metric data points from eBPF agents or SDKs. Publishes to Kafka topic <strong>raw-metrics</strong>. Unauthenticated for high-throughput agent traffic.",
+        "operationId": "ci1",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "ingested": 1,
+                  "failed": 0
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Array of metric data points",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": [
+                {
+                  "serviceId": "svc-001",
+                  "metricName": "cpu_usage",
+                  "value": 72.3,
+                  "timestamp": "2026-01-01T00:00:00Z",
+                  "labels": {
+                    "host": "node-1",
+                    "env": "prod"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/v1/ingest/logs": {
+      "post": {
+        "tags": [
+          "Collector: Telemetry Ingest"
+        ],
+        "summary": "Ingest Log Events",
+        "description": "Ingests structured log events from services and agents. Publishes to Kafka topic <strong>raw-logs</strong>. Unauthenticated.",
+        "operationId": "ci2",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "accepted"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Log entry payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "serviceId": "svc-001",
+                "level": "ERROR",
+                "message": "Connection timeout to DB",
+                "timestamp": "2026-01-01T00:00:00Z",
+                "traceId": "trace-abc123",
+                "labels": {
+                  "host": "node-1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ingest/traces": {
+      "post": {
+        "tags": [
+          "Collector: Telemetry Ingest"
+        ],
+        "summary": "Ingest Distributed Traces",
+        "description": "Accepts OpenTelemetry-compatible trace spans. Publishes to Kafka topic <strong>raw-traces</strong>. Unauthenticated.",
+        "operationId": "ci3",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "accepted"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Trace span payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "traceId": "abc123",
+                "spanId": "span001",
+                "serviceId": "svc-001",
+                "operationName": "db.query",
+                "startTime": "2026-01-01T00:00:00Z",
+                "duration": 45,
+                "status": "OK"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agent/metrics": {
+      "post": {
+        "tags": [
+          "Collector: Telemetry Ingest"
+        ],
+        "summary": "Agent Host Metrics Push",
+        "description": "Accepts host-level metrics (CPU, memory, disk, network) from the C++ eBPF agent via ring buffer. Unauthenticated.",
+        "operationId": "ci4",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "ok"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "description": "Agent metrics batch",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "agentId": "agent-node-1",
+                "metrics": [
+                  {
+                    "name": "cpu_percent",
+                    "value": 65.2
+                  },
+                  {
+                    "name": "mem_used_bytes",
+                    "value": 4294967296
+                  }
+                ],
+                "timestamp": "2026-01-01T00:00:00Z"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/query/metrics": {
+      "get": {
+        "tags": [
+          "Collector: Query"
+        ],
+        "summary": "Query Metrics",
+        "description": "Queries aggregated time-series metrics stored in ClickHouse. Supports service filtering and time range selection.",
+        "operationId": "cq1",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": true,
+            "description": "Target service identifier",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "description": "Metric name filter (e.g. cpu_usage)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Start of time range",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "End of time range",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Max results (default 1000)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "timestamp": "2026-01-01T00:00:00Z",
+                      "metricName": "cpu_usage",
+                      "value": 72.3,
+                      "serviceId": "svc-001"
+                    }
+                  ],
+                  "total": 1
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/query/logs": {
+      "get": {
+        "tags": [
+          "Collector: Query"
+        ],
+        "summary": "Query Logs",
+        "description": "Queries structured log events from ClickHouse with full-text search and severity filtering.",
+        "operationId": "cq2",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": true,
+            "description": "Target service",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "description": "DEBUG | INFO | WARN | ERROR",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Full-text search string",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Start time",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "End time",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "timestamp": "2026-01-01T00:00:00Z",
+                      "level": "ERROR",
+                      "message": "DB timeout",
+                      "serviceId": "svc-001"
+                    }
+                  ],
+                  "total": 1
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/query/traces": {
+      "get": {
+        "tags": [
+          "Collector: Query"
+        ],
+        "summary": "Query Traces",
+        "description": "Fetches distributed trace spans from ClickHouse. Filter by traceId or serviceId.",
+        "operationId": "cq3",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": false,
+            "description": "Service filter",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "traceId",
+            "in": "query",
+            "required": false,
+            "description": "Exact trace ID lookup",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Start time",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "traceId": "abc123",
+                      "spanId": "span001",
+                      "duration": 45,
+                      "status": "OK"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/services": {
+      "get": {
+        "tags": [
+          "Collector: Service Catalog"
+        ],
+        "summary": "List Services",
+        "description": "Returns all services registered in the AstraWatch service catalog.",
+        "operationId": "cs1",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by team",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "env",
+            "in": "query",
+            "required": false,
+            "description": "prod | staging | dev",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "services": [
+                    {
+                      "id": "svc-001",
+                      "name": "payment-service",
+                      "team": "platform",
+                      "env": "prod",
+                      "tier": "T1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Collector: Service Catalog"
+        ],
+        "summary": "Register Service",
+        "description": "Registers a new service in the catalog with metadata, SLO tier, and ownership.",
+        "operationId": "cs2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "svc-001",
+                  "name": "payment-service",
+                  "createdAt": "2026-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Service registration payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "payment-service",
+                "team": "platform-team",
+                "env": "prod",
+                "tier": "T1",
+                "language": "go",
+                "repository": "https://github.com/org/payment"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/services/:id": {
+      "get": {
+        "tags": [
+          "Collector: Service Catalog"
+        ],
+        "summary": "Get Service",
+        "description": "Retrieves full metadata for a single service by ID.",
+        "operationId": "cs3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Service ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "svc-001",
+                  "name": "payment-service",
+                  "team": "platform",
+                  "tier": "T1",
+                  "healthScore": 94.2,
+                  "dependencies": [
+                    "auth-service",
+                    "db-service"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Collector: Service Catalog"
+        ],
+        "summary": "Update Service",
+        "description": "Updates service metadata in the catalog.",
+        "operationId": "cs4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Service ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": "svc-001",
+                  "team": "new-team",
+                  "tier": "T2"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Updated fields",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "team": "new-team",
+                "tier": "T2"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/services/:id/dependencies": {
+      "get": {
+        "tags": [
+          "Collector: Service Catalog"
+        ],
+        "summary": "Get Dependencies",
+        "description": "Returns upstream and downstream service dependency graph.",
+        "operationId": "cs5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Service ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "upstream": [
+                    "auth-service"
+                  ],
+                  "downstream": [
+                    "email-service",
+                    "ledger-service"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/services/:id/scorecard": {
+      "post": {
+        "tags": [
+          "Collector: Service Catalog"
+        ],
+        "summary": "Submit Scorecard",
+        "description": "Submits or updates a service maturity scorecard with production readiness scores.",
+        "operationId": "cs6",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Service ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "serviceId": "svc-001",
+                  "overallScore": 78.25,
+                  "updatedAt": "2026-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Scorecard payload",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "observability": 85,
+                "reliability": 90,
+                "security": 78,
+                "documentation": 60
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "tags": [
+          "Collector: Health"
+        ],
+        "summary": "Health Check",
+        "description": "Liveness and readiness probe. Returns service status, Kafka connectivity, and ClickHouse connectivity.",
+        "operationId": "ch1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "ok",
+                  "kafka": "connected",
+                  "clickhouse": "connected",
+                  "uptime": 3600
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your Bearer JWT token issued by POST /api/v1/auth/login"
+      }
+    },
+    "schemas": {}
+  }
+}

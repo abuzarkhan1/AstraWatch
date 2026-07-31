@@ -26,7 +26,7 @@ function ServiceSLO({ svc }: { svc: any }) {
   const isBreaching = current < target;
 
   return (
-    <div className="bg-gray-900 rounded-lg border border-gray-800 p-4 space-y-3">
+    <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 space-y-3 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] hover:border-blue-500/40 transition-colors">
       <div className="flex items-center justify-between">
         <h3 className="font-medium">{svc.name}</h3>
         {isBreaching ? (
@@ -47,7 +47,7 @@ function ServiceSLO({ svc }: { svc: any }) {
           <span className="text-gray-500">Target</span>
           <span className="text-gray-300">{target}%</span>
         </div>
-        <div className="w-full bg-gray-800 rounded-full h-2 mt-1">
+        <div className="w-full bg-black/60 border border-white/10 rounded-full h-2 mt-1 overflow-hidden">
           <div
             className={`h-2 rounded-full transition-all ${isBreaching ? 'bg-red-500' : 'bg-green-500'}`}
             style={{ width: `${Math.min(100, (current / target) * 100)}%` }}

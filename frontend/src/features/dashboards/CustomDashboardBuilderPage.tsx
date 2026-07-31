@@ -49,7 +49,7 @@ export default function CustomDashboardBuilderPage() {
       position: { x: 100 + (widgetCount % 3) * 300, y: 100 + Math.floor(widgetCount / 3) * 200 },
       data: { label: widgetDef?.label || type },
       style: {
-        background: '#1f2937',
+        background: '#0b101d',
         border: `2px solid ${widgetColors[type] || '#6b7280'}`,
         color: '#f3f4f6',
         borderRadius: 8,
@@ -90,7 +90,7 @@ export default function CustomDashboardBuilderPage() {
                   <button
                     key={w.type}
                     onClick={() => addWidget(w.type)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-700 transition-colors text-left"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-blue-500/40 transition-colors text-left"
                   >
                     <Icon className="w-5 h-5 text-gray-300" />
                     <span className="text-sm text-gray-200">{w.label}</span>
@@ -102,7 +102,7 @@ export default function CustomDashboardBuilderPage() {
         </Dialog>
       </div>
 
-      <div className="bg-gray-900 rounded-lg border border-gray-800" style={{ height: 600 }}>
+      <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]" style={{ height: 600 }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -112,10 +112,10 @@ export default function CustomDashboardBuilderPage() {
           fitView
           attributionPosition="bottom-left"
         >
-          <Background color="#374151" gap={20} />
-          <Controls className="bg-gray-800 border-gray-700 rounded-lg" />
+          <Background color="#1e293b" gap={20} />
+          <Controls className="bg-neutral-950/80 border-white/10 rounded-lg" />
           <MiniMap
-            style={{ background: '#111827' }}
+            style={{ background: '#0b101d' }}
             nodeColor={(node: any) => widgetColors[node.data?.label?.toLowerCase()] || '#6b7280'}
             maskColor="rgba(0,0,0,0.6)"
           />
