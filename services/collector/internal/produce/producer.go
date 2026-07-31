@@ -58,6 +58,7 @@ func (p *Producer) ProduceMetrics(batch pkg.MetricBatch) error {
 		}
 
 		record := &kgo.Record{
+			Topic: "raw-metrics",
 			Key:   []byte(key),
 			Value: data,
 			Headers: []kgo.RecordHeader{

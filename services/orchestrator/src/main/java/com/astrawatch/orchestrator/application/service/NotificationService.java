@@ -17,7 +17,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class NotificationService implements NotificationPort {
 
     private final NotificationRepository notificationRepository;

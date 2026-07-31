@@ -15,7 +15,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class PostmortemService implements PostmortemPort {
 
     private final PostmortemRepository postmortemRepository;

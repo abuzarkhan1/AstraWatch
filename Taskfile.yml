@@ -32,7 +32,7 @@ tasks:
     desc: Build Python Analyzer
     dir: services/analyzer
     cmds:
-      - python3 -m py_compile app/**/*.py
+      - venv/bin/python3 -m py_compile app/**/*.py
 
   build-orchestrator:
     desc: Build Java Orchestrator
@@ -86,43 +86,43 @@ tasks:
     desc: Run Go Collector tests
     dir: services/collector
     cmds:
-      - go test ./... -v -count=1 || true
+      - go test ./... -v -count=1
 
   test-operator:
     desc: Run Go Operator tests
     dir: services/operator
     cmds:
-      - go test ./... -v -count=1 || true
+      - go test ./... -v -count=1
 
   test-orchestrator:
     desc: Run Java Orchestrator tests
     dir: services/orchestrator
     cmds:
-      - mvn test -q || true
+      - mvn test -q
 
   test-analyzer:
     desc: Run Python Analyzer tests
     dir: services/analyzer
     cmds:
-      - python3 -m unittest discover || true
+      - venv/bin/python3 -m unittest discover -s tests
 
   test-realtime:
     desc: Run Node.js Realtime tests
     dir: services/realtime
     cmds:
-      - npm test || true
+      - npm test
 
   test-frontend:
     desc: Run React Frontend tests
     dir: frontend
     cmds:
-      - npm test || true
+      - npm test
 
   test-cxx-agent:
     desc: Run C++ Agent tests
     dir: services/cxx-agent
     cmds:
-      - mkdir -p build && cd build && cmake .. && make && ctest || true
+      - command -v cmake >/dev/null 2>&1 && (mkdir -p build && cd build && cmake .. && make && ctest) || echo "cmake not found on host, skipping C++ agent test"
 
   test-integration:
     desc: Run Integration tests

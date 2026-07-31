@@ -19,6 +19,12 @@ public record ApiResponse<T>(boolean success, T data, Map<String, Object> meta) 
         return (ApiResponse<T>) new ApiResponse<>(true, null, metaOf());
     }
 
+    public static <T> ApiResponse<T> accepted(T data) {
+        return new ApiResponse<>(true, data, metaOf());
+    }
+
+
+
     public static <T> ApiResponse<T> of(T data) {
         return ok(data);
     }

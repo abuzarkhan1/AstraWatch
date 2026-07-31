@@ -39,6 +39,23 @@ public class ActionItem {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getPostmortemId() { return postmortemId; }
+    public void setPostmortemId(UUID postmortemId) { this.postmortemId = postmortemId; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public UUID getOwnerId() { return ownerId; }
+    public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public LocalDate getDueDate() { return dueDate; }
+    public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
+    public Instant getCompletedAt() { return completedAt; }
+    public void setCompletedAt(Instant completedAt) { this.completedAt = completedAt; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

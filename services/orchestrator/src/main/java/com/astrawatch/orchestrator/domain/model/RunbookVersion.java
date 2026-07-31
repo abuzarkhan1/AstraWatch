@@ -35,6 +35,36 @@ public class RunbookVersion {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public UUID getRunbookId() { return runbookId; }
+    public void setRunbookId(UUID runbookId) { this.runbookId = runbookId; }
+    public int getRevision() { return revision; }
+    public void setRevision(int revision) { this.revision = revision; }
+    public String getSteps() { return steps; }
+    public void setSteps(String steps) { this.steps = steps; }
+    public String getChangelog() { return changelog; }
+    public void setChangelog(String changelog) { this.changelog = changelog; }
+    public UUID getCreatedBy() { return createdBy; }
+    public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public static RunbookVersionBuilder builder() { return new RunbookVersionBuilder(); }
+    public static class RunbookVersionBuilder {
+        private UUID runbookId; private int revision; private String steps; private String changelog; private UUID createdBy;
+        public RunbookVersionBuilder runbookId(UUID runbookId) { this.runbookId = runbookId; return this; }
+        public RunbookVersionBuilder revision(int revision) { this.revision = revision; return this; }
+        public RunbookVersionBuilder steps(String steps) { this.steps = steps; return this; }
+        public RunbookVersionBuilder changelog(String changelog) { this.changelog = changelog; return this; }
+        public RunbookVersionBuilder createdBy(UUID createdBy) { this.createdBy = createdBy; return this; }
+        public RunbookVersion build() {
+            RunbookVersion rv = new RunbookVersion();
+            rv.runbookId = this.runbookId; rv.revision = this.revision; rv.steps = this.steps; rv.changelog = this.changelog; rv.createdBy = this.createdBy;
+            return rv;
+        }
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

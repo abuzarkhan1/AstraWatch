@@ -44,6 +44,27 @@ public class Postmortem {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getIncidentId() { return incidentId; }
+    public void setIncidentId(UUID incidentId) { this.incidentId = incidentId; }
+    public String getSummary() { return summary; }
+    public void setSummary(String summary) { this.summary = summary; }
+    public String getTimelineEdits() { return timelineEdits; }
+    public void setTimelineEdits(String timelineEdits) { this.timelineEdits = timelineEdits; }
+    public String getContributingFactors() { return contributingFactors; }
+    public void setContributingFactors(String contributingFactors) { this.contributingFactors = contributingFactors; }
+    public Boolean getSeverityWasAccurate() { return severityWasAccurate; }
+    public void setSeverityWasAccurate(Boolean severityWasAccurate) { this.severityWasAccurate = severityWasAccurate; }
+    public String getLessonsLearned() { return lessonsLearned; }
+    public void setLessonsLearned(String lessonsLearned) { this.lessonsLearned = lessonsLearned; }
+    public UUID getCreatedBy() { return createdBy; }
+    public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

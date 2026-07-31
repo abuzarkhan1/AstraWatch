@@ -8,8 +8,9 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
-@Slf4j
 public class RiskScoringService {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RiskScoringService.class);
 
     public int calculateRiskScore(Incident incident, String actionType, Map<String, Object> parameters) {
         int score = 0;

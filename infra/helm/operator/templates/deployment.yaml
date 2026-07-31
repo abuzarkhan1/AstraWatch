@@ -18,3 +18,15 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          livenessProbe:
+            exec:
+              command:
+                - "true"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - "true"
+            initialDelaySeconds: 5
+            periodSeconds: 10

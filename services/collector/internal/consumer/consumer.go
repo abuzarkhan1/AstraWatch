@@ -21,7 +21,7 @@ func NewConsumer(brokers []string, db driver.Conn, log *zap.Logger) (*Consumer, 
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.ConsumerGroup("astrawatch-clickhouse-writer"),
-		kgo.ConsumeTopics("raw-metrics", "raw-logs"),
+		kgo.ConsumeTopics("raw-metrics", "raw-logs", "raw-traces"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kafka consumer client: %w", err)
@@ -48,6 +48,7 @@ func (c *Consumer) Start(ctx context.Context) {
 
 		var metricsBatch []map[string]interface{}
 		var logsBatch []map[string]interface{}
+		var tracesBatch []map[string]interface{}
 
 		fetches.EachRecord(func(record *kgo.Record) {
 			switch record.Topic {
@@ -65,6 +66,13 @@ func (c *Consumer) Start(ctx context.Context) {
 					return
 				}
 				logsBatch = append(logsBatch, logEntry)
+			case "raw-traces":
+				var traceEntry map[string]interface{}
+				if err := json.Unmarshal(record.Value, &traceEntry); err != nil {
+					c.log.Error("failed to unmarshal trace entry", zap.Error(err))
+					return
+				}
+				tracesBatch = append(tracesBatch, traceEntry)
 			}
 		})
 
@@ -77,6 +85,12 @@ func (c *Consumer) Start(ctx context.Context) {
 		if len(logsBatch) > 0 {
 			if err := c.insertLogs(ctx, logsBatch); err != nil {
 				c.log.Error("failed to insert logs to ClickHouse", zap.Error(err))
+			}
+		}
+
+		if len(tracesBatch) > 0 {
+			if err := c.insertTraces(ctx, tracesBatch); err != nil {
+				c.log.Error("failed to insert traces to ClickHouse", zap.Error(err))
 			}
 		}
 
@@ -150,6 +164,53 @@ func (c *Consumer) insertLogs(ctx context.Context, logs []map[string]interface{}
 		}
 
 		if err := batch.Append(serviceID, cluster, namespace, ts, level, message, metadata); err != nil {
+			return err
+		}
+	}
+
+	return batch.Send()
+}
+
+func (c *Consumer) insertTraces(ctx context.Context, traces []map[string]interface{}) error {
+	batch, err := c.db.PrepareBatch(ctx, "INSERT INTO traces")
+	if err != nil {
+		return err
+	}
+
+	for _, t := range traces {
+		traceID := t["traceId"].(string)
+		spanID := t["spanId"].(string)
+		parentSpanID, _ := t["parentSpanId"].(string)
+		serviceID := t["serviceId"].(string)
+		operationName := t["operationName"].(string)
+
+		var startTime time.Time
+		var endTime time.Time
+
+		// Depending on how they were serialized, either timestamp or string
+		if startStr, ok := t["startTime"].(string); ok {
+			startTime, _ = time.Parse(time.RFC3339, startStr)
+		} else if startFl, ok := t["startTime"].(float64); ok {
+			startTime = time.UnixMilli(int64(startFl))
+		}
+
+		if endStr, ok := t["endTime"].(string); ok {
+			endTime, _ = time.Parse(time.RFC3339, endStr)
+		} else if endFl, ok := t["endTime"].(float64); ok {
+			endTime = time.UnixMilli(int64(endFl))
+		}
+
+		var tags map[string]string
+		if m, ok := t["tags"].(map[string]interface{}); ok {
+			tags = make(map[string]string)
+			for k, v := range m {
+				if vs, ok := v.(string); ok {
+					tags[k] = vs
+				}
+			}
+		}
+
+		if err := batch.Append(traceID, spanID, parentSpanID, serviceID, operationName, startTime, endTime, tags); err != nil {
 			return err
 		}
 	}

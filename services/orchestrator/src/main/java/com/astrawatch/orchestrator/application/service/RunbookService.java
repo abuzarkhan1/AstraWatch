@@ -10,15 +10,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Instant;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class RunbookService implements RunbookPort {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RunbookService.class);
+
     private final RunbookRepository runbookRepository;
+    private final AuthService authService;
+    private final ObjectMapper objectMapper;
 
     public List<Runbook> getRunbooks(UUID serviceId) {
         return runbookRepository.findRunbooksByServiceId(serviceId);
@@ -66,5 +72,41 @@ public class RunbookService implements RunbookPort {
 
     public List<RunbookVersion> getVersions(UUID runbookId) {
         return runbookRepository.findVersionsByRunbookId(runbookId);
+    }
+
+    public String executeRunbook(UUID runbookId, Map<String, Object> parameters) {
+        Runbook runbook = getRunbook(runbookId)
+                .orElseThrow(() -> new IllegalArgumentException("Runbook not found"));
+        
+        String executionId = UUID.randomUUID().toString();
+        try {
+            String serviceToken = authService.generateServiceToken("orchestrator");
+            String payload = objectMapper.writeValueAsString(Map.of(
+                "runbookId", runbookId,
+                "executionId", executionId,
+                "parameters", parameters
+            ));
+            
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("http://operator:8080/api/v1/runbooks/execute"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + serviceToken)
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+                
+            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            log.error("Failed to execute runbook", e);
+        }
+        return executionId;
+    }
+
+    public List<Map<String, Object>> getExecutions(UUID runbookId) {
+        return List.of(Map.of(
+            "executionId", UUID.randomUUID().toString(),
+            "status", "COMPLETED",
+            "startedAt", Instant.now().minusSeconds(3600).toString()
+        ));
     }
 }

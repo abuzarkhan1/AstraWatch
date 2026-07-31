@@ -59,7 +59,10 @@ class IsolationForestDetector:
         try:
             check_is_fitted(self.model)
         except NotFittedError:
-            return False, 0.0
+            try:
+                self.model.fit(values.reshape(-1, 1) if values.ndim == 1 else values)
+            except Exception:
+                return False, 0.0
 
         values_2d = values.reshape(-1, 1) if values.ndim == 1 else values
         scores = self.model.score_samples(values_2d)
@@ -69,3 +72,4 @@ class IsolationForestDetector:
         is_anomaly = predictions[-1] == -1
 
         return bool(is_anomaly), float(min(1.0, max(0.0, anomaly_score)))
+

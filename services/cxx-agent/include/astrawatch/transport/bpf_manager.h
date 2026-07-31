@@ -62,6 +62,7 @@ private:
 
     bool loaded_ = false;
     bool attached_ = false;
+    std::vector<struct bpf_link*> links_;
 
     int load_bpf_object(const std::string& path, struct bpf_object** obj);
     int attach_tracepoint(struct bpf_object* obj, const char* tracepoint);

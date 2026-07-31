@@ -25,12 +25,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, String>>> login(@RequestBody Map<String, String> body) {
         try {
-            String token = authService.login(body.get("email"), body.get("password"));
-            return ResponseEntity.ok(ApiResponse.ok(Map.of(
-                    "accessToken", token,
-                    "refreshToken", "mock-refresh-token",
-                    "expiresIn", "900000"
-            )));
+            Map<String, String> tokens = authService.login(body.get("email"), body.get("password"));
+            return ResponseEntity.ok(ApiResponse.ok(tokens));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, Map.of("error", "Invalid credentials"), Map.of()));
         }
@@ -51,10 +47,12 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Map<String, String>>> refresh(@RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of(
-                "accessToken", "mock-refreshed-jwt",
-                "expiresIn", "900"
-        )));
+        try {
+            Map<String, String> tokens = authService.refresh(body.get("refreshToken"));
+            return ResponseEntity.ok(ApiResponse.ok(tokens));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, Map.of("error", "Invalid refresh token"), Map.of()));
+        }
     }
 
     @PostMapping("/logout")
@@ -101,7 +99,12 @@ public class AuthController {
 
     @PostMapping("/switch-team")
     public ResponseEntity<ApiResponse<Map<String, Object>>> switchTeam(@RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("accessToken", "mock-team-jwt")));
+        try {
+            String token = authService.switchTeam(body.get("teamId"), body.get("accessToken"));
+            return ResponseEntity.ok(ApiResponse.ok(Map.of("accessToken", token)));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, Map.of("error", "Invalid token or team"), Map.of()));
+        }
     }
 
     // ─── MFA ────────────────────────────────────────────────────────────
@@ -190,9 +193,14 @@ public class AuthController {
 
     @PostMapping("/accept-invite")
     public ResponseEntity<ApiResponse<Map<String, Object>>> acceptInvite(@RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of(
-                "accessToken", "mock-jwt-from-invite",
-                "refreshToken", "mock-refresh-from-invite"
-        )));
+        try {
+            Map<String, String> tokens = authService.acceptInvite(body.get("token"));
+            return ResponseEntity.ok(ApiResponse.ok(Map.of(
+                    "accessToken", tokens.get("accessToken"),
+                    "refreshToken", tokens.get("refreshToken")
+            )));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, Map.of("error", "Invalid invite token"), Map.of()));
+        }
     }
 }

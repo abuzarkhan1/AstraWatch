@@ -32,6 +32,19 @@ public class SLODefinition {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getServiceId() { return serviceId; }
+    public void setServiceId(UUID serviceId) { this.serviceId = serviceId; }
+    public String getMetric() { return metric; }
+    public void setMetric(String metric) { this.metric = metric; }
+    public Double getTargetPercentage() { return targetPercentage; }
+    public void setTargetPercentage(Double targetPercentage) { this.targetPercentage = targetPercentage; }
+    public Integer getWindowDays() { return windowDays; }
+    public void setWindowDays(Integer windowDays) { this.windowDays = windowDays; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

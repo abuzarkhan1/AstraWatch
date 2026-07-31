@@ -82,7 +82,13 @@ bool MMapRingBuffer::push(const MetricBatch& batch) {
     }
 
     uint32_t len = static_cast<uint32_t>(serialized.size());
-    std::memcpy(data_ + header_->write_offset, &len, sizeof(len));
+    if (header_->write_offset + sizeof(len) > capacity_) {
+        size_t first_part = capacity_ - header_->write_offset;
+        std::memcpy(data_ + header_->write_offset, &len, first_part);
+        std::memcpy(data_, reinterpret_cast<uint8_t*>(&len) + first_part, sizeof(len) - first_part);
+    } else {
+        std::memcpy(data_ + header_->write_offset, &len, sizeof(len));
+    }
     header_->write_offset = (header_->write_offset + sizeof(len)) % capacity_;
 
     if (header_->write_offset + serialized.size() > capacity_) {
@@ -109,7 +115,13 @@ bool MMapRingBuffer::pop(MetricBatch& batch) {
     if (empty()) return false;
 
     uint32_t len;
-    std::memcpy(&len, data_ + header_->read_offset, sizeof(len));
+    if (header_->read_offset + sizeof(len) > capacity_) {
+        size_t first_part = capacity_ - header_->read_offset;
+        std::memcpy(&len, data_ + header_->read_offset, first_part);
+        std::memcpy(reinterpret_cast<uint8_t*>(&len) + first_part, data_, sizeof(len) - first_part);
+    } else {
+        std::memcpy(&len, data_ + header_->read_offset, sizeof(len));
+    }
     header_->read_offset = (header_->read_offset + sizeof(len)) % capacity_;
 
     std::vector<uint8_t> serialized(len);

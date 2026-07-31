@@ -99,21 +99,21 @@ void build_proto_batch(const AgentConfig& config, int64_t ts, int64_t queue_dept
 
     double elapsed_sec = (elapsed_ms > 0) ? (elapsed_ms / 1000.0) : 1.0;
 
-    // 1) CPU utilization: fraction of sched_switch events (proxy for context-switch rate)
-    double ctx_switch_rate = sched_count / std::max(elapsed_sec, 0.001);
-    // Normalise so that 5000 ctx-switches/sec = 100% utilization
-    double cpu_pct = std::min(ctx_switch_rate / 50.0, 100.0);
-    // 2) Network throughput: tcp_send + tcp_recv per second
-    double net_ops = (tcp_send + tcp_recv) / std::max(elapsed_sec, 0.001);
+    // 1) CPU utilization: From Procfs
+    double cpu_pct = procfs_metrics.cpu_usage_percent;
+    // 2) Network throughput: From Procfs (delta bytes over time)
+    double net_rx = procfs_metrics.net_rx_bytes;
+    double net_tx = procfs_metrics.net_tx_bytes;
     // 3) Disk I/O rate
     double disk_io_rate = block_count / std::max(elapsed_sec, 0.001);
     // 4) Memory is from Procfs
     double memory_pct = procfs_metrics.memory_usage_percent;
 
     add_point("system.cpu.utilization",    std::round(cpu_pct * 100.0) / 100.0,      ts, base_labels);
-    add_point("system.network.ops",        std::round(net_ops * 100.0) / 100.0,       ts, base_labels);
+    add_point("system.network.rx_bytes",   net_rx,                                    ts, base_labels);
+    add_point("system.network.tx_bytes",   net_tx,                                    ts, base_labels);
     add_point("system.disk.io_rate",       std::round(disk_io_rate * 100.0) / 100.0,  ts, base_labels);
-    add_point("system.memory.usage_percent", memory_pct,                                ts, base_labels);
+    add_point("system.memory.usage_percent", memory_pct,                              ts, base_labels);
     add_point("system.load.1m",            (cpu_pct / 100.0) * 2.0,                   ts, base_labels);
 }
 

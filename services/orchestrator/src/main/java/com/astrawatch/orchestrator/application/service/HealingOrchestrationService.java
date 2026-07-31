@@ -16,13 +16,15 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class HealingOrchestrationService {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HealingOrchestrationService.class);
 
     private final HealingActionRepository healingActionRepository;
     private final IncidentRepository incidentRepository;
     private final RiskScoringService riskScoringService;
     private final IncidentCommandService incidentCommandService;
+    private final AuthService authService;
     private final ObjectMapper objectMapper;
 
     private static final int MAX_HEALING_ATTEMPTS_PER_INCIDENT = 3;
@@ -116,10 +118,11 @@ public class HealingOrchestrationService {
             String payload = String.format("{\"actionId\":\"%s\", \"actionType\":\"%s\", \"parameters\":%s}", 
                 actionId, action.getActionType(), action.getParameters());
             
+            String serviceToken = authService.generateServiceToken("orchestrator");
             java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
                 .uri(java.net.URI.create("http://operator:8080/api/v1/healing/trigger"))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer mock-team-jwt")
+                .header("Authorization", "Bearer " + serviceToken)
                 .header("Idempotency-Key", "heal-" + actionId.toString())
                 .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload))
                 .build();

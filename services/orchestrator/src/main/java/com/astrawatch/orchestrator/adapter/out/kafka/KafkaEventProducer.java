@@ -8,8 +8,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class KafkaEventProducer {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(KafkaEventProducer.class);
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;

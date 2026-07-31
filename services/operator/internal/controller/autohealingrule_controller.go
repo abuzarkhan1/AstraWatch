@@ -1,14 +1,12 @@
 package controller
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"go.uber.org/zap"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -16,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"k8s.io/client-go/tools/record"
+	"strconv"
 
 	astrawatchv1 "github.com/astrawatch/operator/internal/api/v1"
 	"github.com/astrawatch/operator/internal/metrics"
@@ -110,7 +109,7 @@ func (r *AutoHealingRuleReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 		if durationMet {
 			if rule.Status.LastTriggered.IsZero() || time.Since(rule.Status.LastTriggered.Time) > 5*time.Minute {
-				if err := r.triggerHealing(rule); err != nil {
+				if err := r.triggerHealing(ctx, rule); err != nil {
 					l.Error(err, "failed to trigger healing")
 					if r.Recorder != nil {
 						r.Recorder.Event(&rule, corev1.EventTypeWarning, "HealingTriggerFailed", err.Error())
@@ -161,38 +160,63 @@ func (r *AutoHealingRuleReconciler) evaluateCondition(ctx context.Context, rule 
 	return metrics.EvaluateCondition(mv.Value, rule.Spec.Condition.Operator, rule.Spec.Condition.Threshold), nil
 }
 
-func (r *AutoHealingRuleReconciler) triggerHealing(rule astrawatchv1.AutoHealingRule) error {
-	payload := map[string]interface{}{
-		"incidentId": nil,
-		"actionType": rule.Spec.Action.Type,
-		"parameters": rule.Spec.Action.Parameters,
-	}
+func (r *AutoHealingRuleReconciler) triggerHealing(ctx context.Context, rule astrawatchv1.AutoHealingRule) error {
+	switch rule.Spec.Action.Type {
+	case "RestartPod":
+		podName := rule.Spec.Action.Parameters["podName"]
+		if podName == "" {
+			return fmt.Errorf("podName parameter missing")
+		}
+		var pod corev1.Pod
+		if err := r.Get(ctx, client.ObjectKey{Name: podName, Namespace: rule.Namespace}, &pod); err != nil {
+			return err
+		}
+		// Blast radius check
+		if pod.Labels["astrawatch.io/critical"] == "true" {
+			return fmt.Errorf("restart blocked by blast-radius check: pod is critical")
+		}
+		return r.Delete(ctx, &pod)
 
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal payload: %w", err)
-	}
+	case "RolloutDeployment":
+		deployName := rule.Spec.Action.Parameters["deploymentName"]
+		if deployName == "" {
+			return fmt.Errorf("deploymentName parameter missing")
+		}
+		var deploy appsv1.Deployment
+		if err := r.Get(ctx, client.ObjectKey{Name: deployName, Namespace: rule.Namespace}, &deploy); err != nil {
+			return err
+		}
+		if deploy.Spec.Template.Annotations == nil {
+			deploy.Spec.Template.Annotations = make(map[string]string)
+		}
+		deploy.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+		return r.Update(ctx, &deploy)
 
-	req, err := http.NewRequest("POST", r.OrchestratorURL+"/api/v1/healing/trigger", bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	// Using a static operator token for now, in a real system this would come from a secret
-	req.Header.Set("Authorization", "Bearer mock-team-jwt")
-	req.Header.Set("Idempotency-Key", rule.Name+"-"+fmt.Sprintf("%d", time.Now().Unix()))
+	case "ScaleReplica":
+		deployName := rule.Spec.Action.Parameters["deploymentName"]
+		replicasStr := rule.Spec.Action.Parameters["replicas"]
+		if deployName == "" || replicasStr == "" {
+			return fmt.Errorf("deploymentName or replicas missing")
+		}
+		replicas, err := strconv.Atoi(replicasStr)
+		if err != nil || replicas < 1 {
+			return fmt.Errorf("invalid replicas: %s", replicasStr)
+		}
+		var deploy appsv1.Deployment
+		if err := r.Get(ctx, client.ObjectKey{Name: deployName, Namespace: rule.Namespace}, &deploy); err != nil {
+			return err
+		}
+		// Blast-radius check
+		if replicas > 100 {
+			return fmt.Errorf("scale blocked by blast-radius check: requested %d replicas > max 100", replicas)
+		}
+		var rep32 int32 = int32(replicas)
+		deploy.Spec.Replicas = &rep32
+		return r.Update(ctx, &deploy)
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to call orchestrator: %w", err)
+	default:
+		return fmt.Errorf("unsupported action type: %s", rule.Spec.Action.Type)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("orchestrator returned status %d", resp.StatusCode)
-	}
-
-	return nil
 }
 
 func (r *AutoHealingRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {

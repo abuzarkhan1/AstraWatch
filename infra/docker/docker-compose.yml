@@ -1,16 +1,21 @@
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.5.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - astrawatch-net
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.5.0
     depends_on:
       - zookeeper
     ports:
@@ -23,6 +28,11 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - astrawatch-net
 
@@ -37,6 +47,11 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init-postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U astrawatch -d astrawatch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - astrawatch-net
 
@@ -48,6 +63,11 @@ services:
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - ./init-clickhouse.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - astrawatch-net
 
@@ -55,143 +75,17 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    networks:
-      - astrawatch-net
-
-#  elasticsearch:
-#    image: elasticsearch:7.17.10
-#    environment:
-#      - discovery.type=single-node
-#      - xpack.security.enabled=false
-#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-#    ports:
-#      - "9200:9200"
-#    networks:
-#      - astrawatch-net
-
-  collector:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.collector
-    ports:
-      - "8080:8080"
-    environment:
-      PORT: "8080"
-      KAFKA_BROKERS: kafka:29092
-      CLICKHOUSE_ADDR: clickhouse:9000
-      CLICKHOUSE_DB: astrawatch
-      REDIS_ADDR: redis:6379
-      JWT_SECRET: dev-secret
-      K8S_IN_CLUSTER: "false"
-    depends_on:
-      - kafka
-      - clickhouse
-      - redis
-    networks:
-      - astrawatch-net
-
-  analyzer:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.analyzer
-    ports:
-      - "8000:8000"
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      CLICKHOUSE_HOST: clickhouse
-      REDIS_URL: redis://redis:6379/0
-      JWT_SECRET: dev-secret
-    depends_on:
-      - kafka
-      - clickhouse
-      - redis
-    networks:
-      - astrawatch-net
-
-  orchestrator:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.orchestrator
-    ports:
-      - "8081:8081"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/astrawatch
-      SPRING_DATASOURCE_USERNAME: astrawatch
-      SPRING_DATASOURCE_PASSWORD: astrawatch
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_DATA_REDIS_HOST: redis
-      SERVER_PORT: 8081
-    depends_on:
-      - postgres
-      - kafka
-      - redis
-    networks:
-      - astrawatch-net
-
-  realtime:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.realtime
-    ports:
-      - "3001:3001"
-    environment:
-      KAFKA_BROKERS: kafka:29092
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: dev-secret
-      PORT: 3001
-    depends_on:
-      - kafka
-      - redis
-    networks:
-      - astrawatch-net
-
-  cxx-agent:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.cxx-agent
-    environment:
-      ASTRAWATCH_AGENT_ID: agent-1
-      HOSTNAME: cxx-agent
-      ASTRAWATCH_CLUSTER: default
-      ASTRAWATCH_COLLECTOR_ADDR: collector:8080
-      ASTRAWATCH_BATCH_INTERVAL_MS: "500"
-      ASTRAWATCH_BUFFER_PATH: /var/lib/astrawatch/agent_buffer
-      ASTRAWATCH_BUFFER_SIZE_MB: "100"
-      ASTRAWATCH_ENABLE_SCHED: "false"
-      ASTRAWATCH_ENABLE_TCP: "false"
-      ASTRAWATCH_ENABLE_BLOCK_IO: "false"
-    volumes:
-      - agent-buffer:/var/lib/astrawatch
-    depends_on:
-      - collector
-    networks:
-      - astrawatch-net
-    restart: unless-stopped
-
-  operator:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.operator
-    networks:
-      - astrawatch-net
-
-  frontend:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.frontend
-    ports:
-      - "5173:80"
-    depends_on:
-      - collector
-      - orchestrator
-      - realtime
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - astrawatch-net
 
 volumes:
   postgres-data:
   clickhouse-data:
-  agent-buffer:
 
 networks:
   astrawatch-net:

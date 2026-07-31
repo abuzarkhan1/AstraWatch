@@ -16,7 +16,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class StatusPageService implements StatusPagePort {
 
     private final StatusPageRepository statusPageRepository;

@@ -10,8 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Slf4j
 public class AnalyzerClient {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AnalyzerClient.class);
 
     private final WebClient webClient;
 

@@ -247,7 +247,7 @@ func corsMiddleware() gin.HandlerFunc {
 func authMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
-		if path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" {
+		if path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" {
 			c.Next()
 			return
 		}
@@ -327,7 +327,12 @@ func getServiceHealth(c *gin.Context) {
 
 func updateService(c *gin.Context) {
 	serviceID := c.Param("id")
-	writeEnvelopeOuter(c, http.StatusOK, gin.H{"id": serviceID, "message": "service updated"}, nil)
+	var req map[string]interface{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeEnvelopeOuter(c, http.StatusBadRequest, nil, gin.H{"error": "invalid payload"})
+		return
+	}
+	writeEnvelopeOuter(c, http.StatusOK, gin.H{"id": serviceID, "message": "service updated", "updated": req}, nil)
 }
 
 func getServiceDependencies(c *gin.Context) {
@@ -336,13 +341,19 @@ func getServiceDependencies(c *gin.Context) {
 		"id": serviceID,
 		"dependencies": []gin.H{
 			{"id": "svc-db", "name": "postgres-primary", "type": "database"},
+			{"id": "svc-redis", "name": "redis-cache", "type": "cache"},
 		},
 	}, nil)
 }
 
 func submitServiceScorecard(c *gin.Context) {
 	serviceID := c.Param("id")
-	writeEnvelopeOuter(c, http.StatusOK, gin.H{"id": serviceID, "message": "scorecard submitted"}, nil)
+	var req map[string]interface{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeEnvelopeOuter(c, http.StatusBadRequest, nil, gin.H{"error": "invalid payload"})
+		return
+	}
+	writeEnvelopeOuter(c, http.StatusOK, gin.H{"id": serviceID, "message": "scorecard submitted", "scorecard": req}, nil)
 }
 
 

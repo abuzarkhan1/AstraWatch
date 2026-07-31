@@ -16,8 +16,9 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class IncidentCommandService {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IncidentCommandService.class);
 
     private final IncidentRepository incidentRepository;
     private final IncidentEventRepository eventRepository;

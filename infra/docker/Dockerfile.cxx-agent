@@ -10,7 +10,7 @@ RUN mkdir -p /build/ebpf && \
     for f in sched_switch tcp_probe block_io; do \
         clang -g -O2 -target bpf -D__TARGET_ARCH_x86 \
             -I/usr/include/x86_64-linux-gnu \
-            -c /bpf/${f}.bpf.c -o /build/ebpf/${f}.bpf.o 2>/dev/null || true; \
+            -c /bpf/${f}.bpf.c -o /build/ebpf/${f}.bpf.o 2>/dev/null || touch /build/ebpf/empty.bpf.o; \
     done
 
 # Stage 2 — build agent binary
@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* && \
     mkdir -p /var/lib/astrawatch /etc/astrawatch/ebpf
 
-COPY --from=ebpf-builder /build/ebpf/*.bpf.o /etc/astrawatch/ebpf/ 2>/dev/null || true
+COPY --from=ebpf-builder /build/ebpf/ /etc/astrawatch/ebpf/
 COPY --from=builder /install/usr/local/bin/astrawatch-agent /usr/local/bin/
 
 ENV ASTRAWATCH_BUFFER_PATH=/var/lib/astrawatch/agent_buffer

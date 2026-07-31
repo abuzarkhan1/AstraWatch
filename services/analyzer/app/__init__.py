@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.kafka_client import kafka_client
 from app.ml.ensemble import EnsembleDetector
-from app.routers import anomaly, predict, rootcause, models
+from app.routers import anomaly, predict, rootcause
 from app.schemas import AnomalyDetectRequest, MetricPoint
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,6 @@ app.add_middleware(
 app.include_router(anomaly.router)
 app.include_router(predict.router)
 app.include_router(rootcause.router)
-app.include_router(models.router)
 
 
 @app.get("/v1/health")

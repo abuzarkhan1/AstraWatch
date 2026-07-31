@@ -13,8 +13,9 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class AnomalyEventConsumer {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AnomalyEventConsumer.class);
 
     private final IncidentCommandService incidentService;
     private final ObjectMapper objectMapper;

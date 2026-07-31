@@ -1,4 +1,6 @@
 import logging
+import os
+import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
@@ -24,8 +26,36 @@ logger = logging.getLogger(__name__)
 class AnomalyService:
     def __init__(self):
         self.detector = EnsembleDetector()
-        self._feedback_store: List[AnomalyFeedback] = []
         self._model_registry_cache: dict = {}
+
+    def _get_pg_connection(self):
+        import psycopg2
+        return psycopg2.connect(
+            host=os.getenv("POSTGRES_HOST", "localhost"),
+            port=int(os.getenv("POSTGRES_PORT", "5432")),
+            dbname=os.getenv("POSTGRES_DB", "astrawatch"),
+            user=os.getenv("POSTGRES_USER", "astrawatch"),
+            password=os.getenv("POSTGRES_PASSWORD", "astrawatch")
+        )
+
+    def _init_pg_tables(self):
+        try:
+            with self._get_pg_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS anomaly_feedback (
+                            id SERIAL PRIMARY KEY,
+                            anomaly_id VARCHAR(255) NOT NULL,
+                            is_true_positive BOOLEAN NOT NULL,
+                            actual_severity VARCHAR(50),
+                            notes TEXT,
+                            user_id VARCHAR(100) NOT NULL,
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                        );
+                    """)
+                conn.commit()
+        except Exception as e:
+            logger.error(f"Failed to init PG tables: {e}")
 
     async def detect_anomaly(
         self, request: AnomalyDetectRequest, use_deep_learning: bool = False
@@ -62,10 +92,14 @@ class AnomalyService:
     async def root_cause_analysis(
         self, request: RootCauseRequest
     ) -> RootCauseResult:
+        service_id = getattr(request, 'serviceId', None)
+        if not service_id:
+            service_id = request.incidentId
+
         metric_groups = {
-            "cpu_usage": self._get_recent_values(request.incidentId, "cpu_usage"),
-            "memory_usage": self._get_recent_values(request.incidentId, "memory_usage"),
-            "latency": self._get_recent_values(request.incidentId, "latency"),
+            "cpu_usage": self._get_recent_values(service_id, "cpu_usage"),
+            "memory_usage": self._get_recent_values(service_id, "memory_usage"),
+            "latency": self._get_recent_values(service_id, "latency"),
         }
 
         if len(metric_groups) < 2:
@@ -99,7 +133,18 @@ class AnomalyService:
     def _get_recent_values(
         self, service_id: str, metric: str
     ) -> List[float]:
-        _ = service_id
+        try:
+            import httpx
+            clickhouse_url = os.getenv("CLICKHOUSE_URL", "http://localhost:8123")
+            query = f"SELECT value FROM raw_metrics WHERE service_id = '{service_id}' AND metric_name = '{metric}' ORDER BY ts DESC LIMIT 60"
+            response = httpx.post(clickhouse_url, data=query, timeout=5.0)
+            if response.status_code == 200:
+                lines = response.text.strip().split('\n')
+                if lines and lines[0]:
+                    return [float(line) for line in lines][::-1]
+        except Exception as e:
+            logger.error(f"Clickhouse query error: {e}")
+            
         base = 50.0 if "cpu" in metric else 200.0 if "latency" in metric else 100.0
         return [base + (i * 0.5) + np.random.randn() * 5 for i in range(60)]
 
@@ -146,18 +191,38 @@ class AnomalyService:
     async def submit_feedback(
         self, anomaly_id: str, feedback: dict, user_id: str
     ) -> dict:
-        feedback_entry = AnomalyFeedback(
-            anomalyId=anomaly_id,
-            feedback=feedback,
-            userId=user_id,
-            createdAt=datetime.utcnow(),
-        )
-        self._feedback_store.append(feedback_entry)
-        logger.info(
-            f"Feedback recorded for anomaly {anomaly_id}: "
-            f"isTruePositive={feedback.get('isTruePositive')}"
-        )
-        return {"status": "recorded", "anomalyId": anomaly_id}
+        self._init_pg_tables()
+        try:
+            with self._get_pg_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO anomaly_feedback (anomaly_id, is_true_positive, actual_severity, notes, user_id)
+                        VALUES (%s, %s, %s, %s, %s)
+                        """,
+                        (
+                            anomaly_id,
+                            feedback.get('isTruePositive', True),
+                            feedback.get('actualSeverity', ''),
+                            feedback.get('notes', ''),
+                            user_id
+                        )
+                    )
+                conn.commit()
+            
+            # Basic retraining trigger check
+            if not feedback.get('isTruePositive', True):
+                await self.retrain_model("isolation_forest")
+                
+            logger.info(
+                f"Feedback recorded for anomaly {anomaly_id}: "
+                f"isTruePositive={feedback.get('isTruePositive')}"
+            )
+            return {"status": "recorded", "anomalyId": anomaly_id}
+        except Exception as e:
+            logger.error(f"Failed to record feedback: {e}")
+            return {"status": "error", "error": str(e)}
 
 
 anomaly_service = AnomalyService()
+

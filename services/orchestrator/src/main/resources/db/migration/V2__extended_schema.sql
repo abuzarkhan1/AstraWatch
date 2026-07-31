@@ -265,7 +265,7 @@ CREATE TABLE IF NOT EXISTS dead_letter_queue (
     id BIGSERIAL PRIMARY KEY,
     topic VARCHAR(100) NOT NULL,
     partition INT,
-    offset BIGINT,
+    "offset" BIGINT,
     key VARCHAR(500),
     value TEXT,
     error_message TEXT,
@@ -371,15 +371,6 @@ CREATE TABLE IF NOT EXISTS billing_subscriptions (
     current_period_end DATE,
     stripe_customer_id VARCHAR(100),
     created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- ── SLO Definitions ──────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS slo_definitions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    service_id UUID REFERENCES services(id),
-    metric VARCHAR(100),
-    target_percentage NUMERIC(5,2),
-    window_days SMALLINT DEFAULT 30
 );
 
 -- ── Idempotency Keys ─────────────────────────────────────────────────────

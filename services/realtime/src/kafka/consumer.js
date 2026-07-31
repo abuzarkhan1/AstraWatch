@@ -39,6 +39,8 @@ class KafkaConsumer extends EventEmitter {
             key,
             value,
             topic,
+            offset: message.offset,
+            timestamp: message.timestamp,
           });
         } catch (err) {
           console.error(`Error processing Kafka message from ${topic}:`, err.message);

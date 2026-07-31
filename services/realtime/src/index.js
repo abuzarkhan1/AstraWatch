@@ -125,8 +125,9 @@ class RealtimeGateway {
       // ── Service subscription ────────────────────────────────────────
       socket.on('service:subscribe', ({ serviceId }) => {
         if (serviceId) {
-          socket.join(`service:${serviceId}`);
-          this.trackSubscription(socket.id, `service:${serviceId}`);
+          const tenantPrefix = socket.user?.tenantId ? `tenant:${socket.user.tenantId}:` : '';
+          socket.join(`${tenantPrefix}service:${serviceId}`);
+          this.trackSubscription(socket.id, `${tenantPrefix}service:${serviceId}`);
         }
       });
 
@@ -171,22 +172,25 @@ class RealtimeGateway {
   async setupKafkaBridge() {
     await this.kafkaConsumer.connect();
 
-    this.kafkaConsumer.on('*', ({ eventType, key, value, topic }) => {
-      if (this.isDuplicate(eventType, key)) return;
+    this.kafkaConsumer.on('*', ({ eventType, key, value, topic, offset, timestamp }) => {
+      const dedupKey = key || `${topic}-${offset}-${timestamp}`;
+      if (this.isDuplicate(eventType, dedupKey)) return;
 
-      this.cacheEvent(eventType, key, value);
+      this.cacheEvent(eventType, dedupKey, value);
 
       this.io.to('dashboard:all').emit(eventType, {
         ...value,
-        _meta: { key, topic, timestamp: new Date().toISOString() },
+        _meta: { key: dedupKey, topic, timestamp: new Date().toISOString() },
       });
 
       if (value.serviceId) {
-        this.io.to(`service:${value.serviceId}`).emit(eventType, value);
+        const tenantPrefix = value.tenantId ? `tenant:${value.tenantId}:` : '';
+        this.io.to(`${tenantPrefix}service:${value.serviceId}`).emit(eventType, value);
       }
 
       if (value.incidentId) {
-        this.io.to(`incident:${value.incidentId}`).emit(eventType, value);
+        const tenantPrefix = value.tenantId ? `tenant:${value.tenantId}:` : '';
+        this.io.to(`${tenantPrefix}incident:${value.incidentId}`).emit(eventType, value);
       }
     });
   }

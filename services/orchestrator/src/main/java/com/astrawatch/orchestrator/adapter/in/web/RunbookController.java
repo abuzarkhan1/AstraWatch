@@ -51,11 +51,13 @@ public class RunbookController {
     @PostMapping("/{id}/execute")
     public ResponseEntity<ApiResponse<Map<String, Object>>> executeRunbook(@PathVariable UUID id,
                                                                             @RequestBody Map<String, Object> body) {
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.accepted());
+        String executionId = runbookService.executeRunbook(id, body);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.accepted(Map.of("executionId", executionId)));
     }
 
     @GetMapping("/{id}/executions")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getExecutions(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("executions", List.of())));
+        List<Map<String, Object>> executions = runbookService.getExecutions(id);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("executions", executions)));
     }
 }

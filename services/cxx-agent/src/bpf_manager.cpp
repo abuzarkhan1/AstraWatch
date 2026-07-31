@@ -44,6 +44,7 @@ bool BPFManager::load_block_io_probe() {
 struct attach_ctx {
     const char* tracepoint;
     bool success;
+    std::vector<struct bpf_link*>* links;
 };
 
 static int attach_prog_cb(struct bpf_program* prog, void* ctx_ptr) {
@@ -54,6 +55,7 @@ static int attach_prog_cb(struct bpf_program* prog, void* ctx_ptr) {
                 ctx->tracepoint, strerror(-errno));
         return 0;
     }
+    ctx->links->push_back(link);
     ctx->success = true;
     return 0;
 }
@@ -61,9 +63,9 @@ static int attach_prog_cb(struct bpf_program* prog, void* ctx_ptr) {
 bool BPFManager::attach_all() {
     if (!loaded_) return false;
 
-    auto attach_obj = [](struct bpf_object* obj, const char* tp) -> bool {
+    auto attach_obj = [this](struct bpf_object* obj, const char* tp) -> bool {
         if (!obj) return false;
-        attach_ctx ctx{tp, false};
+        attach_ctx ctx{tp, false, &links_};
         bpf_program__foreach_defined_program(obj, attach_prog_cb, &ctx);
         return ctx.success;
     };
@@ -80,13 +82,14 @@ bool BPFManager::attach_all() {
 void BPFManager::detach_all() {
     auto detach_obj = [](struct bpf_object** obj) {
         if (!*obj) return;
-        struct bpf_link* link;
-        while ((link = bpf_program__next_link(nullptr, *obj)) != nullptr) {
-            bpf_link__destroy(link);
-        }
         bpf_object__close(*obj);
         *obj = nullptr;
     };
+
+    for (auto* link : links_) {
+        bpf_link__destroy(link);
+    }
+    links_.clear();
 
     detach_obj(&sched_obj_);
     detach_obj(&tcp_obj_);
