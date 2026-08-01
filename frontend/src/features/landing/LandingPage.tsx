@@ -1,6 +1,6 @@
 import React from 'react';
 import { HeroSection } from '@/components/ui/hero-section-9';
-import FeaturesSection from './components/FeaturesSection';
+import { Features } from '@/components/ui/features-4';
 import ArchitectureSection from './components/ArchitectureSection';
 import LiveDemoPreview from './components/LiveDemoPreview';
 import PricingSection from './components/PricingSection';
@@ -22,7 +22,7 @@ export default function LandingPage() {
         <HeroSection />
         
         <div id="features" className="w-full max-w-full overflow-x-hidden [content-visibility:auto] [contain-intrinsic-size:1px_800px]">
-          <FeaturesSection />
+          <Features />
         </div>
 
         <div id="architecture" className="w-full max-w-full overflow-x-hidden [content-visibility:auto] [contain-intrinsic-size:1px_800px]">

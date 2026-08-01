@@ -26,7 +26,7 @@ function ServiceSLO({ svc }: { svc: any }) {
   const isBreaching = current < target;
 
   return (
-    <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl space-y-3 hover:border-blue-500/40 transition-colors">
+    <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 text-white space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-medium">{svc.name}</h3>
         {isBreaching ? (

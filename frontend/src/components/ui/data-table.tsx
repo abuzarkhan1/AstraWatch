@@ -38,7 +38,7 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="w-full text-white bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl relative z-10">
+    <div className="w-full text-white backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 relative z-10 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
       <div className="flex items-center py-4">
         <input
           placeholder="Search..."

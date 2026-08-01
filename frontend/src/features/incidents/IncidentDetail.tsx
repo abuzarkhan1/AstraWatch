@@ -37,7 +37,7 @@ export default function IncidentDetail() {
         Back to incidents
       </Link>
 
-      <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10">
+      <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-white relative z-10 mb-1">{incident.title || 'Incident'}</h1>
@@ -88,7 +88,7 @@ export default function IncidentDetail() {
       </div>
 
       {timeline && timeline.length > 0 && (
-        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10">
+        <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
           <h2 className="text-sm font-semibold text-gray-300 mb-4">Timeline</h2>
           <div className="space-y-3">
             {timeline.map((event: any) => (

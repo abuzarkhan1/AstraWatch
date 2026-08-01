@@ -128,8 +128,8 @@ export default function TraceExplorerPage() {
               traces.map((trace) => (
                 <div
                   key={trace.traceId}
-                  className={`bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border text-white rounded-2xl p-6 shadow-xl cursor-pointer transition-colors ${
-                    selectedTrace?.traceId === trace.traceId ? 'border-blue-500/50 bg-blue-500/10' : 'border-neutral-800 hover:border-neutral-700'
+                  className={`backdrop-blur-2xl bg-neutral-950/40 border text-white rounded-2xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] cursor-pointer hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 ${
+                    selectedTrace?.traceId === trace.traceId ? 'border-blue-500/50 bg-blue-500/10' : 'border-white/10 hover:border-blue-500/40'
                   }`}
                   onClick={() => setSelectedTrace(trace)}
                 >
@@ -154,7 +154,7 @@ export default function TraceExplorerPage() {
 
           <div className="lg:col-span-1">
             {selectedTrace ? (
-              <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl h-fit">
+              <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] text-white rounded-2xl p-6 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 h-fit">
                 <h2 className="text-lg font-semibold mb-4 text-white">Trace Detail</h2>
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-xs text-gray-400">
@@ -176,7 +176,7 @@ export default function TraceExplorerPage() {
                 </div>
               </div>
             ) : (
-              <div className="text-center text-gray-500 py-12 text-sm bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl shadow-xl">
+              <div className="text-center text-gray-500 py-12 text-sm backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] text-white rounded-2xl hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
                 Select a trace to view details
               </div>
             )}

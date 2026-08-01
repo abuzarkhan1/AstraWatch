@@ -114,7 +114,7 @@ export function MetricsChart({
   };
 
   return (
-    <div className="w-full rounded-xl overflow-hidden border border-white/5 shadow-lg">
+    <div className="w-full overflow-hidden backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
       <ReactECharts
         option={options}
         style={{ height: height, width: '100%' }}

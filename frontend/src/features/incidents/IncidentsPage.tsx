@@ -44,7 +44,7 @@ export default function IncidentsPage() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10 overflow-hidden">
+      <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 overflow-hidden hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

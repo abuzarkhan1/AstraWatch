@@ -12,7 +12,7 @@ function StatCard({ icon: Icon, label, value, change, color }: {
   color: string;
 }) {
   return (
-    <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10 hover:border-white/20 transition-all">
+    <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>
         <Icon className={`w-5 h-5 ${color}`} />
@@ -110,7 +110,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10">
+        <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
           <h2 className="text-3xl font-bold tracking-tight text-white relative z-10 mb-4">Recent Incidents</h2>
           {incidents.slice(0, 5).map((incident) => (
             <a
@@ -131,7 +131,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10">
+        <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
           <h2 className="text-3xl font-bold tracking-tight text-white relative z-10 mb-4">Service Health</h2>
           <div className="space-y-2">
             {services.slice(0, 8).map((service) => (
