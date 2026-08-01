@@ -16,8 +16,8 @@ func main() {
 	billingHandler := handlers.NewBillingHandler(cfg, stripeClient)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/v1/billing/checkout", billingHandler.HandleCheckout)
-	mux.HandleFunc("POST /api/v1/billing/portal", billingHandler.HandlePortal)
+	mux.HandleFunc("POST /api/v1/billing/checkout-session", billingHandler.HandleCheckout)
+	mux.HandleFunc("POST /api/v1/billing/portal-session", billingHandler.HandlePortal)
 	mux.HandleFunc("GET /api/v1/billing/subscriptions", billingHandler.HandleSubscriptions)
 	mux.HandleFunc("POST /api/v1/billing/webhook", billingHandler.HandleWebhook)
 	mux.HandleFunc("GET /healthz", billingHandler.HandleHealthz)

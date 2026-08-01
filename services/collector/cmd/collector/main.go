@@ -119,6 +119,8 @@ func main() {
 			agentGroup.GET("/health", agentHandler.HandleAgentHealth)
 		}
 
+		v1.POST("/telemetry", handler.IngestMetricsBatch)
+
 		v1.GET("/query", func(c *gin.Context) {
 			serviceID := c.Query("service")
 			metric := c.Query("metric")
@@ -209,8 +211,8 @@ func loadConfig() Config {
 		KafkaBrokers:      getEnvAsSlice("KAFKA_BROKERS", []string{"localhost:9092"}),
 		ClickHouseAddr:    getEnv("CLICKHOUSE_ADDR", "localhost:9000"),
 		ClickHouseDB:      getEnv("CLICKHOUSE_DB", "astrawatch"),
-		ClickHouseUser:    getEnv("CLICKHOUSE_USER", "default"),
-		ClickHousePassword: getEnv("CLICKHOUSE_PASSWORD", ""),
+		ClickHouseUser:    getEnv("CLICKHOUSE_USER", "astrawatch"),
+		ClickHousePassword: getEnv("CLICKHOUSE_PASSWORD", "astrawatch"),
 		RedisAddr:         getEnv("REDIS_ADDR", "localhost:6379"),
 		JWTSecret:         getEnv("JWT_SECRET", "astrawatch-super-secret-jwt-token-signing-key-2026-secure-32bytes-long!"),
 	}
@@ -253,7 +255,7 @@ func corsMiddleware() gin.HandlerFunc {
 func authMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
-		if path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" {
+		if path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" || path == "/v1/telemetry" || path == "/v1/query" {
 			c.Next()
 			return
 		}

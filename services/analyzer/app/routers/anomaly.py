@@ -23,7 +23,7 @@ async def detect_anomaly(
     return result
 
 
-@router.post("/{anomaly_id}/feedback")
+@router.post("/feedback/{anomaly_id}")
 async def submit_feedback(
     anomaly_id: str,
     feedback: FeedbackRequest,

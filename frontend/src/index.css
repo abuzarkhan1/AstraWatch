@@ -28,11 +28,11 @@
 
   --container-container: 1280px;
   --animate-marquee: marquee var(--duration) linear infinite;
-}
 
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(calc(-100% - var(--gap))); }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-25% - var(--gap) / 4)); }
+  }
 }
 
 /* Liquid Glassmorphism Design Utilities */

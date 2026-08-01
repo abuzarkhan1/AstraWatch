@@ -114,6 +114,7 @@ app.include_router(predict.router)
 app.include_router(rootcause.router)
 
 
+@app.get("/healthz")
 @app.get("/v1/health")
 async def health():
     return {

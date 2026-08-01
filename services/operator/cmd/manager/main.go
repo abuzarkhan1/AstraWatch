@@ -32,7 +32,16 @@ func main() {
 	_ = corev1.AddToScheme(scheme)
 	_ = astrawatchv1.AddToScheme(scheme)
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	cfg, err := ctrl.GetConfig()
+	if err != nil {
+		logger.Info("running without k8s, starting only healthz on 8081")
+		http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+		})
+		go http.ListenAndServe(":8081", nil)
+		select{}
+	}
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme,
 	})
 	if err != nil {

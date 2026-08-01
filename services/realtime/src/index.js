@@ -251,7 +251,7 @@ class RealtimeGateway {
 
 import http from 'http';
 const server = http.createServer((req, res) => {
-  if (req.url === '/health' || req.url === '/v1/health') {
+  if (req.url === '/health' || req.url === '/v1/health' || req.url === '/healthz') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', service: 'realtime', uptime: process.uptime() }));
   } else {
@@ -261,7 +261,7 @@ const server = http.createServer((req, res) => {
 });
 
 const gateway = new RealtimeGateway(server);
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8084;
 
 createTerminus(server, {
   signal: 'SIGINT',
