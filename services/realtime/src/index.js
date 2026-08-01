@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import Redis from 'ioredis';
-import winston from 'winston';
+import pino from 'pino';
+import { createTerminus } from '@godaddy/terminus';
 
 import config from './config.js';
 import KafkaConsumer from './kafka/consumer.js';
@@ -9,15 +10,8 @@ import { createRedisAdapter } from './redis/adapter.js';
 import { setupDashboardSocket } from './sockets/dashboard.socket.js';
 import { setupIncidentSocket } from './sockets/incidents.socket.js';
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console(),
-  ],
+const logger = pino({
+  level: 'info'
 });
 
 class RealtimeGateway {
@@ -268,6 +262,20 @@ const server = http.createServer((req, res) => {
 
 const gateway = new RealtimeGateway(server);
 const PORT = process.env.PORT || 3001;
+
+createTerminus(server, {
+  signal: 'SIGINT',
+  healthChecks: {
+    '/healthcheck': async () => {
+      return Promise.resolve();
+    }
+  },
+  onSignal: async () => {
+    logger.info('Server is starting cleanup');
+    await gateway.shutdown();
+  }
+});
+
 server.listen(PORT, () => {
   logger.info(`Realtime gateway listening on port ${PORT}`);
 });

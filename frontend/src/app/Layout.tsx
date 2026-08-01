@@ -3,6 +3,7 @@ import { useAppStore } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Activity, Shield, AlertTriangle, BarChart3, Network, Bell, LayoutGrid, ScrollText, GitBranch, Menu, X, LogOut, Search, Settings, Book, FileText, Globe, Box } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Toaster } from 'sonner';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -192,6 +193,7 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+      <Toaster theme="dark" position="bottom-right" />
     </div>
   );
 }

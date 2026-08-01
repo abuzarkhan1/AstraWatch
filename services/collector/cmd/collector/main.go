@@ -24,6 +24,8 @@ import (
 	"github.com/astrawatch/collector/internal/ratelimit"
 	"github.com/astrawatch/collector/internal/validate"
 	"github.com/astrawatch/collector/pkg"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
 
@@ -75,8 +77,12 @@ func main() {
 
 	queryService := query.NewQueryService(clickConn)
 
+	// OpenTelemetry tracer initialization
+	_ = otel.Tracer("collector")
+
 	router := gin.Default()
 
+	router.Use(otelgin.Middleware("collector"))
 	router.Use(traceMiddleware())
 	router.Use(corsMiddleware())
 	router.Use(authMiddleware(cfg.JWTSecret))

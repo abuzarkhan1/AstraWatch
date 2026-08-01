@@ -1,11 +1,12 @@
 import asyncio
 import json
-import logging
+import structlog
 from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
@@ -14,7 +15,7 @@ from app.ml.ensemble import EnsembleDetector
 from app.routers import anomaly, predict, rootcause
 from app.schemas import AnomalyDetectRequest, MetricPoint
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 metrics_buffer: dict[str, list[MetricPoint]] = defaultdict(list)
@@ -97,6 +98,7 @@ app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
     lifespan=lifespan,
+    default_response_class=ORJSONResponse,
 )
 
 app.add_middleware(

@@ -16,3 +16,8 @@ statsmodels>=0.14.0
 pytest>=7.0.0
 clickhouse-connect
 psycopg2-binary
+onnxruntime
+joblib
+structlog
+tenacity
+orjson
