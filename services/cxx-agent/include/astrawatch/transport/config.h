@@ -12,6 +12,7 @@ struct AgentConfig {
     std::string agent_id;
     std::string hostname;
     std::string cluster = "default";
+    std::string tenant_id = "default";
 
     // Collector connection
     std::string collector_address = "localhost:8080";

@@ -1,13 +1,16 @@
 package com.astrawatch.orchestrator.application.service;
 
-import com.astrawatch.orchestrator.domain.model.HealingAction;
-import com.astrawatch.orchestrator.domain.model.Incident;
+import com.astrawatch.orchestrator.adapter.out.kafka.KafkaEventProducer;
+import com.astrawatch.orchestrator.adapter.out.persistence.GitHubRepositoryRepository;
 import com.astrawatch.orchestrator.adapter.out.persistence.HealingActionRepository;
 import com.astrawatch.orchestrator.adapter.out.persistence.IncidentRepository;
+import com.astrawatch.orchestrator.domain.model.HealingAction;
+import com.astrawatch.orchestrator.domain.model.Incident;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,24 +18,57 @@ import java.time.Instant;
 import java.util.*;
 
 @Service
-@RequiredArgsConstructor
 public class HealingOrchestrationService {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HealingOrchestrationService.class);
+    private static final String REDIS_HEALING_ENABLED_KEY = "astrawatch:healing:enabled";
+    private static final int MAX_HEALING_ATTEMPTS_PER_INCIDENT = 3;
 
     private final HealingActionRepository healingActionRepository;
     private final IncidentRepository incidentRepository;
     private final RiskScoringService riskScoringService;
     private final IncidentCommandService incidentCommandService;
-    private final AuthService authService;
+    private final NotificationService notificationService;
+    private final KafkaEventProducer kafkaEventProducer;
     private final ObjectMapper objectMapper;
+    private final StringRedisTemplate redisTemplate;
+    private final GitHubIntegrationService gitHubIntegrationService;
+    private final GitHubRepositoryRepository gitHubRepositoryRepository;
 
-    private static final int MAX_HEALING_ATTEMPTS_PER_INCIDENT = 3;
     private boolean healingEnabled = true;
+
+    // Gated auto-PR remediation: off by default. When enabled, an incident whose
+    // service has a strictly-scoped linked repo may generate a remediation PR
+    // (audit F4 boundary: never any-repo fallback, never mock tokens).
+    @Value("${astrawatch.healing.auto-pr.enabled:false}")
+    private boolean autoPREnabled = false;
+
+    @Autowired
+    public HealingOrchestrationService(HealingActionRepository healingActionRepository,
+                                       IncidentRepository incidentRepository,
+                                       RiskScoringService riskScoringService,
+                                       IncidentCommandService incidentCommandService,
+                                       NotificationService notificationService,
+                                       KafkaEventProducer kafkaEventProducer,
+                                       ObjectMapper objectMapper,
+                                       @Autowired(required = false) StringRedisTemplate redisTemplate,
+                                       @Autowired(required = false) GitHubIntegrationService gitHubIntegrationService,
+                                       @Autowired(required = false) GitHubRepositoryRepository gitHubRepositoryRepository) {
+        this.healingActionRepository = healingActionRepository;
+        this.incidentRepository = incidentRepository;
+        this.riskScoringService = riskScoringService;
+        this.incidentCommandService = incidentCommandService;
+        this.notificationService = notificationService;
+        this.kafkaEventProducer = kafkaEventProducer;
+        this.objectMapper = objectMapper;
+        this.redisTemplate = redisTemplate;
+        this.gitHubIntegrationService = gitHubIntegrationService;
+        this.gitHubRepositoryRepository = gitHubRepositoryRepository;
+    }
 
     @Transactional
     public HealingAction triggerHealing(UUID incidentId, String actionType, Map<String, Object> parameters) {
-        if (!healingEnabled) {
+        if (!isHealingEnabled()) {
             throw new IllegalStateException("Auto-healing is globally disabled");
         }
 
@@ -53,32 +89,43 @@ public class HealingOrchestrationService {
             throw new RuntimeException("Failed to serialize parameters", e);
         }
 
+        HealingAction.HealingStatus initialStatus = determineInitialStatus(riskScore);
+
         HealingAction action = HealingAction.builder()
                 .incidentId(incidentId)
                 .actionType(actionType)
                 .parameters(paramsJson)
                 .riskScore(riskScore)
-                .status(determineInitialStatus(riskScore))
+                .status(initialStatus)
                 .build();
 
         action = healingActionRepository.save(action);
 
         incidentCommandService.addEvent(incidentId, "healing.triggered",
-                String.format("{\"actionId\":\"%s\",\"actionType\":\"%s\",\"riskScore\":%d}",
-                        action.getId(), actionType, riskScore));
+                String.format("{\"actionId\":\"%s\",\"actionType\":\"%s\",\"riskScore\":%d,\"status\":\"%s\"}",
+                        action.getId(), actionType, riskScore, initialStatus));
 
-        log.info("Healing triggered: actionId={}, incidentId={}, type={}, riskScore={}",
-                action.getId(), incidentId, actionType, riskScore);
+        log.info("Healing triggered: actionId={}, incidentId={}, type={}, riskScore={}, status={}",
+                action.getId(), incidentId, actionType, riskScore, initialStatus);
+
+        try {
+            notificationService.sendHealingStatusEmail(action, initialStatus.name());
+        } catch (Exception e) {
+            log.error("Failed to send healing triggered email: {}", e.getMessage());
+        }
 
         return action;
     }
 
     private HealingAction.HealingStatus determineInitialStatus(int riskScore) {
         if (riskScore < 40) {
+            log.info("Low risk score ({}), auto-approving healing action", riskScore);
             return HealingAction.HealingStatus.APPROVED;
         } else if (riskScore <= 75) {
+            log.info("Medium risk score ({}), requiring human approval (PENDING)", riskScore);
             return HealingAction.HealingStatus.PENDING;
         } else {
+            log.warn("HIGH risk score ({}), explicitly requiring PENDING human approval", riskScore);
             return HealingAction.HealingStatus.PENDING;
         }
     }
@@ -94,6 +141,12 @@ public class HealingOrchestrationService {
 
         incidentCommandService.addEvent(action.getIncidentId(), "healing.approved",
                 String.format("{\"actionId\":\"%s\",\"approvedBy\":\"%s\"}", actionId, approvedBy));
+
+        try {
+            notificationService.sendHealingStatusEmail(action, "APPROVED");
+        } catch (Exception e) {
+            log.error("Failed to send healing approved email: {}", e.getMessage());
+        }
 
         return action;
     }
@@ -111,30 +164,32 @@ public class HealingOrchestrationService {
         action = healingActionRepository.save(action);
 
         incidentCommandService.addEvent(action.getIncidentId(), "healing.started",
-                String.format("{\"actionId\":\"%s\"}", actionId));
+                String.format("{\"actionId\":\"%s\",\"actionType\":\"%s\"}", actionId, action.getActionType()));
 
         try {
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-            String payload = String.format("{\"actionId\":\"%s\", \"actionType\":\"%s\", \"parameters\":%s}", 
-                actionId, action.getActionType(), action.getParameters());
-            
-            String serviceToken = authService.generateServiceToken("orchestrator");
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create("http://operator:8080/api/v1/healing/trigger"))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + serviceToken)
-                .header("Idempotency-Key", "heal-" + actionId.toString())
-                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload))
-                .build();
-                
-            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
-                .thenAccept(response -> {
-                    if (response.statusCode() >= 400) {
-                        log.error("Operator returned error: {}", response.body());
-                    }
-                });
+            Map<String, Object> eventPayload = new HashMap<>();
+            eventPayload.put("actionId", actionId.toString());
+            eventPayload.put("incidentId", action.getIncidentId().toString());
+            eventPayload.put("actionType", action.getActionType());
+            eventPayload.put("parameters", action.getParameters());
+            eventPayload.put("riskScore", action.getRiskScore());
+            eventPayload.put("timestamp", Instant.now().toString());
+
+            kafkaEventProducer.publish("healing-actions", actionId.toString(), eventPayload);
+
+            log.info("Published healing action to Kafka topic 'healing-actions': actionId={}", actionId);
         } catch (Exception e) {
-            log.error("Failed to trigger operator", e);
+            log.error("Failed to publish healing action event for actionId={}: {}", actionId, e.getMessage(), e);
+            action.setStatus(HealingAction.HealingStatus.FAILED);
+            healingActionRepository.save(action);
+            incidentCommandService.addEvent(action.getIncidentId(), "healing.failed",
+                    String.format("{\"actionId\":\"%s\",\"error\":\"%s\"}", actionId, e.getMessage()));
+        }
+
+        try {
+            notificationService.sendHealingStatusEmail(action, "EXECUTING");
+        } catch (Exception e) {
+            log.error("Failed to send healing executing email: {}", e.getMessage());
         }
 
         return action;
@@ -166,6 +221,12 @@ public class HealingOrchestrationService {
                 success ? "healing.completed" : "healing.failed",
                 String.format("{\"actionId\":\"%s\",\"success\":%b}", actionId, success));
 
+        try {
+            notificationService.sendHealingStatusEmail(action, success ? "COMPLETED" : "FAILED");
+        } catch (Exception e) {
+            log.error("Failed to send healing completion email: {}", e.getMessage());
+        }
+
         return action;
     }
 
@@ -182,15 +243,96 @@ public class HealingOrchestrationService {
         incidentCommandService.addEvent(action.getIncidentId(), "healing.rolled_back",
                 String.format("{\"actionId\":\"%s\",\"reason\":\"%s\"}", actionId, reason));
 
+        try {
+            notificationService.sendHealingStatusEmail(action, "ROLLED_BACK");
+        } catch (Exception e) {
+            log.error("Failed to send healing rollback email: {}", e.getMessage());
+        }
+
         return action;
+    }
+
+    @Transactional
+    public HealingAction rejectAction(UUID actionId, UUID rejectedBy, String reason) {
+        HealingAction action = healingActionRepository.findById(actionId)
+                .orElseThrow(() -> new IllegalArgumentException("Healing action not found: " + actionId));
+
+        // A rejected action must not be executed; mark it FAILED so the incident
+        // stays open for human investigation (no auto-resolution).
+        action.setStatus(HealingAction.HealingStatus.FAILED);
+        action.setApprovedBy(rejectedBy);
+        action.setCompletedAt(Instant.now());
+        action = healingActionRepository.save(action);
+
+        incidentCommandService.addEvent(action.getIncidentId(), "healing.rejected",
+                String.format("{\"actionId\":\"%s\",\"rejectedBy\":\"%s\",\"reason\":\"%s\"}",
+                        actionId, rejectedBy != null ? rejectedBy : "email", reason));
+
+        try {
+            notificationService.sendHealingStatusEmail(action, "REJECTED");
+        } catch (Exception e) {
+            log.error("Failed to send healing rejected email: {}", e.getMessage());
+        }
+
+        return action;
+    }
+
+    @Transactional
+    public boolean processAutomatedRemediationIfEligible(Incident incident, String aiAnalysis, String codePatch) {
+        if (!autoPREnabled) {
+            log.info("[DRY-RUN] Auto-remediation PR disabled (astrawatch.healing.auto-pr.enabled=false) for incident {}",
+                    incident == null ? "null" : incident.getId());
+            return false;
+        }
+        if (incident == null || incident.getServiceId() == null) {
+            return false;
+        }
+        // Strict service scoping: never fall back to "any repo in the system" — that
+        // could attribute a remediation to an unrelated tenant's repository (audit F4).
+        boolean hasLinkedRepo = gitHubRepositoryRepository != null
+                && gitHubRepositoryRepository.findByServiceId(incident.getServiceId()).isPresent();
+
+        if (!hasLinkedRepo) {
+            return false;
+        }
+
+        if (gitHubIntegrationService == null) {
+            return false;
+        }
+        try {
+            log.info("Linked GitHub repository found for serviceId={}, creating remediation PR", incident.getServiceId());
+            String prUrl = gitHubIntegrationService.createRemediationPullRequest(incident.getId(), aiAnalysis, codePatch);
+            log.info("Automated PR created successfully: {}", prUrl);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to automatically create remediation PR for incidentId={}: {}", incident.getId(), e.getMessage(), e);
+        }
+        return false;
     }
 
     public void setHealingEnabled(boolean enabled) {
         this.healingEnabled = enabled;
+        try {
+            if (redisTemplate != null) {
+                redisTemplate.opsForValue().set(REDIS_HEALING_ENABLED_KEY, String.valueOf(enabled));
+            }
+        } catch (Exception e) {
+            log.warn("Could not persist healingEnabled to Redis: {}", e.getMessage());
+        }
         log.info("Auto-healing globally {}", enabled ? "enabled" : "disabled");
     }
 
     public boolean isHealingEnabled() {
+        try {
+            if (redisTemplate != null) {
+                String val = redisTemplate.opsForValue().get(REDIS_HEALING_ENABLED_KEY);
+                if (val != null) {
+                    this.healingEnabled = Boolean.parseBoolean(val);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not read healingEnabled from Redis, fallback to in-memory: {}", e.getMessage());
+        }
         return healingEnabled;
     }
 }

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>AstraWatch Alert - Anomaly Detected</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; }
+        .header { border-bottom: 1px solid #30363d; padding-bottom: 16px; margin-bottom: 20px; }
+        .title { color: #f85149; font-size: 20px; font-weight: 600; margin: 0; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .badge-CRITICAL { background-color: #da3633; color: #ffffff; }
+        .badge-HIGH { background-color: #d97706; color: #ffffff; }
+        .badge-MEDIUM { background-color: #eab308; color: #000000; }
+        .badge-LOW { background-color: #238636; color: #ffffff; }
+        .detail-row { margin: 12px 0; font-size: 14px; }
+        .label { color: #8b949e; font-weight: 500; }
+        .value { color: #58a6ff; font-family: monospace; }
+        .description-box { background: #21262d; border-radius: 6px; padding: 12px; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+        .button { display: inline-block; background-color: #238636; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; margin-top: 16px; }
+        .footer { border-top: 1px solid #30363d; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #8b949e; text-align: center; }
+        .footer a { color: #58a6ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 class="title">⚠️ Anomaly Alert Detected</h2>
+        </div>
+        <p>A new incident has been automatically opened by AstraWatch observability system.</p>
+        
+        <div class="detail-row">
+            <span class="label">Severity:</span>
+            <span th:class="'badge badge-' + ${severity}" th:text="${severity}">HIGH</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Service ID:</span>
+            <span class="value" th:text="${serviceId}">service-123</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Incident ID:</span>
+            <span class="value" th:text="${incidentId}">uuid-here</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Title:</span>
+            <strong th:text="${title}">Anomaly detected</strong>
+        </div>
+
+        <div class="description-box">
+            <strong>Description & Impact:</strong><br/>
+            <span th:text="${description}">Anomaly score high</span>
+        </div>
+
+        <a th:href="${dashboardUrl}" class="button">View Incident in AstraWatch Dashboard</a>
+
+        <div class="footer">
+            <p>You received this automated notification from AstraWatch Observability Platform.</p>
+            <p><a th:href="${unsubscribeUrl}">Unsubscribe from incident emails</a></p>
+        </div>
+    </div>
+</body>
+</html>

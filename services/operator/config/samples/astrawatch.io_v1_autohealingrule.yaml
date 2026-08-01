@@ -1,0 +1,22 @@
+apiVersion: astrawatch.io/v1
+kind: AutoHealingRule
+metadata:
+  name: payment-service-cpu-spike
+  namespace: astrawatch-system
+  labels:
+    app.kubernetes.io/part-of: astrawatch
+spec:
+  targetService: payment-service
+  riskLevel: MEDIUM
+  condition:
+    metric: cpu_usage
+    operator: ">"
+    threshold: 85
+    forDuration: 2m
+  action:
+    type: RestartPod
+    parameters:
+      podName: payment-api-7d9f
+  # Safety: add the dry-run annotation to simulate instead of mutate.
+  # annotations:
+  #   astrawatch.io/dry-run: "true"

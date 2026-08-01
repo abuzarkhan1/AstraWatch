@@ -8,7 +8,7 @@
 
 char LICENSE[] SEC("license") = "GPL";
 
-extern struct {
+struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 24);
 } rb SEC(".maps");
@@ -25,13 +25,13 @@ struct block_event {
 };
 
 /*
- * We track I/O start times in a hash map keyed by request.
+ * We track I/O start times in a hash map keyed by unique (dev, sector) pair.
  * On completion, we look up the start time and emit the event.
  */
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, 10240);
-    __type(key, __u64);         /* request pointer */
+    __type(key, __u64);         /* unique dev+sector key */
     __type(value, __u64);       /* start time (ns) */
 } io_start_times SEC(".maps");
 
@@ -39,7 +39,7 @@ SEC("tracepoint/block/block_rq_issue")
 int trace_block_rq_issue(struct trace_event_raw_block_rq_issue *ctx)
 {
     __u64 now = bpf_ktime_get_ns();
-    __u64 req_ptr = (__u64)ctx->dev + ctx->sector;
+    __u64 req_ptr = (((__u64)ctx->dev) << 32) | (ctx->sector & 0xFFFFFFFF);
 
     bpf_map_update_elem(&io_start_times, &req_ptr, &now, BPF_ANY);
     return 0;
@@ -50,7 +50,7 @@ int trace_block_rq_complete(struct trace_event_raw_block_rq_complete *ctx)
 {
     struct block_event *evt;
     __u64 now = bpf_ktime_get_ns();
-    __u64 req_ptr = (__u64)ctx->dev + ctx->sector;
+    __u64 req_ptr = (((__u64)ctx->dev) << 32) | (ctx->sector & 0xFFFFFFFF);
     __u64 *start_time;
 
     start_time = bpf_map_lookup_elem(&io_start_times, &req_ptr);

@@ -44,7 +44,15 @@ func (s *grpcAgentServer) SendMetricBatch(ctx context.Context, batch *agentproto
 			Labels:    labels,
 		}
 
-		if err := s.handler.processMetricPoint(pmp, batch.AgentId); err != nil {
+		// Fail closed: a point without an explicit tenantId label is rejected rather
+		// than silently bucketed into the shared "default" tenant.
+		tenantID, ok := labels["tenantId"]
+		if !ok || tenantID == "" {
+			rejected++
+			continue
+		}
+
+		if err := s.handler.processMetricPoint(pmp, batch.AgentId, tenantID); err != nil {
 			rejected++
 			continue
 		}
@@ -86,7 +94,14 @@ func (s *grpcAgentServer) StreamMetrics(stream grpc.ClientStreamingServer[agentp
 				Labels:    labels,
 			}
 
-			if err := s.handler.processMetricPoint(pmp, batch.AgentId); err != nil {
+			// Fail closed: reject points lacking an explicit tenantId label.
+			tenantID, ok := labels["tenantId"]
+			if !ok || tenantID == "" {
+				rejected++
+				continue
+			}
+
+			if err := s.handler.processMetricPoint(pmp, batch.AgentId, tenantID); err != nil {
 				rejected++
 				continue
 			}

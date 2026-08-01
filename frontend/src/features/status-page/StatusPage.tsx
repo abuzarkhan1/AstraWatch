@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Globe, CheckCircle2, AlertTriangle, XCircle, Clock, ArrowUpRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
+import { useServices } from '@/hooks/useApi';
 
 const statusIcon: Record<string, React.ElementType> = {
   HEALTHY: CheckCircle2,
@@ -24,13 +25,7 @@ const uptimeCategories = [
 ];
 
 export default function StatusPage() {
-  const { data: services = [], isLoading } = useQuery({
-    queryKey: ['status-services'],
-    queryFn: async () => {
-      const { data } = await endpoints.services.list();
-      return data?.services || data || [];
-    },
-  });
+  const { data: services = [], isLoading } = useServices();
 
   const healthy = services.filter((s: any) => s.status === 'HEALTHY').length;
   const degraded = services.filter((s: any) => s.status === 'DEGRADED').length;

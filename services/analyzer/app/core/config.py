@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     mlflow_tracking_uri: str = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
     model_path: str = os.getenv("MODEL_PATH", "/models")
     retrain_interval_hours: int = int(os.getenv("RETRAIN_INTERVAL_HOURS", "24"))
-    jwt_secret: str = os.getenv("JWT_SECRET", "dev-secret")
+    jwt_secret: str = os.getenv("JWT_SECRET", "")
     prometheus_port: int = int(os.getenv("PROMETHEUS_PORT", "9090"))
 
     class Config:

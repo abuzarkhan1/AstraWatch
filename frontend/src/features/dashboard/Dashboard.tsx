@@ -46,10 +46,7 @@ export default function Dashboard() {
   }, [incidentsData]);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
-
-    wsManager.connect(token);
+    wsManager.connect();
 
     const unsubAnomaly = wsManager.on('anomaly.detected', (data: any) => {
       console.log('Anomaly detected:', data);

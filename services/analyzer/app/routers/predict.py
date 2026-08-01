@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from datetime import datetime
 from app.schemas import PredictRequest, ModelStatus
 from app.services.anomaly_service import anomaly_service
+from app.core.auth import require_internal_auth
 
 router = APIRouter(prefix="/v1", tags=["predict"])
 
@@ -18,7 +19,7 @@ async def model_status():
     return {"models": [m.model_dump() for m in models]}
 
 
-@router.post("/models/retrain", status_code=202)
+@router.post("/models/retrain", status_code=202, dependencies=[Depends(require_internal_auth)])
 async def retrain_model(model_name: str = "all"):
     result = await anomaly_service.retrain_model(model_name)
     return {"status": "accepted", **result}

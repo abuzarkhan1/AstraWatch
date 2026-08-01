@@ -104,4 +104,16 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> updatePreferences(@RequestBody Map<String, Object> body) {
         return ResponseEntity.ok(ApiResponse.ok(Map.of("preferences", body)));
     }
+
+    @PostMapping("/unsubscribe")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> unsubscribe(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        boolean success = notificationService.unsubscribe(token);
+        if (success) {
+            return ResponseEntity.ok(ApiResponse.ok(Map.of("unsubscribed", true)));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, Map.of("error", "Invalid or expired unsubscribe token"), Map.of()));
+        }
+    }
 }

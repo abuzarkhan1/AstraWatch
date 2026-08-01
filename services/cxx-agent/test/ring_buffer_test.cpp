@@ -10,8 +10,9 @@ using namespace astrawatch::agent::storage;
 using namespace astrawatch::agent;
 
 void test_ring_buffer_push_pop() {
-    std::cout << "test_ring_buffer_push_pop... ";
+    std::cout << "test_ring_buffer_push_pop... " << std::flush;
 
+    std::remove("/tmp/astrawatch_test_rb");
     {
         MMapRingBuffer buf("/tmp/astrawatch_test_rb", 64 * 1024);
 
@@ -46,8 +47,9 @@ void test_ring_buffer_push_pop() {
 }
 
 void test_ring_buffer_multiple_batches() {
-    std::cout << "test_ring_buffer_multiple_batches... ";
+    std::cout << "test_ring_buffer_multiple_batches... " << std::flush;
 
+    std::remove("/tmp/astrawatch_test_rb2");
     {
         MMapRingBuffer buf("/tmp/astrawatch_test_rb2", 256 * 1024);
 
@@ -114,6 +116,46 @@ void test_config_defaults() {
     std::cout << "PASSED" << std::endl;
 }
 
+void test_ring_buffer_escaping() {
+    std::cout << "test_ring_buffer_escaping... " << std::flush;
+
+    std::remove("/tmp/astrawatch_test_rb_esc");
+    {
+        MMapRingBuffer buf("/tmp/astrawatch_test_rb_esc", 64 * 1024);
+
+        MetricBatch batch;
+        batch.agent_id = "agent\nwith\nnewlines";
+        batch.hostname = "host\\with\\slashes";
+        batch.cluster = "prod\r\ncluster";
+        batch.batch_seq = 1;
+        batch.original_timestamp_ms = 1000;
+        batch.is_backlog = false;
+
+        MetricSample sample;
+        sample.name = "test\nmetric.name";
+        sample.value = 42.5;
+        sample.timestamp_ms = 1000;
+        sample.labels["label\nkey"] = "label\nval\\with\\slash";
+        batch.metrics.push_back(sample);
+
+        assert(buf.push(batch));
+        assert(buf.size() == 1);
+
+        MetricBatch popped;
+        assert(buf.pop(popped));
+        assert(popped.agent_id == "agent\nwith\nnewlines");
+        assert(popped.hostname == "host\\with\\slashes");
+        assert(popped.cluster == "prod\r\ncluster");
+        assert(popped.metrics.size() == 1);
+        assert(popped.metrics[0].name == "test\nmetric.name");
+        assert(popped.metrics[0].labels["label\nkey"] == "label\nval\\with\\slash");
+        assert(buf.empty());
+    }
+
+    std::remove("/tmp/astrawatch_test_rb_esc");
+    std::cout << "PASSED" << std::endl;
+}
+
 int main() {
     std::cout << "Running AstraWatch C++ Agent tests..." << std::endl;
     std::cout << std::endl;
@@ -122,6 +164,7 @@ int main() {
     test_config_defaults();
     test_ring_buffer_push_pop();
     test_ring_buffer_multiple_batches();
+    test_ring_buffer_escaping();
 
     std::cout << std::endl;
     std::cout << "All tests PASSED!" << std::endl;

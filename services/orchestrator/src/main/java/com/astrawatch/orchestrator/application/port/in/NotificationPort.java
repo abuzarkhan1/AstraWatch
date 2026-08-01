@@ -20,4 +20,9 @@ public interface NotificationPort {
     List<MaintenanceWindow> getMaintenanceWindows(UUID orgId);
     MaintenanceWindow createMaintenanceWindow(MaintenanceWindow window);
     void deleteMaintenanceWindow(UUID id);
+    void sendAnomalyAlertEmail(com.astrawatch.orchestrator.domain.model.Incident incident);
+    void sendHealingStatusEmail(com.astrawatch.orchestrator.domain.model.HealingAction action, String status);
+    String generateUnsubscribeToken(String email);
+    boolean verifyUnsubscribeToken(String token);
+    boolean unsubscribe(String token);
 }

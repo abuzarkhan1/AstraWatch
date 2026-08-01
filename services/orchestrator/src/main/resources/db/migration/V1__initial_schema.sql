@@ -92,6 +92,7 @@ CREATE INDEX idx_audit_actor ON audit_log(actor_id, created_at DESC);
 CREATE TABLE slo_definitions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     service_id UUID REFERENCES services(id),
+    name VARCHAR(200),
     metric VARCHAR(100),
     target_percentage NUMERIC(5,2),
     window_days SMALLINT DEFAULT 30,

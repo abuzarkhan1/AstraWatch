@@ -30,11 +30,11 @@ export default defineConfig({
       },
       // ── Analyzer anomaly/predict/root-cause endpoints ──
       '/v1/anomaly': {
-        target: 'http://localhost:8086',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/v1/predict': {
-        target: 'http://localhost:8086',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       // ── Collector metrics query & health ──
@@ -44,7 +44,7 @@ export default defineConfig({
       },
       // ── Realtime WebSocket gateway ──
       '/ws': {
-        target: 'ws://localhost:3001',
+        target: 'http://localhost:8084',
         ws: true,
         changeOrigin: true,
       },

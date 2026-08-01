@@ -1,16 +1,23 @@
 package com.astrawatch.orchestrator.adapter.in.web;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.astrawatch.orchestrator.adapter.in.web.dto.UserDTO;
+import com.astrawatch.orchestrator.adapter.out.persistence.UserRepository;
 import com.astrawatch.orchestrator.application.service.AuthService;
 import com.astrawatch.orchestrator.domain.model.User;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -18,17 +25,109 @@ public class AuthController {
 
     private final AuthService authService;
 
-    public AuthController(AuthService authService) {
+    private final UserRepository userRepository;
+
+    public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
+    }
+
+    private ResponseCookie createAccessTokenCookie(String token) {
+        return ResponseCookie.from("accessToken", token != null ? token : "")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(Duration.ofHours(24))
+                .build();
+    }
+
+    private ResponseCookie createRefreshTokenCookie(String token) {
+        return ResponseCookie.from("refreshToken", token != null ? token : "")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(Duration.ofDays(7))
+                .build();
+    }
+
+    private ResponseCookie createCleanCookie(String cookieName) {
+        return ResponseCookie.from(cookieName, "")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(0)
+                .build();
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, String>>> login(@RequestBody Map<String, String> body) {
         try {
             Map<String, String> tokens = authService.login(body.get("email"), body.get("password"));
-            return ResponseEntity.ok(ApiResponse.ok(tokens));
+            ResponseCookie accessCookie = createAccessTokenCookie(tokens.get("accessToken"));
+            ResponseCookie refreshCookie = createRefreshTokenCookie(tokens.get("refreshToken"));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .body(ApiResponse.ok(tokens));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, Map.of("error", "Invalid credentials"), Map.of()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Invalid credentials"), Map.of()));
+        }
+    }
+
+    @PostMapping("/oauth2/google")
+    public ResponseEntity<ApiResponse<Map<String, String>>> oauth2Google(@RequestBody Map<String, String> body) {
+        try {
+            Map<String, String> tokens = authService.processOAuth2Login(
+                    "google",
+                    body.get("code"),
+                    body.get("idToken"),
+                    body.get("accessToken"),
+                    body.get("providerId"),
+                    body.get("email"),
+                    body.get("name"),
+                    body.get("avatarUrl")
+            );
+            ResponseCookie accessCookie = createAccessTokenCookie(tokens.get("accessToken"));
+            ResponseCookie refreshCookie = createRefreshTokenCookie(tokens.get("refreshToken"));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .body(ApiResponse.ok(tokens));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", e.getMessage() != null ? e.getMessage() : "OAuth authentication failed"), Map.of()));
+        }
+    }
+
+    @PostMapping("/oauth2/github")
+    public ResponseEntity<ApiResponse<Map<String, String>>> oauth2GitHub(@RequestBody Map<String, String> body) {
+        try {
+            Map<String, String> tokens = authService.processOAuth2Login(
+                    "github",
+                    body.get("code"),
+                    null,
+                    body.get("token"),
+                    null,
+                    body.get("email"),
+                    body.get("name"),
+                    body.get("avatarUrl")
+            );
+            ResponseCookie accessCookie = createAccessTokenCookie(tokens.get("accessToken"));
+            ResponseCookie refreshCookie = createRefreshTokenCookie(tokens.get("refreshToken"));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .body(ApiResponse.ok(tokens));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", e.getMessage() != null ? e.getMessage() : "OAuth authentication failed"), Map.of()));
         }
     }
 
@@ -41,33 +140,73 @@ public class AuthController {
                     "requiresVerification", true
             )));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(false, Map.of("error", e.getMessage()), Map.of()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, Map.of("error", e.getMessage()), Map.of()));
         }
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<Map<String, String>>> refresh(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> refresh(
+            @RequestBody(required = false) Map<String, String> body,
+            @CookieValue(name = "refreshToken", required = false) String cookieRefreshToken) {
         try {
-            Map<String, String> tokens = authService.refresh(body.get("refreshToken"));
-            return ResponseEntity.ok(ApiResponse.ok(tokens));
+            String tokenToUse = (body != null && body.containsKey("refreshToken"))
+                    ? body.get("refreshToken")
+                    : cookieRefreshToken;
+            if (tokenToUse == null || tokenToUse.isBlank()) {
+                throw new IllegalArgumentException("Missing refresh token");
+            }
+            Map<String, String> tokens = authService.refresh(tokenToUse);
+            ResponseCookie accessCookie = createAccessTokenCookie(tokens.get("accessToken"));
+            ResponseCookie refreshCookie = createRefreshTokenCookie(tokens.get("refreshToken"));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .body(ApiResponse.ok(tokens));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, Map.of("error", "Invalid refresh token"), Map.of()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Invalid refresh token"), Map.of()));
         }
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
-        return ResponseEntity.noContent().build();
+        ResponseCookie accessCookie = createCleanCookie("accessToken");
+        ResponseCookie refreshCookie = createCleanCookie("refreshToken");
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .build();
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> me() {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of(
-                "userId", UUID.randomUUID().toString(),
-                "email", "admin@astrawatch.io",
-                "roles", List.of("PlatformAdmin"),
-                "permissions", List.of("*")
-        )));
+    public ResponseEntity<?> me(HttpServletRequest request) {
+        // Extract token from cookie or Authorization header
+        String token = null;
+        if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                if ("accessToken".equals(c.getName())) { token = c.getValue(); break; }
+            }
+        }
+        if (token == null) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) token = authHeader.substring(7);
+        }
+
+        if (token == null || !authService.verifyToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, "Not authenticated", null));
+        }
+
+        String userId = authService.extractUserId(token);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, "Invalid token", null));
+        }
+
+        return userRepository.findById(java.util.UUID.fromString(userId))
+                .map(user -> ResponseEntity.ok(ApiResponse.ok(UserDTO.from(user))))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     // ─── Email Verification ─────────────────────────────────────────────
@@ -101,9 +240,14 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> switchTeam(@RequestBody Map<String, String> body) {
         try {
             String token = authService.switchTeam(body.get("teamId"), body.get("accessToken"));
-            return ResponseEntity.ok(ApiResponse.ok(Map.of("accessToken", token)));
+            ResponseCookie accessCookie = createAccessTokenCookie(token);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .body(ApiResponse.ok(Map.of("accessToken", token)));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, Map.of("error", "Invalid token or team"), Map.of()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Invalid token or team"), Map.of()));
         }
     }
 
@@ -195,12 +339,19 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> acceptInvite(@RequestBody Map<String, String> body) {
         try {
             Map<String, String> tokens = authService.acceptInvite(body.get("token"));
-            return ResponseEntity.ok(ApiResponse.ok(Map.of(
-                    "accessToken", tokens.get("accessToken"),
-                    "refreshToken", tokens.get("refreshToken")
-            )));
+            ResponseCookie accessCookie = createAccessTokenCookie(tokens.get("accessToken"));
+            ResponseCookie refreshCookie = createRefreshTokenCookie(tokens.get("refreshToken"));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .body(ApiResponse.ok(Map.of(
+                            "accessToken", tokens.get("accessToken"),
+                            "refreshToken", tokens.get("refreshToken")
+                    )));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, Map.of("error", "Invalid invite token"), Map.of()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Invalid invite token"), Map.of()));
         }
     }
 }

@@ -53,8 +53,9 @@ func NewAgentHandler(producer *produce.Producer, enricher *enrich.Enricher, vali
 	}
 }
 
-func (h *AgentHandler) processMetricPoint(mp pkg.MetricPoint, serviceID string) error {
+func (h *AgentHandler) processMetricPoint(mp pkg.MetricPoint, serviceID string, tenantID string) error {
 	metricBatch := pkg.MetricBatch{
+		TenantID:  tenantID,
 		ServiceID: serviceID,
 		Metrics:   []pkg.MetricPoint{mp},
 	}
@@ -69,7 +70,11 @@ func (h *AgentHandler) processMetricPoint(mp pkg.MetricPoint, serviceID string) 
 }
 
 func (h *AgentHandler) HandleAgentBatch(c *gin.Context) {
-	tenantID := extractTenant(c)
+	tenantID, err := extractTenant(c)
+	if err != nil {
+		writeEnvelope(c, http.StatusUnauthorized, nil, gin.H{"error": err.Error()})
+		return
+	}
 	if !h.limiter.Allow(tenantID) {
 		c.Header("Retry-After", "1")
 		writeEnvelope(c, http.StatusTooManyRequests, nil, gin.H{"error": "rate limit exceeded"})
@@ -144,7 +149,7 @@ func (h *AgentHandler) HandleAgentBatch(c *gin.Context) {
 			Labels:    labels,
 		}
 
-		if err := h.processMetricPoint(pmp, agentBatch.AgentID); err != nil {
+		if err := h.processMetricPoint(pmp, agentBatch.AgentID, tenantID); err != nil {
 			log.Printf("Failed to produce agent metric: %v", err)
 			rejected++
 			continue

@@ -3,6 +3,7 @@ package ingest
 import (
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -21,12 +22,13 @@ import (
 )
 
 type Handler struct {
-	producer   *produce.Producer
-	enricher   *enrich.Enricher
-	validator  *validate.Validator
-	limiter    *ratelimit.RateLimiter
-	batchChan  chan pkg.MetricBatch
-	log        *zap.Logger
+	producer  *produce.Producer
+	enricher  *enrich.Enricher
+	validator *validate.Validator
+	limiter   *ratelimit.RateLimiter
+	batchChan chan pkg.MetricBatch
+	logChan   chan *pkg.LogEntry
+	log       *zap.Logger
 }
 
 func NewHandler(producer *produce.Producer, enricher *enrich.Enricher, validator *validate.Validator, limiter *ratelimit.RateLimiter, log *zap.Logger) *Handler {
@@ -36,6 +38,7 @@ func NewHandler(producer *produce.Producer, enricher *enrich.Enricher, validator
 		validator: validator,
 		limiter:   limiter,
 		batchChan: make(chan pkg.MetricBatch, 10000),
+		logChan:   make(chan *pkg.LogEntry, 10000),
 		log:       log,
 	}
 }
@@ -43,6 +46,7 @@ func NewHandler(producer *produce.Producer, enricher *enrich.Enricher, validator
 func (h *Handler) StartWorkerPool(numWorkers int) {
 	for i := 0; i < numWorkers; i++ {
 		go h.worker()
+		go h.logWorker()
 	}
 }
 
@@ -50,6 +54,14 @@ func (h *Handler) worker() {
 	for batch := range h.batchChan {
 		if err := h.producer.ProduceMetrics(batch); err != nil {
 			h.log.Error("failed to produce metrics", zap.Error(err))
+		}
+	}
+}
+
+func (h *Handler) logWorker() {
+	for entry := range h.logChan {
+		if err := h.producer.ProduceLog(entry); err != nil {
+			h.log.Error("failed to produce log", zap.Error(err))
 		}
 	}
 }
@@ -67,7 +79,11 @@ func (h *Handler) checkIdempotency(c *gin.Context) bool {
 }
 
 func (h *Handler) IngestMetricsBatch(c *gin.Context) {
-	tenantID := extractTenant(c)
+	tenantID, err := extractTenant(c)
+	if err != nil {
+		writeEnvelope(c, http.StatusUnauthorized, nil, gin.H{"error": err.Error()})
+		return
+	}
 
 	if !h.limiter.Allow(tenantID) {
 		c.Header("Retry-After", "1")
@@ -136,6 +152,8 @@ func (h *Handler) IngestMetricsBatch(c *gin.Context) {
 		}
 	}
 
+	batch.TenantID = tenantID
+
 	valid, rejected := h.validator.ValidateBatch(batch)
 	if len(valid.Metrics) == 0 {
 		writeEnvelope(c, http.StatusBadRequest, gin.H{"accepted": 0, "rejected": len(rejected), "errors": rejected}, nil)
@@ -178,7 +196,11 @@ func protoBatchToPkg(pb *agentproto.MetricBatch) pkg.MetricBatch {
 }
 
 func (h *Handler) IngestLogsStream(c *gin.Context) {
-	tenantID := extractTenant(c)
+	tenantID, err := extractTenant(c)
+	if err != nil {
+		writeEnvelope(c, http.StatusUnauthorized, nil, gin.H{"error": err.Error()})
+		return
+	}
 	if !h.limiter.Allow(tenantID) {
 		c.Header("Retry-After", "1")
 		writeEnvelope(c, http.StatusTooManyRequests, nil, gin.H{"error": "rate limit exceeded"})
@@ -223,20 +245,27 @@ func (h *Handler) IngestLogsStream(c *gin.Context) {
 			rejected++
 			continue
 		}
+		logEntry.TenantID = tenantID
 		h.enricher.EnrichLog(logEntry)
-		if err := h.producer.ProduceLog(logEntry); err != nil {
-			h.log.Error("failed to produce log", zap.Error(err))
+
+		select {
+		case h.logChan <- logEntry:
+			accepted++
+		default:
+			h.log.Warn("log worker channel full, dropping log entry")
 			rejected++
-			continue
 		}
-		accepted++
 	}
 
 	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": accepted, "rejected": rejected}, nil)
 }
 
 func (h *Handler) IngestTraces(c *gin.Context) {
-	tenantID := extractTenant(c)
+	tenantID, err := extractTenant(c)
+	if err != nil {
+		writeEnvelope(c, http.StatusUnauthorized, nil, gin.H{"error": err.Error()})
+		return
+	}
 	if !h.limiter.Allow(tenantID) {
 		c.Header("Retry-After", "1")
 		writeEnvelope(c, http.StatusTooManyRequests, nil, gin.H{"error": "rate limit exceeded"})
@@ -265,6 +294,7 @@ func (h *Handler) IngestTraces(c *gin.Context) {
 	}
 
 	for _, trace := range traces {
+		trace.TenantID = tenantID
 		h.enricher.EnrichTrace(&trace)
 		if err := h.producer.ProduceTrace(trace); err != nil {
 			h.log.Error("failed to produce trace", zap.Error(err))
@@ -318,18 +348,22 @@ func init() {
 	startTime = time.Now()
 }
 
-func extractTenant(c *gin.Context) string {
+func extractTenant(c *gin.Context) (string, error) {
 	claims, exists := c.Get("claims")
 	if !exists {
-		return "default"
+		return "", fmt.Errorf("authentication required: missing JWT claims")
 	}
 	jwtClaims, ok := claims.(jwt.MapClaims)
 	if !ok {
-		return "default"
+		return "", fmt.Errorf("authentication failed: invalid claims format")
 	}
 	tenant, _ := jwtClaims["tenantId"].(string)
 	if tenant == "" {
-		return "default"
+		// Backward-compatible fallback for tokens that carry teamId but no tenantId.
+		tenant, _ = jwtClaims["teamId"].(string)
 	}
-	return tenant
+	if tenant == "" {
+		tenant = "default"
+	}
+	return tenant, nil
 }

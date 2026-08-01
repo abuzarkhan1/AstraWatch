@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -14,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"k8s.io/client-go/tools/record"
-	"strconv"
 
 	astrawatchv1 "github.com/astrawatch/operator/internal/api/v1"
 	"github.com/astrawatch/operator/internal/metrics"
@@ -22,12 +20,24 @@ import (
 
 const autoHealingFinalizer = "astrawatch.io/finalizer"
 
+// +kubebuilder:rbac:groups=astrawatch.io,resources=autohealingrules,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=astrawatch.io,resources=autohealingrules/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=astrawatch.io,resources=autohealingrules/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+
 type AutoHealingRuleReconciler struct {
 	client.Client
 	Logger          *zap.Logger
 	OrchestratorURL string
 	MetricsClient   metrics.MetricsClient
 	Recorder        record.EventRecorder
+	DryRun          bool
+	// StandaloneTrigger enables the operator's own rule-evaluation trigger loop.
+	// When false (default), the operator only maintains rules/finalizers and
+	// leaves all healing decisioning to the orchestrator (audit F2).
+	StandaloneTrigger bool
 }
 
 func (r *AutoHealingRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -59,6 +69,14 @@ func (r *AutoHealingRuleReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+
+	// Single decision authority: when standalone triggering is disabled, the
+	// operator never evaluates conditions or executes actions on its own — the
+	// orchestrator drives healing through the healing-actions Kafka topic.
+	if !r.StandaloneTrigger {
+		l.Info("standalone trigger disabled — orchestrator owns healing decisions", "rule", rule.Name)
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
 	conditionMet, err := r.evaluateCondition(ctx, rule)
@@ -161,62 +179,25 @@ func (r *AutoHealingRuleReconciler) evaluateCondition(ctx context.Context, rule 
 }
 
 func (r *AutoHealingRuleReconciler) triggerHealing(ctx context.Context, rule astrawatchv1.AutoHealingRule) error {
-	switch rule.Spec.Action.Type {
-	case "RestartPod":
-		podName := rule.Spec.Action.Parameters["podName"]
-		if podName == "" {
-			return fmt.Errorf("podName parameter missing")
-		}
-		var pod corev1.Pod
-		if err := r.Get(ctx, client.ObjectKey{Name: podName, Namespace: rule.Namespace}, &pod); err != nil {
-			return err
-		}
-		// Blast radius check
-		if pod.Labels["astrawatch.io/critical"] == "true" {
-			return fmt.Errorf("restart blocked by blast-radius check: pod is critical")
-		}
-		return r.Delete(ctx, &pod)
+	isDryRun := rule.Annotations != nil && rule.Annotations["astrawatch.io/dry-run"] == "true"
 
-	case "RolloutDeployment":
-		deployName := rule.Spec.Action.Parameters["deploymentName"]
-		if deployName == "" {
-			return fmt.Errorf("deploymentName parameter missing")
-		}
-		var deploy appsv1.Deployment
-		if err := r.Get(ctx, client.ObjectKey{Name: deployName, Namespace: rule.Namespace}, &deploy); err != nil {
-			return err
-		}
-		if deploy.Spec.Template.Annotations == nil {
-			deploy.Spec.Template.Annotations = make(map[string]string)
-		}
-		deploy.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-		return r.Update(ctx, &deploy)
+	r.Logger.Info("[AUDIT] Triggering auto-healing evaluation",
+		zap.String("audit_event", "HEALING_ACTION_TRIGGERED"),
+		zap.String("rule_name", rule.Name),
+		zap.String("namespace", rule.Namespace),
+		zap.String("action_type", rule.Spec.Action.Type),
+		zap.String("target_service", rule.Spec.TargetService),
+		zap.Bool("dry_run", isDryRun),
+	)
 
-	case "ScaleReplica":
-		deployName := rule.Spec.Action.Parameters["deploymentName"]
-		replicasStr := rule.Spec.Action.Parameters["replicas"]
-		if deployName == "" || replicasStr == "" {
-			return fmt.Errorf("deploymentName or replicas missing")
-		}
-		replicas, err := strconv.Atoi(replicasStr)
-		if err != nil || replicas < 1 {
-			return fmt.Errorf("invalid replicas: %s", replicasStr)
-		}
-		var deploy appsv1.Deployment
-		if err := r.Get(ctx, client.ObjectKey{Name: deployName, Namespace: rule.Namespace}, &deploy); err != nil {
-			return err
-		}
-		// Blast-radius check
-		if replicas > 100 {
-			return fmt.Errorf("scale blocked by blast-radius check: requested %d replicas > max 100", replicas)
-		}
-		var rep32 int32 = int32(replicas)
-		deploy.Spec.Replicas = &rep32
-		return r.Update(ctx, &deploy)
-
-	default:
-		return fmt.Errorf("unsupported action type: %s", rule.Spec.Action.Type)
+	executor := &ActionExecutor{
+		Client:   r.Client,
+		Logger:   r.Logger,
+		Recorder: r.Recorder,
+		DryRun:   r.DryRun,
 	}
+
+	return executor.Execute(ctx, rule.Namespace, rule.Spec.Action.Type, rule.Spec.Action.Parameters, isDryRun)
 }
 
 func (r *AutoHealingRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {

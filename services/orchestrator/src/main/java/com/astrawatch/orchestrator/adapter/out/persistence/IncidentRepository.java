@@ -11,4 +11,6 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
     List<Incident> findByServiceIdOrderByCreatedAtDesc(UUID serviceId);
     List<Incident> findByStateOrderByCreatedAtDesc(Incident.IncidentState state);
     long countByServiceIdAndState(UUID serviceId, Incident.IncidentState state);
+    boolean existsByAnomalyId(UUID anomalyId);
+    java.util.Optional<Incident> findByAnomalyId(UUID anomalyId);
 }

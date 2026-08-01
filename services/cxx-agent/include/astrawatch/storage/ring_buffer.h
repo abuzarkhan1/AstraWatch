@@ -2,6 +2,8 @@
 #define ASTRAWATCH_AGENT_RING_BUFFER_H
 
 #include <cstdint>
+#include <string>
+#include <map>
 #include <vector>
 #include <chrono>
 #include <mutex>

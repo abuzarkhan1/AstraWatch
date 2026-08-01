@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useServices } from '@/hooks/useApi';
 import { Box, Search, Tag, ExternalLink, Circle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
@@ -20,13 +21,7 @@ const healthColors: Record<string, string> = {
 export default function CatalogPage() {
   const [search, setSearch] = useState('');
 
-  const { data: services = [], isLoading } = useQuery({
-    queryKey: ['catalog-services'],
-    queryFn: async () => {
-      const { data } = await endpoints.services.list();
-      return data?.services || data || [];
-    },
-  });
+  const { data: services = [], isLoading } = useServices();
 
   const filtered = services.filter((svc: any) =>
     !search ||

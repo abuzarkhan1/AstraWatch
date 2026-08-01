@@ -100,7 +100,7 @@ export default function TraceExplorerPage() {
     queryKey: ['traces', search],
     queryFn: async () => {
       try {
-        const { data } = await endpoints.metrics.query({ type: 'traces', q: search || 'all' });
+        const { data } = await endpoints.traces.query({ q: search || 'all' });
         if (data?.items || Array.isArray(data)) return data;
       } catch (err) {
         console.warn('API fallback to mock traces');

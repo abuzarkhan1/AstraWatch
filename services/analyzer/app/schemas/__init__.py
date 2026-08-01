@@ -8,12 +8,29 @@ class MetricPoint(BaseModel):
     name: str
     value: float
     labels: Optional[dict] = None
+    tenant_id: Optional[str] = "default"
 
 
 class AnomalyDetectRequest(BaseModel):
     serviceId: str
+    tenantId: Optional[str] = "default"
+    threshold: Optional[float] = None
     metrics: List[MetricPoint]
     window: Optional[int] = 300
+
+
+class SuggestedFix(BaseModel):
+    targetFile: str
+    patch: str
+    explanation: str
+
+
+class AIDiagnosis(BaseModel):
+    summary: str
+    what: str
+    why: str
+    suggestedFix: Optional[SuggestedFix] = None
+    suggestedAction: Optional[dict] = None
 
 
 class AnomalyResult(BaseModel):
@@ -21,16 +38,19 @@ class AnomalyResult(BaseModel):
     score: float
     contributingMetrics: List[dict] = []
     rootCauses: List[dict] = []
+    aiDiagnosis: Optional[AIDiagnosis] = None
     prediction30min: Optional[List[dict]] = None
 
 
 class RootCauseRequest(BaseModel):
     incidentId: str
+    serviceId: Optional[str] = None
     metricsWindow: Optional[int] = 900
 
 
 class RootCauseResult(BaseModel):
     rankedCauses: List[dict] = []
+    aiDiagnosis: Optional[AIDiagnosis] = None
 
 
 class PredictRequest(BaseModel):

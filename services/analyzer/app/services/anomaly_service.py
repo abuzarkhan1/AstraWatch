@@ -7,7 +7,7 @@ from datetime import datetime
 import numpy as np
 
 from app.ml.ensemble import EnsembleDetector
-from app.ml.causal import granger_causality
+from app.ml.causal import granger_causality, generate_ai_diagnosis
 from app.schemas import (
     AnomalyDetectRequest,
     AnomalyResult,
@@ -17,6 +17,7 @@ from app.schemas import (
     ForecastPoint,
     ModelStatus,
     AnomalyFeedback,
+    AIDiagnosis,
 )
 from training.retrain_job import retrain_model as run_retrain
 
@@ -70,9 +71,12 @@ class AnomalyService:
             metrics=metrics_dict,
             window_seconds=request.window or 300,
             use_deep_learning=use_deep_learning,
+            threshold=getattr(request, "threshold", None),
+            tenant_id=getattr(request, "tenantId", "default"),
         )
 
         prediction = []
+        ai_diagnosis = None
         if result["isAnomaly"]:
             values = [m.value for m in request.metrics if m.name == result.get(
                 "details", {}
@@ -81,11 +85,24 @@ class AnomalyService:
                 values = [m.value for m in request.metrics]
             prediction = self.detector.predict_timeseries(values, 30)
 
+            root_causes = result.get("rootCauses", [])
+            # Pass mined log evidence so the diagnosis reflects the actual error
+            # (audit F5) instead of generic text.
+            from app.services.log_miner import log_miner
+            log_evidence = log_miner.evidence(
+                getattr(request, "tenantId", None) or "default", request.serviceId, window_seconds=300
+            )
+            ai_diagnosis_dict = generate_ai_diagnosis(
+                root_causes, service_id=request.serviceId, log_evidence=log_evidence
+            )
+            ai_diagnosis = AIDiagnosis(**ai_diagnosis_dict)
+
         return AnomalyResult(
             isAnomaly=result["isAnomaly"],
             score=result["score"],
             contributingMetrics=result.get("contributingMetrics", []),
             rootCauses=result.get("rootCauses", []),
+            aiDiagnosis=ai_diagnosis,
             prediction30min=prediction if prediction else None,
         )
 
@@ -102,12 +119,14 @@ class AnomalyService:
             "latency": self._get_recent_values(service_id, "latency"),
         }
 
-        if len(metric_groups) < 2:
-            return RootCauseResult(rankedCauses=[])
+        # Drop empty/degenerate series so granger causality never sees empty input.
+        metric_groups = {k: v for k, v in metric_groups.items() if len(v) >= 3}
 
-        ranked = granger_causality(metric_groups, max_lag=min(5, len(next(iter(metric_groups.values()))) // 2))
-        return RootCauseResult(
-            rankedCauses=[
+        ranked_causes = []
+        if len(metric_groups) >= 2:
+            min_len = min(len(v) for v in metric_groups.values())
+            ranked = granger_causality(metric_groups, max_lag=min(5, max(1, min_len // 2)))
+            ranked_causes = [
                 {
                     "metric": r["cause"],
                     "confidence": r["score"],
@@ -115,6 +134,13 @@ class AnomalyService:
                 }
                 for r in ranked[:5]
             ]
+
+        ai_diagnosis_dict = generate_ai_diagnosis(ranked_causes, service_id=service_id)
+        ai_diagnosis = AIDiagnosis(**ai_diagnosis_dict)
+
+        return RootCauseResult(
+            rankedCauses=ranked_causes,
+            aiDiagnosis=ai_diagnosis,
         )
 
     async def predict_timeseries(
@@ -133,20 +159,39 @@ class AnomalyService:
     def _get_recent_values(
         self, service_id: str, metric: str
     ) -> List[float]:
+        """
+        Fetch the latest 60 values for (service_id, metric) from ClickHouse.
+
+        Uses ClickHouse HTTP parameter binding (param_* query params) so the
+        service_id / metric values are never interpolated into the SQL string
+        (previously an f-string SQL injection). Returns [] (no synthetic data)
+        when the query fails or returns nothing.
+        """
         try:
             import httpx
             clickhouse_url = os.getenv("CLICKHOUSE_URL", "http://localhost:8123")
-            query = f"SELECT value FROM raw_metrics WHERE service_id = '{service_id}' AND metric_name = '{metric}' ORDER BY ts DESC LIMIT 60"
-            response = httpx.post(clickhouse_url, data=query, timeout=5.0)
+            query = (
+                "SELECT value FROM metrics "
+                "WHERE service_id = {service_id:String} "
+                "AND metric_name = {metric:String} "
+                "ORDER BY ts DESC LIMIT 60"
+            )
+            response = httpx.post(
+                clickhouse_url,
+                data=query,
+                params={
+                    "param_service_id": service_id,
+                    "param_metric": metric,
+                },
+                timeout=5.0,
+            )
             if response.status_code == 200:
                 lines = response.text.strip().split('\n')
                 if lines and lines[0]:
                     return [float(line) for line in lines][::-1]
         except Exception as e:
             logger.error(f"Clickhouse query error: {e}")
-            
-        base = 50.0 if "cpu" in metric else 200.0 if "latency" in metric else 100.0
-        return [base + (i * 0.5) + np.random.randn() * 5 for i in range(60)]
+        return []
 
     async def get_model_status(self) -> List[ModelStatus]:
         try:
@@ -210,10 +255,25 @@ class AnomalyService:
                     )
                 conn.commit()
             
-            # Basic retraining trigger check
-            if not feedback.get('isTruePositive', True):
-                await self.retrain_model("isolation_forest")
-                
+            # Async retrain trigger (audit F12): a false positive must NOT block the
+            # HTTP request with a synchronous model retrain. Publish to the
+            # feedback-received Kafka topic; the consumer task triggers the retrain.
+            try:
+                from app.core.kafka_client import kafka_client
+                from app.core.config import settings
+                await kafka_client.publish(
+                    settings.kafka_feedback_topic,
+                    key=anomaly_id,
+                    value={
+                        "anomalyId": anomaly_id,
+                        "isTruePositive": feedback.get('isTruePositive', True),
+                        "actualSeverity": feedback.get('actualSeverity', ''),
+                    },
+                )
+                logger.info(f"Feedback for anomaly {anomaly_id} published to {settings.kafka_feedback_topic} for async retrain")
+            except Exception as e:
+                logger.error(f"Failed to publish feedback event for async retrain: {e}")
+
             logger.info(
                 f"Feedback recorded for anomaly {anomaly_id}: "
                 f"isTruePositive={feedback.get('isTruePositive')}"

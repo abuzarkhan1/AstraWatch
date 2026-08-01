@@ -1,25 +1,27 @@
 export function setupIncidentSocket(socket, io) {
+  const tenantId = socket.user?.tenantId || 'default';
+
   socket.on('incident:subscribe', ({ incidentId } = {}) => {
     if (incidentId) {
-      socket.join(`incident:${incidentId}`);
+      socket.join(`tenant:${tenantId}:incident:${incidentId}`);
     }
   });
 
   socket.on('incident:unsubscribe', ({ incidentId } = {}) => {
     if (incidentId) {
-      socket.leave(`incident:${incidentId}`);
+      socket.leave(`tenant:${tenantId}:incident:${incidentId}`);
     }
   });
 
   return {
-    emitUpdated(incidentId, data) {
-      io.to(`incident:${incidentId}`).emit('incident:updated', data);
+    emitUpdated(incidentId, data, targetTenantId = tenantId) {
+      io.to(`tenant:${targetTenantId}:incident:${incidentId}`).emit('incident:updated', data);
     },
-    emitResolved(incidentId, data) {
-      io.to(`incident:${incidentId}`).emit('incident:resolved', data);
+    emitResolved(incidentId, data, targetTenantId = tenantId) {
+      io.to(`tenant:${targetTenantId}:incident:${incidentId}`).emit('incident:resolved', data);
     },
-    emitAcknowledged(incidentId, data) {
-      io.to(`incident:${incidentId}`).emit('incident:acknowledged', data);
+    emitAcknowledged(incidentId, data, targetTenantId = tenantId) {
+      io.to(`tenant:${targetTenantId}:incident:${incidentId}`).emit('incident:acknowledged', data);
     },
   };
 }

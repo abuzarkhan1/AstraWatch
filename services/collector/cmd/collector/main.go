@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -34,6 +35,9 @@ func main() {
 	defer logger.Sync()
 
 	cfg := loadConfig()
+	if cfg.JWTSecret == "" {
+		logger.Fatal("JWT_SECRET environment variable is required — refusing to start with empty secret")
+	}
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr: cfg.RedisAddr,
@@ -122,6 +126,19 @@ func main() {
 		v1.POST("/telemetry", handler.IngestMetricsBatch)
 
 		v1.GET("/query", func(c *gin.Context) {
+			// Unified query dispatch (audit F7): the frontend Logs/Trace Explorers
+			// call /v1/query with type=logs | type=traces; metrics stay default.
+			queryType := c.Query("type")
+			if queryType == "logs" {
+				handleLogQuery(c, queryService)
+				return
+			}
+			if queryType == "traces" {
+				handleTraceQuery(c, queryService)
+				return
+			}
+
+			tenantID := tenantFromClaims(c)
 			serviceID := c.Query("service")
 			metric := c.Query("metric")
 			step := c.Query("step")
@@ -141,9 +158,9 @@ func main() {
 					writeEnvelopeOuter(c, http.StatusBadRequest, nil, gin.H{"error": "invalid step duration: " + parseErr.Error()})
 					return
 				}
-				result, err = queryService.QueryMetricsWithStep(c.Request.Context(), serviceID, metric, from, to, dur)
+				result, err = queryService.QueryMetricsWithStepTenant(c.Request.Context(), tenantID, serviceID, metric, from, to, dur)
 			} else {
-				result, err = queryService.QueryMetrics(c.Request.Context(), serviceID, metric, from, to)
+				result, err = queryService.QueryMetricsTenant(c.Request.Context(), tenantID, serviceID, metric, from, to)
 			}
 			if err != nil {
 				writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
@@ -153,7 +170,44 @@ func main() {
 			writeEnvelopeOuter(c, http.StatusOK, result, nil)
 		})
 
+		v1.GET("/query/logs", func(c *gin.Context) {
+			handleLogQuery(c, queryService)
+		})
+
+		v1.GET("/query/traces", func(c *gin.Context) {
+			handleTraceQuery(c, queryService)
+		})
+
 		v1.GET("/health", handler.HealthCheck)
+	}
+
+	internalMetricsGroup := router.Group("/api/v1/metrics")
+	internalMetricsGroup.Use(internalTokenMiddleware())
+	{
+		internalMetricsGroup.GET("/query", func(c *gin.Context) {
+			serviceID := c.Query("service")
+			metric := c.Query("metric")
+			if serviceID == "" || metric == "" {
+				writeEnvelopeOuter(c, http.StatusBadRequest, nil, gin.H{"error": "service and metric are required"})
+				return
+			}
+			to := time.Now()
+			from := to.Add(-time.Minute)
+			result, err := queryService.QueryMetrics(c.Request.Context(), serviceID, metric, from, to)
+			if err != nil {
+				writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
+				return
+			}
+			if result == nil || len(result.Series) == 0 {
+				writeEnvelopeOuter(c, http.StatusOK, gin.H{"value": 0, "timestamp": to.Format(time.RFC3339)}, nil)
+				return
+			}
+			last := result.Series[len(result.Series)-1]
+			writeEnvelopeOuter(c, http.StatusOK, gin.H{
+				"value":     last.Value,
+				"timestamp": last.Timestamp.Format(time.RFC3339),
+			}, nil)
+		})
 	}
 
 	catalogGroup := router.Group("/api/v1/catalog")
@@ -207,14 +261,14 @@ type Config struct {
 
 func loadConfig() Config {
 	return Config{
-		Port:              getEnv("PORT", "8080"),
-		KafkaBrokers:      getEnvAsSlice("KAFKA_BROKERS", []string{"localhost:9092"}),
-		ClickHouseAddr:    getEnv("CLICKHOUSE_ADDR", "localhost:9000"),
-		ClickHouseDB:      getEnv("CLICKHOUSE_DB", "astrawatch"),
-		ClickHouseUser:    getEnv("CLICKHOUSE_USER", "astrawatch"),
+		Port:               getEnv("PORT", "8080"),
+		KafkaBrokers:       getEnvAsSlice("KAFKA_BROKERS", []string{"localhost:9092"}),
+		ClickHouseAddr:     getEnv("CLICKHOUSE_ADDR", "localhost:9000"),
+		ClickHouseDB:       getEnv("CLICKHOUSE_DB", "astrawatch"),
+		ClickHouseUser:     getEnv("CLICKHOUSE_USER", "astrawatch"),
 		ClickHousePassword: getEnv("CLICKHOUSE_PASSWORD", "astrawatch"),
-		RedisAddr:         getEnv("REDIS_ADDR", "localhost:6379"),
-		JWTSecret:         getEnv("JWT_SECRET", "astrawatch-super-secret-jwt-token-signing-key-2026-secure-32bytes-long!"),
+		RedisAddr:          getEnv("REDIS_ADDR", "localhost:6379"),
+		JWTSecret:          os.Getenv("JWT_SECRET"),
 	}
 }
 
@@ -237,8 +291,22 @@ func getEnvAsSlice(key string, fallback []string) []string {
 }
 
 func corsMiddleware() gin.HandlerFunc {
+	allowedOriginsStr := getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
+	allowedOrigins := strings.Split(allowedOriginsStr, ",")
+	allowedMap := make(map[string]bool)
+	for _, o := range allowedOrigins {
+		allowedMap[strings.TrimSpace(o)] = true
+	}
+
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		origin := c.Request.Header.Get("Origin")
+		if origin != "" && (allowedMap[origin] || allowedMap["*"]) {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Vary", "Origin")
+			c.Header("Access-Control-Allow-Credentials", "true")
+		} else if origin != "" && len(allowedOrigins) > 0 {
+			c.Header("Access-Control-Allow-Origin", allowedOrigins[0])
+		}
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Batch-Id, Idempotency-Key")
 		c.Header("Access-Control-Max-Age", "86400")
@@ -255,14 +323,22 @@ func corsMiddleware() gin.HandlerFunc {
 func authMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
-		if path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" || path == "/v1/telemetry" || path == "/v1/query" {
-			c.Next()
-			return
-		}
+		bypassed := path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" || path == "/v1/telemetry" || strings.HasPrefix(path, "/api/v1/catalog") || strings.HasPrefix(path, "/api/v1/metrics")
 
 		auth := c.GetHeader("Authorization")
 		if auth == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing authorization header"})
+			cookie, err := c.Cookie("accessToken")
+			if err == nil && cookie != "" {
+				auth = cookie
+			}
+		}
+
+		if auth == "" {
+			if bypassed {
+				c.Next()
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing authorization header or cookie"})
 			return
 		}
 
@@ -278,12 +354,20 @@ func authMiddleware(secret string) gin.HandlerFunc {
 			return []byte(secret), nil
 		})
 		if err != nil || !token.Valid {
+			if bypassed {
+				c.Next()
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
+			if bypassed {
+				c.Next()
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
 			return
 		}
@@ -364,6 +448,101 @@ func submitServiceScorecard(c *gin.Context) {
 	writeEnvelopeOuter(c, http.StatusOK, gin.H{"id": serviceID, "message": "scorecard submitted", "scorecard": req}, nil)
 }
 
+
+// ── Log / trace query handlers (audit F7) ─────────────────────────────────
+
+func parseRange(c *gin.Context) (time.Time, time.Time) {
+	now := time.Now().UTC()
+	from, _ := time.Parse(time.RFC3339, c.Query("from"))
+	to, _ := time.Parse(time.RFC3339, c.Query("to"))
+	if to.IsZero() {
+		to = now
+	}
+	if from.IsZero() {
+		from = to.Add(-1 * time.Hour)
+	}
+	return from, to
+}
+
+// tenantFromClaims extracts the tenantId (or teamId fallback) from the JWT set
+// by authMiddleware. Queries are tenant-scoped so one tenant can never read
+// another's logs/traces/metrics (audit V5).
+func tenantFromClaims(c *gin.Context) string {
+	claims, exists := c.Get("claims")
+	if !exists {
+		return ""
+	}
+	jwtClaims, ok := claims.(jwt.MapClaims)
+	if !ok {
+		return ""
+	}
+	tenant, _ := jwtClaims["tenantId"].(string)
+	if tenant == "" {
+		tenant, _ = jwtClaims["teamId"].(string)
+	}
+	if tenant == "" {
+		tenant = "default"
+	}
+	return tenant
+}
+
+func handleLogQuery(c *gin.Context, queryService *query.QueryService) {
+	from, to := parseRange(c)
+	tenantID := tenantFromClaims(c)
+	serviceID := c.Query("service")
+	level := c.Query("level")
+	q := c.Query("q")
+	limit := 200
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil {
+			limit = parsed
+		}
+	}
+
+	results, err := queryService.QueryLogsTenant(c.Request.Context(), tenantID, serviceID, level, q, from, to, limit)
+	if err != nil {
+		writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
+		return
+	}
+	writeEnvelopeOuter(c, http.StatusOK, gin.H{"items": results}, nil)
+}
+
+func handleTraceQuery(c *gin.Context, queryService *query.QueryService) {
+	from, to := parseRange(c)
+	tenantID := tenantFromClaims(c)
+	serviceID := c.Query("service")
+	traceID := c.Query("q")
+	limit := 100
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil {
+			limit = parsed
+		}
+	}
+
+	results, err := queryService.QueryTracesTenant(c.Request.Context(), tenantID, serviceID, traceID, from, to, limit)
+	if err != nil {
+		writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
+		return
+	}
+	writeEnvelopeOuter(c, http.StatusOK, gin.H{"items": results}, nil)
+}
+
+func internalTokenMiddleware() gin.HandlerFunc {
+	expected := os.Getenv("INTERNAL_API_TOKEN")
+	return func(c *gin.Context) {
+		if expected == "" {
+			writeEnvelopeOuter(c, http.StatusServiceUnavailable, nil, gin.H{"error": "INTERNAL_API_TOKEN not configured on collector"})
+			c.Abort()
+			return
+		}
+		provided := c.GetHeader("X-Internal-Token")
+		if provided != expected {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid internal token"})
+			return
+		}
+		c.Next()
+	}
+}
 
 func traceMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {

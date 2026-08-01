@@ -43,6 +43,7 @@ func (p *Producer) ProduceMetrics(batch pkg.MetricBatch) error {
 
 	for _, metric := range batch.Metrics {
 		msg := map[string]interface{}{
+			"tenantId":   batch.TenantID,
 			"serviceId":  batch.ServiceID,
 			"cluster":    batch.Cluster,
 			"namespace":  batch.Namespace,
@@ -97,7 +98,9 @@ func (p *Producer) ProduceLog(entry *pkg.LogEntry) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	p.client.ProduceSync(ctx, record)
+	if err := p.client.ProduceSync(ctx, record).FirstErr(); err != nil {
+		return fmt.Errorf("failed to produce log: %w", err)
+	}
 	return nil
 }
 
@@ -120,7 +123,9 @@ func (p *Producer) ProduceTrace(trace pkg.TraceSpan) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	p.client.ProduceSync(ctx, record)
+	if err := p.client.ProduceSync(ctx, record).FirstErr(); err != nil {
+		return fmt.Errorf("failed to produce trace: %w", err)
+	}
 	return nil
 }
 

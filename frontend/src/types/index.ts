@@ -12,6 +12,22 @@ export interface AnomalyResult {
   prediction30min?: Array<{ ts: string; value: number; confidenceInterval?: number[] }>;
 }
 
+export interface GitHubPRInfo {
+  number: number;
+  title: string;
+  repo: string;
+  url: string;
+  status: 'OPEN' | 'MERGED' | 'CLOSED' | 'DRAFT';
+  branch: string;
+  aiDiagnosis?: {
+    what: string;
+    why: string;
+    confidence: number;
+    impactedFiles: string[];
+  };
+  codeDiff?: string;
+}
+
 export interface Incident {
   id: string;
   serviceId: string;
@@ -24,6 +40,7 @@ export interface Incident {
   rootCause?: string;
   createdAt: string;
   resolvedAt?: string;
+  githubPR?: GitHubPRInfo;
 }
 
 export interface HealingAction {
@@ -70,3 +87,20 @@ export interface ServiceEdge {
   animated?: boolean;
   style?: { stroke?: string };
 }
+
+export type UserRole = 'ADMIN' | 'OPERATOR' | 'VIEWER' | 'BILLING_OWNER';
+export type UserStatus = 'Active' | 'Deactivated';
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  role: UserRole;
+  status: UserStatus;
+  isActive?: boolean;
+  avatarUrl?: string;
+  lastActive?: string;
+  department?: string;
+  createdAt?: string;
+}
+

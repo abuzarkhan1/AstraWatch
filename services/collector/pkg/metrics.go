@@ -16,6 +16,7 @@ type MetricPoint struct {
 
 type MetricBatch struct {
 	BatchID    string        `json:"batchId,omitempty"`
+	TenantID   string        `json:"tenantId,omitempty"`
 	ServiceID  string        `json:"serviceId"`
 	Cluster    string        `json:"cluster"`
 	Namespace  string        `json:"namespace"`
@@ -26,7 +27,9 @@ type MetricBatch struct {
 
 type LogEntry struct {
 	Timestamp time.Time         `json:"ts"`
+	TenantID  string            `json:"tenantId,omitempty"`
 	ServiceID string            `json:"serviceId"`
+	Namespace string            `json:"namespace,omitempty"`
 	Message   string            `json:"message"`
 	Level     string            `json:"level"`
 	Labels    map[string]string `json:"labels"`
@@ -38,7 +41,9 @@ type TraceSpan struct {
 	TraceID      string            `json:"traceId"`
 	SpanID       string            `json:"spanId"`
 	ParentSpanID string            `json:"parentSpanId,omitempty"`
+	TenantID     string            `json:"tenantId,omitempty"`
 	ServiceID    string            `json:"serviceId"`
+	Namespace    string            `json:"namespace,omitempty"`
 	Operation    string            `json:"operation"`
 	StartTime    time.Time         `json:"startTime"`
 	EndTime      time.Time         `json:"endTime"`

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'astrawatch-super-secret-jwt-token-signing-key-2026-secure-32bytes-long!';
 
 // In-memory API key store. In production this would be a DB/Redis lookup.
 const apiKeyStore = new Map();
@@ -67,16 +67,9 @@ class SocketAuth {
       };
     }
 
-    // Accept any valid-format key for dev; real validation would hit the orchestrator DB
-    return {
-      valid: true,
-      type: 'api_key',
-      keyPrefix: prefix,
-      userId: null,
-      roles: [],
-      permissions: ['read'],
-      tenantId: 'default',
-    };
+    // Unknown API key → reject. Real validation should hit the orchestrator DB;
+    // accepting any 16+ char string as a valid key was an auth bypass.
+    return { valid: false, error: 'Unknown API key' };
   }
 
   registerApiKey(key, metadata = {}) {

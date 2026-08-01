@@ -103,11 +103,11 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ── 5. Create SLO Definitions ─────────────────────────────────────────────
-INSERT INTO slo_definitions (id, service_id, metric, target_percentage, window_days)
+INSERT INTO slo_definitions (id, service_id, name, metric, target_percentage, window_days)
 VALUES 
-  ('44444444-4444-4444-4444-444444444401', 'a1b2c3d4-0001-4000-8000-000000000001', 'latency_p99', 99.95, 30),
-  ('44444444-4444-4444-4444-444444444402', 'a1b2c3d4-0002-4000-8000-000000000002', 'http_success_rate', 99.90, 30),
-  ('44444444-4444-4444-4444-444444444403', 'a1b2c3d4-0003-4000-8000-000000000003', 'queue_latency', 99.50, 30)
+  ('44444444-4444-4444-4444-444444444401', 'a1b2c3d4-0001-4000-8000-000000000001', 'Payment API Latency', 'latency_p99', 99.95, 30),
+  ('44444444-4444-4444-4444-444444444402', 'a1b2c3d4-0002-4000-8000-000000000002', 'User Service HTTP Success', 'http_success_rate', 99.90, 30),
+  ('44444444-4444-4444-4444-444444444403', 'a1b2c3d4-0003-4000-8000-000000000003', 'Notification Queue Latency', 'queue_latency', 99.50, 30)
 ON CONFLICT (id) DO NOTHING;
 
 -- ── 6. Create Synthetic Checks ────────────────────────────────────────────

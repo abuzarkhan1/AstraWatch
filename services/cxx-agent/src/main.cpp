@@ -84,7 +84,8 @@ void build_proto_batch(const AgentConfig& config, int64_t ts, int64_t queue_dept
     };
 
     auto base_labels = std::map<std::string, std::string>{
-        {"source", "cxx-agent"}, {"host", config.hostname}};
+        {"source", "cxx-agent"}, {"host", config.hostname},
+        {"tenantId", config.tenant_id}};
 
     // Count events by type
     int sched_count = 0, tcp_send = 0, tcp_recv = 0, block_count = 0;

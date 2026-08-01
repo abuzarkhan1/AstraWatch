@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>AstraWatch - Auto-Healing Report</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; }
+        .header { border-bottom: 1px solid #30363d; padding-bottom: 16px; margin-bottom: 20px; }
+        .title { color: #58a6ff; font-size: 20px; font-weight: 600; margin: 0; }
+        .status-COMPLETED { color: #3fb950; font-weight: bold; }
+        .status-FAILED { color: #f85149; font-weight: bold; }
+        .status-EXECUTING { color: #d29922; font-weight: bold; }
+        .status-PENDING { color: #db61a2; font-weight: bold; }
+        .detail-row { margin: 12px 0; font-size: 14px; }
+        .label { color: #8b949e; font-weight: 500; }
+        .value { color: #58a6ff; font-family: monospace; }
+        .button { display: inline-block; background-color: #1f6beb; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; margin-top: 16px; }
+        .footer { border-top: 1px solid #30363d; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #8b949e; text-align: center; }
+        .footer a { color: #58a6ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 class="title">🛠️ Auto-Healing Action Report</h2>
+        </div>
+        <p>An automated healing orchestration action has been processed.</p>
+
+        <div class="detail-row">
+            <span class="label">Action ID:</span>
+            <span class="value" th:text="${actionId}">action-uuid</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Incident ID:</span>
+            <span class="value" th:text="${incidentId}">incident-uuid</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Action Type:</span>
+            <strong th:text="${actionType}">RESTART_POD</strong>
+        </div>
+        <div class="detail-row">
+            <span class="label">Risk Score:</span>
+            <span th:text="${riskScore}">35</span> / 100
+        </div>
+        <div class="detail-row">
+            <span class="label">Execution Status:</span>
+            <span th:class="'status-' + ${status}" th:text="${status}">COMPLETED</span>
+        </div>
+
+        <!-- Boundary-aware approve / reject control plane (audit F6) -->
+        <div th:if="${status == 'PENDING'}" style="margin-top:20px;padding:16px;background:#21262d;border-radius:8px;border:1px solid #30363d">
+            <p style="margin:0 0 12px 0;font-size:13px;color:#8b949e">
+                This healing action requires human approval (risk-gated). Approving executes it under
+                blast-radius guards; rejecting leaves the incident open for investigation.
+            </p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <a th:href="${approveUrl}" style="display:inline-block;background-color:#238636;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600">✓ Approve Action</a>
+                <a th:href="${rejectUrl}" style="display:inline-block;background-color:#da3633;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600">✗ Reject Action</a>
+            </div>
+        </div>
+
+        <a th:href="${dashboardUrl}" class="button">View Healing Details</a>
+
+        <div class="footer">
+            <p>AstraWatch Automated Healing Orchestrator</p>
+            <p><a th:href="${unsubscribeUrl}">Unsubscribe from healing updates</a></p>
+        </div>
+    </div>
+</body>
+</html>

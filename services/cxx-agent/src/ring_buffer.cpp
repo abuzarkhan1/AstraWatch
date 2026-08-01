@@ -22,6 +22,9 @@ MMapRingBuffer::MMapRingBuffer(const std::string& path, size_t capacity)
     // Allocate header + data region: 4KB header, rest is data
     size_t total_size = 4096 + capacity_;
 
+    struct stat st;
+    bool is_new = (::stat(path_.c_str(), &st) != 0 || st.st_size == 0);
+
     fd_ = ::open(path_.c_str(), O_RDWR | O_CREAT, 0644);
     if (fd_ < 0) {
         throw std::runtime_error("Failed to open ring buffer file: " +
@@ -46,12 +49,10 @@ MMapRingBuffer::MMapRingBuffer(const std::string& path, size_t capacity)
     header_ = static_cast<RingHeader*>(mapped_);
     data_ = static_cast<uint8_t*>(mapped_) + 4096;
 
-    // Initialize header if this is a new file
-    if (header_->count == 0 && header_->write_offset == 0) {
-        header_->write_offset = 0;
-        header_->read_offset = 0;
-        header_->count = 0;
-        header_->oldest_ts = 0;
+    // Initialize header if this is a new file or if offsets are 0 / corrupt
+    if (is_new || header_->write_offset >= capacity_ || header_->read_offset >= capacity_ ||
+        (header_->write_offset == 0 && header_->read_offset == 0)) {
+        std::memset(mapped_, 0, total_size);
     }
 
     ::close(fd_); // fd no longer needed after mmap
@@ -112,7 +113,7 @@ bool MMapRingBuffer::push(const MetricBatch& batch) {
 bool MMapRingBuffer::pop(MetricBatch& batch) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    if (empty()) return false;
+    if (header_->count == 0) return false;
 
     uint32_t len;
     if (header_->read_offset + sizeof(len) > capacity_) {
@@ -178,23 +179,65 @@ size_t MMapRingBuffer::write_available() const {
     }
 }
 
+static std::string escape_string(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        if (c == '\\') {
+            out += "\\\\";
+        } else if (c == '\n') {
+            out += "\\n";
+        } else if (c == '\r') {
+            out += "\\r";
+        } else {
+            out.push_back(c);
+        }
+    }
+    return out;
+}
+
+static std::string unescape_string(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '\\' && i + 1 < s.size()) {
+            char next = s[i + 1];
+            if (next == '\\') {
+                out.push_back('\\');
+                i++;
+            } else if (next == 'n') {
+                out.push_back('\n');
+                i++;
+            } else if (next == 'r') {
+                out.push_back('\r');
+                i++;
+            } else {
+                out.push_back(s[i]);
+            }
+        } else {
+            out.push_back(s[i]);
+        }
+    }
+    return out;
+}
+
 void MMapRingBuffer::serialize_batch(const MetricBatch& batch, std::vector<uint8_t>& out) {
     std::ostringstream oss;
-    oss << batch.agent_id << "\n"
-        << batch.hostname << "\n"
-        << batch.cluster << "\n"
+    oss << escape_string(batch.agent_id) << "\n"
+        << escape_string(batch.hostname) << "\n"
+        << escape_string(batch.cluster) << "\n"
         << batch.batch_seq << "\n"
         << batch.original_timestamp_ms << "\n"
         << (batch.is_backlog ? "1" : "0") << "\n"
         << batch.metrics.size() << "\n";
 
     for (const auto& m : batch.metrics) {
-        oss << m.name << "\n"
+        oss << escape_string(m.name) << "\n"
             << m.value << "\n"
             << m.timestamp_ms << "\n"
             << m.labels.size() << "\n";
         for (const auto& [k, v] : m.labels) {
-            oss << k << "\n" << v << "\n";
+            oss << escape_string(k) << "\n" << escape_string(v) << "\n";
         }
     }
 
@@ -203,53 +246,66 @@ void MMapRingBuffer::serialize_batch(const MetricBatch& batch, std::vector<uint8
 }
 
 bool MMapRingBuffer::deserialize_batch(const uint8_t* data, size_t len, MetricBatch& batch) {
-    std::string str(reinterpret_cast<const char*>(data), len);
-    std::istringstream iss(str);
+    try {
+        std::string str(reinterpret_cast<const char*>(data), len);
+        std::istringstream iss(str);
 
-    std::string line;
-    if (!std::getline(iss, batch.agent_id)) return false;
-    if (!std::getline(iss, batch.hostname)) return false;
-    if (!std::getline(iss, batch.cluster)) return false;
+        std::string line;
+        if (!std::getline(iss, line)) return false;
+        batch.agent_id = unescape_string(line);
 
-    std::string seq_str;
-    if (!std::getline(iss, seq_str)) return false;
-    batch.batch_seq = std::stoll(seq_str);
+        if (!std::getline(iss, line)) return false;
+        batch.hostname = unescape_string(line);
 
-    std::string ts_str;
-    if (!std::getline(iss, ts_str)) return false;
-    batch.original_timestamp_ms = std::stoll(ts_str);
+        if (!std::getline(iss, line)) return false;
+        batch.cluster = unescape_string(line);
 
-    std::string backlog_str;
-    if (!std::getline(iss, backlog_str)) return false;
-    batch.is_backlog = backlog_str == "1";
+        std::string seq_str;
+        if (!std::getline(iss, seq_str)) return false;
+        batch.batch_seq = std::stoll(seq_str);
 
-    std::string count_str;
-    if (!std::getline(iss, count_str)) return false;
-    size_t count = std::stoul(count_str);
+        std::string ts_str;
+        if (!std::getline(iss, ts_str)) return false;
+        batch.original_timestamp_ms = std::stoll(ts_str);
 
-    for (size_t i = 0; i < count; i++) {
-        MetricSample sample;
-        if (!std::getline(iss, sample.name)) return false;
-        std::string val_str;
-        if (!std::getline(iss, val_str)) return false;
-        sample.value = std::stod(val_str);
-        std::string ts_s;
-        if (!std::getline(iss, ts_s)) return false;
-        sample.timestamp_ms = std::stoll(ts_s);
+        std::string backlog_str;
+        if (!std::getline(iss, backlog_str)) return false;
+        batch.is_backlog = backlog_str == "1";
 
-        std::string labels_count;
-        if (!std::getline(iss, labels_count)) return false;
-        size_t lc = std::stoul(labels_count);
-        for (size_t j = 0; j < lc; j++) {
-            std::string k, v;
-            if (!std::getline(iss, k)) return false;
-            if (!std::getline(iss, v)) return false;
-            sample.labels[k] = v;
+        std::string count_str;
+        if (!std::getline(iss, count_str)) return false;
+        size_t count = std::stoul(count_str);
+
+        for (size_t i = 0; i < count; i++) {
+            MetricSample sample;
+            if (!std::getline(iss, line)) return false;
+            sample.name = unescape_string(line);
+
+            std::string val_str;
+            if (!std::getline(iss, val_str)) return false;
+            sample.value = std::stod(val_str);
+
+            std::string ts_s;
+            if (!std::getline(iss, ts_s)) return false;
+            sample.timestamp_ms = std::stoll(ts_s);
+
+            std::string labels_count;
+            if (!std::getline(iss, labels_count)) return false;
+            size_t lc = std::stoul(labels_count);
+
+            for (size_t j = 0; j < lc; j++) {
+                std::string k_line, v_line;
+                if (!std::getline(iss, k_line)) return false;
+                if (!std::getline(iss, v_line)) return false;
+                sample.labels[unescape_string(k_line)] = unescape_string(v_line);
+            }
+            batch.metrics.push_back(std::move(sample));
         }
-        batch.metrics.push_back(std::move(sample));
-    }
 
-    return true;
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 } // namespace astrawatch::agent::storage

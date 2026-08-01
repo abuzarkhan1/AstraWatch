@@ -20,6 +20,39 @@ const mockIncidents = [
     description: 'eBPF probe detected 99th percentile response time spiked to 3,450ms. TCP retransmissions increased by 420%.',
     createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+    githubPR: {
+      number: 42,
+      title: 'astrawatch/fix-incident-123',
+      repo: 'astrawatch/payment-service',
+      url: 'https://github.com/astrawatch/payment-service/pull/42',
+      status: 'OPEN',
+      branch: 'astrawatch/fix-incident-123',
+      aiDiagnosis: {
+        what: 'eBPF socket buffer overflow caused TCP retransmission spikes during high-throughput ingress spikes.',
+        why: 'Socket read buffer pool size (64KB) was undersized for peak 10Gbps ingress burst traffic, forcing TCP window scaling drops and kernel queue exhaustion.',
+        confidence: 0.94,
+        impactedFiles: [
+          'services/payment-service/internal/socket/buffer.go',
+          'services/payment-service/config/sysctl.conf',
+        ],
+      },
+      codeDiff: `--- a/services/payment-service/internal/socket/buffer.go
++++ b/services/payment-service/internal/socket/buffer.go
+@@ -14,7 +14,7 @@ const (
+-   DefaultMaxSocketBuffer = 65536 // 64KB
++   DefaultMaxSocketBuffer = 4194304 // 4MB dynamic pool buffer
+    TcpWindowScaleFactor  = 7
+ )
+
+ func ConfigureRingBuffer(conn *net.TCPConn) error {
+-   return conn.SetReadBuffer(DefaultMaxSocketBuffer)
++   if err := conn.SetReadBuffer(DefaultMaxSocketBuffer); err != nil {
++       log.Warnf("Failed to expand socket buffer: %v", err)
++       return err
++   }
++   return nil
+ }`,
+    },
   },
   {
     id: '22222222-2222-2222-2222-222222222202',
@@ -30,6 +63,31 @@ const mockIncidents = [
     description: 'Active connections saturated PostgreSQL pool (100/100). HTTP 500 error rate exceeded 4.2%.',
     createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    githubPR: {
+      number: 88,
+      title: 'astrawatch/fix-db-pool-exhaustion',
+      repo: 'astrawatch/user-service',
+      url: 'https://github.com/astrawatch/user-service/pull/88',
+      status: 'OPEN',
+      branch: 'astrawatch/fix-db-pool-exhaustion',
+      aiDiagnosis: {
+        what: 'PostgreSQL connection leaks in unclosed gRPC transaction contexts.',
+        why: 'Defer statement was missing after acquireConnection() call in user authentication handler.',
+        confidence: 0.91,
+        impactedFiles: [
+          'services/user-service/internal/db/pool.go',
+        ],
+      },
+      codeDiff: `--- a/services/user-service/internal/db/pool.go
++++ b/services/user-service/internal/db/pool.go
+@@ -32,6 +32,7 @@ func GetUserByID(ctx context.Context, id string) (*User, error) {
+    conn, err := pool.Acquire(ctx)
+    if err != nil { return nil, err }
++   defer conn.Release()
+
+    return conn.QueryUser(id)
+ }`,
+    },
   },
   {
     id: '22222222-2222-2222-2222-222222222203',
@@ -204,12 +262,13 @@ export function useServices() {
     queryFn: async () => {
       try {
         const { data } = await endpoints.services.list();
-        if (data?.services && data.services.length > 0) return data;
-        if (Array.isArray(data) && data.length > 0) return { services: data };
+        const actualData = data?.data ?? data;
+        if (Array.isArray(actualData)) return actualData;
+        if (actualData?.services && Array.isArray(actualData.services)) return actualData.services;
       } catch (err) {
         console.warn('API fallback to mock services');
       }
-      return { services: mockServices };
+      return mockServices;
     },
     refetchInterval: 60000,
   });

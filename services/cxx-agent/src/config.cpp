@@ -20,6 +20,7 @@ AgentConfig AgentConfig::from_env() {
     cfg.agent_id = get_env("ASTRAWATCH_AGENT_ID", "");
     cfg.hostname = get_env("HOSTNAME", "unknown");
     cfg.cluster = get_env("ASTRAWATCH_CLUSTER", "default");
+    cfg.tenant_id = get_env("ASTRAWATCH_TENANT", "default");
     cfg.collector_address = get_env("ASTRAWATCH_COLLECTOR_ADDR", "localhost:8080");
     cfg.use_mtls = get_env("ASTRAWATCH_MTLS_ENABLED", "false") == "true";
     cfg.tls_cert_path = get_env("ASTRAWATCH_TLS_CERT", "");

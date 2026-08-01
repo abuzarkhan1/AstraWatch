@@ -6,12 +6,21 @@ class WebSocketManager {
   private socket: Socket | null = null;
   private listeners: Map<string, Set<(data: unknown) => void>> = new Map();
 
-  connect(token: string): Socket {
+  connect(token?: string): Socket {
     if (this.socket?.connected) return this.socket;
+
+    let authToken = token;
+    if (!authToken && typeof document !== 'undefined') {
+      const tokenMatch = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
+      if (tokenMatch) {
+        authToken = decodeURIComponent(tokenMatch[1]);
+      }
+    }
 
     this.socket = io(WS_URL, {
       path: '/ws',
-      auth: { token },
+      auth: authToken ? { token: authToken } : undefined,
+      withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,

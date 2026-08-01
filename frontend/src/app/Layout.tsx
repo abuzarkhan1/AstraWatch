@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Activity, Shield, AlertTriangle, BarChart3, Network, Bell, LayoutGrid, ScrollText, GitBranch, Menu, X, LogOut, Search, Settings, Book, FileText, Globe, Box } from 'lucide-react';
+import { LayoutDashboard, Activity, Shield, AlertTriangle, BarChart3, Network, Bell, LayoutGrid, ScrollText, GitBranch, Menu, X, LogOut, Search, Settings, Book, FileText, Globe, Box, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
 
@@ -21,6 +21,7 @@ const navItems = [
   { path: '/postmortems', label: 'Postmortems', icon: FileText },
   { path: '/synthetics', label: 'Synthetics', icon: Activity },
   { path: '/admin', label: 'Admin', icon: Settings },
+  { path: '/users', label: 'User Management', icon: Users },
 ];
 
 function BrandMark({ className = "w-5 h-5" }: { className?: string }) {
@@ -34,11 +35,129 @@ function BrandMark({ className = "w-5 h-5" }: { className?: string }) {
   );
 }
 
+interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  time: string;
+  link?: string;
+}
+
+interface SearchResult {
+  id: string;
+  title: string;
+  subtitle: string;
+  link: string;
+}
+
 export default function Layout() {
   const location = useLocation();
   const { sidebarOpen, setSidebarOpen } = useAppStore();
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ name?: string; email?: string; avatarUrl?: string } | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Live notifications via the realtime WebSocket (audit F11 — previously a stub
+  // that always rendered "No new notifications"). A mounted flag prevents handler
+  // registration after unmount (async import race) and handlers are deduped by
+  // event id so StrictMode double-mounts don't produce duplicates.
+  useEffect(() => {
+    let mounted = true;
+    let unsubscribers: Array<() => void> = [];
+    const NOTIFY_EVENTS = ['anomaly.detected', 'incident.created', 'incident.updated', 'healing.started', 'healing.completed', 'healing.failed'];
+
+    import('@/hooks/useWebSocket').then(({ wsManager }) => {
+      if (!mounted) return;
+      wsManager.connect();
+
+      const pushNotification = (type: string, raw: unknown) => {
+        if (!mounted) return;
+        const d = (raw && typeof raw === 'object' ? (raw as any)?.data ?? raw : raw) ?? {};
+        const id = String(d.incidentId || d.actionId || d.eventId || `${type}-${Date.now()}`);
+        const link = d.incidentId ? `/incidents/${d.incidentId}` : '/incidents';
+        const title =
+          type === 'anomaly.detected' ? `Anomaly detected: ${d.serviceId || 'unknown service'}` :
+          type === 'incident.created' ? `Incident created: ${d.title || d.serviceId || 'new incident'}` :
+          type.startsWith('healing.') ? `Healing ${type.split('.')[1]}: ${d.actionType || 'action'}` :
+          `Event: ${type}`;
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === id)) return prev;
+          const next = [{ id, type, title, time: new Date().toISOString(), link }, ...prev];
+          return next.slice(0, 50);
+        });
+      };
+
+      NOTIFY_EVENTS.forEach((evt) => {
+        unsubscribers.push(wsManager.on(evt, (data) => pushNotification(evt, data)));
+      });
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribers.forEach((u) => u());
+    };
+  }, []);
+
+  useEffect(() => {
+    import('@/lib/api').then(({ endpoints }) => {
+      endpoints.auth.me().then((res: any) => {
+        const d = res.data?.data ?? res.data;
+        if (d) setCurrentUser({ name: d.name, email: d.email, avatarUrl: d.avatarUrl });
+      }).catch(() => {});
+    });
+  }, []);
+
+  // Command-bar search (audit F11 — previously a stub with no query logic).
+  useEffect(() => {
+    if (!searchOpen) return;
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchResults([]);
+      return;
+    }
+    let cancelled = false;
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const { default: api } = await import('@/lib/api');
+        const [incRes, healRes] = await Promise.allSettled([
+          api.get('/api/v1/incidents', { params: { limit: 50 } }),
+          api.get('/api/v1/healing/history'),
+        ]);
+        const results: SearchResult[] = [];
+        if (incRes.status === 'fulfilled') {
+          const items = incRes.value.data?.data ?? incRes.value.data ?? [];
+          (Array.isArray(items) ? items : []).forEach((inc: any) => {
+            const title = inc.title || inc.serviceId || '';
+            if (title.toLowerCase().includes(q.toLowerCase())) {
+              results.push({ id: `inc-${inc.id}`, title, subtitle: `${inc.severity || ''} incident`.trim(), link: `/incidents/${inc.id}` });
+            }
+          });
+        }
+        if (healRes.status === 'fulfilled') {
+          const items = healRes.value.data?.data ?? healRes.value.data ?? [];
+          (Array.isArray(items) ? items : []).forEach((h: any) => {
+            if ((h.actionType || '').toLowerCase().includes(q.toLowerCase())) {
+              results.push({ id: `heal-${h.id}`, title: `Healing: ${h.actionType}`, subtitle: `Risk ${h.riskScore} · ${h.status || ''}`.trim(), link: `/incidents/${h.incidentId}` });
+            }
+          });
+        }
+        if (!cancelled) setSearchResults(results.slice(0, 20));
+      } catch (err) {
+        if (!cancelled) setSearchResults([]);
+      } finally {
+        if (!cancelled) setSearchLoading(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, searchOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -92,12 +211,36 @@ export default function Layout() {
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-neutral-800">
+        <div className="px-3 py-4 border-t border-neutral-800 space-y-2">
+          {/* User profile strip */}
+          {currentUser && (
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              {currentUser.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.name || 'User'}
+                  className="w-8 h-8 rounded-full object-cover border border-white/10 shrink-0"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-300 text-xs font-bold shrink-0">
+                  {(currentUser.name?.[0] || currentUser.email?.[0] || '?').toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-white truncate">{currentUser.name || 'User'}</div>
+                <div className="text-[10px] text-gray-500 truncate">{currentUser.email}</div>
+              </div>
+            </div>
+          )}
           <button
-            onClick={() => {
-              localStorage.removeItem('accessToken');
-              localStorage.removeItem('refreshToken');
-              window.location.href = '/auth/login';
+            onClick={async () => {
+              try {
+                const { default: api } = await import('@/lib/api');
+                await api.post('/api/v1/auth/logout').catch(() => {});
+              } finally {
+                window.location.href = '/auth/login';
+              }
             }}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-gray-400 hover:bg-white/[0.05] hover:text-white border border-transparent hover:border-white/10 transition-all"
           >
@@ -147,12 +290,42 @@ export default function Layout() {
               className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-400 hover:text-white relative transition-all duration-200 hover:scale-105 active:scale-95"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              {notifications.length > 0 && (
+                <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">
+                  {notifications.length > 9 ? '9+' : notifications.length}
+                </span>
+              )}
             </button>
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 border border-neutral-800 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] z-50 overflow-hidden">
-                  <div className="p-3 border-b border-neutral-800 font-medium text-sm">Notifications</div>
-                  <div className="p-4 text-sm text-gray-400">No new notifications</div>
+                <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 border border-neutral-800 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] z-50 overflow-hidden">
+                  <div className="p-3 border-b border-neutral-800 font-medium text-sm flex items-center justify-between">
+                    <span>Notifications</span>
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={() => setNotifications([])}
+                        className="text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
+                      >
+                        Clear all
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-80 overflow-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-4 text-sm text-gray-400">No new notifications</div>
+                    ) : (
+                      notifications.map((n) => (
+                        <Link
+                          key={n.id}
+                          to={n.link || '/incidents'}
+                          onClick={() => setNotificationsOpen(false)}
+                          className="block px-4 py-3 border-b border-neutral-800/60 hover:bg-white/[0.03] transition-colors"
+                        >
+                          <div className="text-xs font-semibold text-white truncate">{n.title}</div>
+                          <div className="text-[10px] text-gray-500 mt-0.5">{new Date(n.time).toLocaleString()}</div>
+                        </Link>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -170,9 +343,10 @@ export default function Layout() {
                   <Search className="w-5 h-5 text-gray-400" />
                   <input
                     autoFocus
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="flex-1 bg-transparent outline-none text-gray-100 placeholder-gray-500"
                     placeholder="Type a command or search..."
-                    onChange={() => {}}
                   />
                   <button
                     onClick={() => setSearchOpen(false)}
@@ -182,7 +356,25 @@ export default function Layout() {
                   </button>
                 </div>
                 <div className="flex-1 overflow-auto p-2">
-                  <div className="p-2 text-sm text-gray-500">No results found.</div>
+                  {searchLoading ? (
+                    <div className="p-2 text-sm text-gray-500">Searching...</div>
+                  ) : searchQuery.trim() === '' ? (
+                    <div className="p-2 text-sm text-gray-500">Type to search incidents and healing actions.</div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="p-2 text-sm text-gray-500">No results found.</div>
+                  ) : (
+                    searchResults.map((r) => (
+                      <Link
+                        key={r.id}
+                        to={r.link}
+                        onClick={() => setSearchOpen(false)}
+                        className="block p-2 rounded-xl hover:bg-white/[0.04] transition-colors"
+                      >
+                        <div className="text-sm text-white font-medium truncate">{r.title}</div>
+                        <div className="text-xs text-gray-500 truncate">{r.subtitle}</div>
+                      </Link>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

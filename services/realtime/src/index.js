@@ -57,9 +57,13 @@ class RealtimeGateway {
 
   setupAuth() {
     this.io.use((socket, next) => {
-      const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+      const token =
+        socket.handshake.auth?.token ||
+        socket.handshake.query?.token ||
+        this.tokenFromCookie(socket.handshake.headers?.cookie);
 
       if (!token) {
+        logger.warn('Authentication required. Handshake headers:', socket.handshake.headers);
         return next(new Error('Authentication required'));
       }
 
@@ -78,13 +82,43 @@ class RealtimeGateway {
     });
   }
 
+  // The frontend stores the access token in an httpOnly cookie (XSRF-protected API
+  // auth), so the socket handshake may carry it instead of an explicit auth token.
+  tokenFromCookie(cookieHeader) {
+    if (!cookieHeader) return null;
+    const match = cookieHeader.match(/(?:^|; )accessToken=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
   setupEventHandlers() {
     this.io.on('connection', (socket) => {
-      logger.info(`Client connected: ${socket.id}, userId: ${socket.user?.userId || 'api'}`);
+      logger.info(`Client connected: ${socket.id}, userId: ${socket.user?.userId || 'api'}, tenantId: ${socket.user?.tenantId || 'default'}`);
+
+      const tenantId = socket.user?.tenantId || 'default';
+      const tenantDashboardRoom = `tenant:${tenantId}:dashboard`;
+      socket.join(tenantDashboardRoom);
+      this.trackSubscription(socket.id, tenantDashboardRoom);
 
       socket.emit('connected', {
         socketId: socket.id,
+        tenantId,
         serverTime: new Date().toISOString(),
+      });
+
+      // ── Per-socket message rate limiting ────────────────────────────
+      const rateLimitWindowMs = 60000;
+      const maxEventsPerMin = 120;
+      let socketEventTimestamps = [];
+
+      socket.use(([event, ...args], next) => {
+        const now = Date.now();
+        socketEventTimestamps = socketEventTimestamps.filter((ts) => now - ts < rateLimitWindowMs);
+        if (socketEventTimestamps.length >= maxEventsPerMin) {
+          logger.warn(`Rate limit exceeded for socket ${socket.id}, event: ${event}`);
+          return next(new Error('Rate limit exceeded. Too many requests.'));
+        }
+        socketEventTimestamps.push(now);
+        next();
       });
 
       // ── JWT revalidation timer (every 10 min) ───────────────────────
@@ -119,15 +153,15 @@ class RealtimeGateway {
       // ── Service subscription ────────────────────────────────────────
       socket.on('service:subscribe', ({ serviceId }) => {
         if (serviceId) {
-          const tenantPrefix = socket.user?.tenantId ? `tenant:${socket.user.tenantId}:` : '';
-          socket.join(`${tenantPrefix}service:${serviceId}`);
-          this.trackSubscription(socket.id, `${tenantPrefix}service:${serviceId}`);
+          const room = `tenant:${tenantId}:service:${serviceId}`;
+          socket.join(room);
+          this.trackSubscription(socket.id, room);
         }
       });
 
       // ── Replay handler ──────────────────────────────────────────────
       socket.on('replay', ({ eventTypes, since, room }) => {
-        const replayTarget = room || 'dashboard:all';
+        const replayTarget = room ? (room.startsWith('tenant:') ? room : `tenant:${tenantId}:${room}`) : tenantDashboardRoom;
         const sinceTime = since ? new Date(since).getTime() : (Date.now() - 60000);
 
         let replayed = 0;
@@ -135,12 +169,16 @@ class RealtimeGateway {
           const eventTime = this.eventCacheTimestamps.get(cacheKey) || 0;
           if (eventTime < sinceTime) continue;
 
+          // Tenant isolation check: cached event must belong to socket's tenant
+          const eventTenant = value.tenantId || 'default';
+          if (eventTenant !== tenantId) continue;
+
           const colonIdx = cacheKey.indexOf(':');
           const eventType = colonIdx > 0 ? cacheKey.substring(0, colonIdx) : cacheKey;
 
           if (eventTypes && !eventTypes.includes(eventType)) continue;
 
-          if (socket.rooms.has(replayTarget) || replayTarget === 'dashboard:all') {
+          if (socket.rooms.has(replayTarget) || socket.rooms.has(tenantDashboardRoom)) {
             socket.emit(eventType, value);
             replayed++;
           }
@@ -172,19 +210,20 @@ class RealtimeGateway {
 
       this.cacheEvent(eventType, dedupKey, value);
 
-      this.io.to('dashboard:all').emit(eventType, {
+      const tenantId = value.tenantId || 'default';
+
+      // Broadcast ONLY to tenant-scoped rooms
+      this.io.to(`tenant:${tenantId}:dashboard`).emit(eventType, {
         ...value,
         _meta: { key: dedupKey, topic, timestamp: new Date().toISOString() },
       });
 
       if (value.serviceId) {
-        const tenantPrefix = value.tenantId ? `tenant:${value.tenantId}:` : '';
-        this.io.to(`${tenantPrefix}service:${value.serviceId}`).emit(eventType, value);
+        this.io.to(`tenant:${tenantId}:service:${value.serviceId}`).emit(eventType, value);
       }
 
       if (value.incidentId) {
-        const tenantPrefix = value.tenantId ? `tenant:${value.tenantId}:` : '';
-        this.io.to(`${tenantPrefix}incident:${value.incidentId}`).emit(eventType, value);
+        this.io.to(`tenant:${tenantId}:incident:${value.incidentId}`).emit(eventType, value);
       }
     });
   }

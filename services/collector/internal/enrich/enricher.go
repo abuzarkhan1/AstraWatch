@@ -63,7 +63,7 @@ func (e *Enricher) startK8sWatch() {
 		AddFunc: func(obj interface{}) {
 			pod := obj.(*v1.Pod)
 			e.mu.Lock()
-			e.podCache[pod.Name] = podInfo{
+			e.podCache[podCacheKey(pod.Namespace, pod.Name)] = podInfo{
 				Namespace: pod.Namespace,
 				Labels:    pod.Labels,
 				Service:   pod.Labels["app"],
@@ -73,7 +73,7 @@ func (e *Enricher) startK8sWatch() {
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			pod := newObj.(*v1.Pod)
 			e.mu.Lock()
-			e.podCache[pod.Name] = podInfo{
+			e.podCache[podCacheKey(pod.Namespace, pod.Name)] = podInfo{
 				Namespace: pod.Namespace,
 				Labels:    pod.Labels,
 				Service:   pod.Labels["app"],
@@ -81,9 +81,19 @@ func (e *Enricher) startK8sWatch() {
 			e.mu.Unlock()
 		},
 		DeleteFunc: func(obj interface{}) {
-			pod := obj.(*v1.Pod)
+			pod, ok := obj.(*v1.Pod)
+			if !ok {
+				if tombstone, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+					pod, ok = tombstone.Obj.(*v1.Pod)
+					if !ok {
+						return
+					}
+				} else {
+					return
+				}
+			}
 			e.mu.Lock()
-			delete(e.podCache, pod.Name)
+			delete(e.podCache, podCacheKey(pod.Namespace, pod.Name))
 			e.mu.Unlock()
 		},
 	})
@@ -96,7 +106,7 @@ func (e *Enricher) EnrichBatch(batch *pkg.MetricBatch) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	if pod, ok := e.podCache[batch.Source]; ok {
+	if pod, ok := e.lookupPod(batch.Source, batch.Namespace); ok {
 		if batch.Namespace == "" {
 			batch.Namespace = pod.Namespace
 		}
@@ -121,7 +131,7 @@ func (e *Enricher) EnrichLog(entry *pkg.LogEntry) {
 	if entry.Labels == nil {
 		entry.Labels = make(map[string]string)
 	}
-	if pod, ok := e.podCache[entry.ServiceID]; ok {
+	if pod, ok := e.lookupPod(entry.ServiceID, entry.Namespace); ok {
 		entry.Labels["namespace"] = pod.Namespace
 		entry.Labels["service"] = pod.Service
 	}
@@ -134,9 +144,39 @@ func (e *Enricher) EnrichTrace(trace *pkg.TraceSpan) {
 	if trace.Tags == nil {
 		trace.Tags = make(map[string]string)
 	}
-	if pod, ok := e.podCache[trace.ServiceID]; ok {
+	if pod, ok := e.lookupPod(trace.ServiceID, trace.Namespace); ok {
 		trace.Tags["namespace"] = pod.Namespace
 	}
+}
+
+// podCacheKey namespaces the pod cache so pods with the same name in different
+// namespaces (a normal Kubernetes state) never collide.
+func podCacheKey(namespace, name string) string {
+	return namespace + "/" + name
+}
+
+// lookupPod resolves a pod by (name, namespace). When the caller does not know the
+// namespace it falls back to the first pod whose name matches, so legacy agents that
+// omit namespace metadata still get enriched.
+func (e *Enricher) lookupPod(name, namespace string) (podInfo, bool) {
+	if namespace != "" {
+		pod, ok := e.podCache[podCacheKey(namespace, name)]
+		if ok {
+			return pod, true
+		}
+	}
+	// Fall back to a name-only match. Keys are "namespace/name", so the suffix we
+	// compare against is "/"+name (length len(name)+1); guard against names that
+	// are longer than the key to avoid a slice out-of-range panic.
+	if name != "" {
+		suffix := "/" + name
+		for key, pod := range e.podCache {
+			if len(key) >= len(suffix) && key[len(key)-len(suffix):] == suffix {
+				return pod, true
+			}
+		}
+	}
+	return podInfo{}, false
 }
 
 func (e *Enricher) Stop() {

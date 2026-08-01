@@ -5,9 +5,11 @@ import (
 )
 
 type Config struct {
-	Port           string
-	StripeKey      string
-	WebhookSecret  string
+	Port          string
+	StripeKey     string
+	WebhookSecret string
+	JWTSecret     string
+	DatabaseURL   string
 }
 
 func Load() *Config {
@@ -18,10 +20,14 @@ func Load() *Config {
 	
 	stripeKey := os.Getenv("STRIPE_SECRET_KEY")
 	webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+	jwtSecret := os.Getenv("JWT_SECRET")
+	databaseURL := os.Getenv("DATABASE_URL")
 
 	return &Config{
 		Port:          port,
 		StripeKey:     stripeKey,
 		WebhookSecret: webhookSecret,
+		JWTSecret:     jwtSecret,
+		DatabaseURL:   databaseURL,
 	}
 }

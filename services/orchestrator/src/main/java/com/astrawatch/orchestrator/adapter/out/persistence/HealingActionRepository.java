@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface HealingActionRepository extends JpaRepository<HealingAction, UUID> {
     List<HealingAction> findByIncidentIdOrderByCreatedAtDesc(UUID incidentId);
     List<HealingAction> findByStatusOrderByCreatedAtDesc(HealingAction.HealingStatus status);
+    List<HealingAction> findByActionType(String actionType);
+    List<HealingAction> findByActionTypeOrderByCreatedAtDesc(String actionType);
 }

@@ -1,7 +1,9 @@
-from typing import List, Dict, Any, Tuple
+import os
+from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime
 import numpy as np
 from scipy import stats as scipy_stats
+import structlog
 
 import pandas as pd
 
@@ -10,13 +12,21 @@ from app.ml.detectors.isolation_forest import IsolationForestDetector
 from app.ml.detectors.lstm_autoencoder import LSTMAutoencoder
 from app.ml.features.feature_engineering import FeatureEngineering
 
+logger = structlog.get_logger(__name__)
+
 
 class EnsembleDetector:
-    def __init__(self):
+    def __init__(self, default_threshold: float = 0.5, thresholds: Optional[Dict[str, float]] = None):
         self.statistical = StatisticalDetector()
         self.isolation_forest = IsolationForestDetector()
         self.lstm = LSTMAutoencoder()
         self.feature_engineering = FeatureEngineering()
+
+        self.default_threshold = default_threshold
+        self.thresholds: Dict[str, float] = thresholds or {}
+
+        self._lstm_ts_model = None
+        self._lstm_ts_model_trained = False
 
         self.weights = {
             "statistical": 0.25,
@@ -25,12 +35,34 @@ class EnsembleDetector:
             "causal": 0.10,
         }
 
+    def set_threshold(self, key: str, threshold: float):
+        """Set custom anomaly threshold for a service_id or tenant_id."""
+        self.thresholds[key] = threshold
+
+    def get_threshold(
+        self,
+        service_id: str,
+        tenant_id: Optional[str] = None,
+        explicit_threshold: Optional[float] = None,
+    ) -> float:
+        if explicit_threshold is not None:
+            return explicit_threshold
+        if tenant_id and f"{tenant_id}:{service_id}" in self.thresholds:
+            return self.thresholds[f"{tenant_id}:{service_id}"]
+        if service_id in self.thresholds:
+            return self.thresholds[service_id]
+        if tenant_id and tenant_id in self.thresholds:
+            return self.thresholds[tenant_id]
+        return self.default_threshold
+
     def detect(
         self,
         service_id: str,
         metrics: List[Dict[str, Any]],
         window_seconds: int = 300,
         use_deep_learning: bool = False,
+        threshold: Optional[float] = None,
+        tenant_id: Optional[str] = None,
     ) -> dict:
         if not metrics:
             return {"isAnomaly": False, "score": 0.0, "details": {}}
@@ -67,9 +99,7 @@ class EnsembleDetector:
             "values": values, "timestamps": ts
         }])
         if len(X) > 0:
-            ifo_anomaly, ifo_score = self.isolation_forest.detect(
-                X.flatten()
-            )
+            ifo_anomaly, ifo_score = self.isolation_forest.detect(X)
 
         lstm_anomaly, lstm_score = False, 0.0
         if use_deep_learning and len(values) >= 60:
@@ -117,9 +147,10 @@ class EnsembleDetector:
             active_layers += 1
 
         final_score = min(1.0, max(0.0, final_score))
+        effective_threshold = self.get_threshold(service_id, tenant_id, threshold)
 
         return {
-            "isAnomaly": final_score > 0.5,
+            "isAnomaly": final_score > effective_threshold,
             "score": round(final_score, 4),
             "contributingMetrics": contributing_metrics,
             "details": {
@@ -128,6 +159,7 @@ class EnsembleDetector:
                 "lstm": {"anomaly": lstm_anomaly, "score": round(lstm_score, 4)},
                 "active_layers": active_layers,
                 "primary_metric": primary_metric,
+                "threshold": effective_threshold,
             },
         }
 
@@ -186,8 +218,8 @@ class EnsembleDetector:
                     })
             results.sort(key=lambda x: abs(x["score"]), reverse=True)
             return results
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"SHAP contribution computation failed: {e}")
 
         results = []
         for name, vals in metric_groups.items():
@@ -220,11 +252,25 @@ class EnsembleDetector:
             import tensorflow as tf
             from tensorflow import keras
 
-            model = keras.Sequential([
-                keras.layers.LSTM(32, activation='relu', input_shape=(10, 1)),
-                keras.layers.Dense(1),
-            ])
-            model.compile(optimizer='adam', loss='mse')
+            model_dir = "/models"
+            model_path = os.path.join(model_dir, "lstm_ts_model.keras")
+
+            if self._lstm_ts_model is None:
+                if os.path.exists(model_path):
+                    try:
+                        self._lstm_ts_model = keras.models.load_model(model_path)
+                        self._lstm_ts_model_trained = True
+                    except Exception as e:
+                        logger.warning(f"Failed to load saved LSTM model: {e}")
+
+                if self._lstm_ts_model is None:
+                    self._lstm_ts_model = keras.Sequential([
+                        keras.layers.LSTM(32, activation='relu', input_shape=(10, 1)),
+                        keras.layers.Dense(1),
+                    ])
+                    self._lstm_ts_model.compile(optimizer='adam', loss='mse')
+
+            model = self._lstm_ts_model
 
             if n > 20:
                 X, y = [], []
@@ -233,7 +279,18 @@ class EnsembleDetector:
                     y.append(arr[i+10])
                 X = np.array(X).reshape(-1, 10, 1)
                 y = np.array(y)
-                model.fit(X, y, epochs=5, verbose=0)
+
+                if not self._lstm_ts_model_trained:
+                    model.fit(X, y, epochs=5, verbose=0)
+                    self._lstm_ts_model_trained = True
+                    try:
+                        os.makedirs(model_dir, exist_ok=True)
+                        model.save(model_path)
+                    except Exception as e:
+                        logger.warning(f"Failed to save LSTM model: {e}")
+                else:
+                    # Fine-tune with 1 epoch when reused
+                    model.fit(X, y, epochs=1, verbose=0)
 
                 last_seq = arr[-10:].reshape(1, 10, 1)
                 for i in range(horizon_minutes):
@@ -250,8 +307,8 @@ class EnsembleDetector:
                     last_seq = np.roll(last_seq, -1)
                     last_seq[0, -1, 0] = pred
                 return predictions
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"LSTM timeseries prediction failed: {e}")
 
         try:
             from prophet import Prophet
