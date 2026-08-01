@@ -30,31 +30,34 @@ export default function HealingPage() {
   const pending = actions.filter((a: any) => a.status === 'PENDING' || a.status === 'APPROVED').length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Healing Actions</h1>
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-green-500" />
-          <span className="text-sm text-green-500">Auto-healing enabled</span>
+    <div className="min-h-screen bg-[#060911] text-white p-6 relative overflow-hidden">
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[rgba(6,182,212,0.12)] blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[rgba(6,182,212,0.12)] blur-[120px] rounded-full pointer-events-none" />
+      <div className="relative z-10 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent">Healing Actions</h1>
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-green-500" />
+            <span className="text-sm text-green-500">Auto-healing enabled</span>
+          </div>
         </div>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
+        <div className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6">
           <div className="text-2xl font-bold text-blue-500">{actions.length}</div>
           <div className="text-sm text-gray-500 mt-1">Total Actions</div>
         </div>
-        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
+        <div className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6">
           <div className="text-2xl font-bold text-green-500">{completed}</div>
           <div className="text-sm text-gray-500 mt-1">Completed</div>
         </div>
-        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
+        <div className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6">
           <div className="text-2xl font-bold text-yellow-500">{pending}</div>
           <div className="text-sm text-gray-500 mt-1">Pending / Approved</div>
         </div>
       </div>
 
-      <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] overflow-hidden">
+      <div className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -93,9 +96,9 @@ export default function HealingPage() {
                       <td className="px-4 py-3 text-sm text-gray-500">
                         {new Date(action.createdAt).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3">
-                        <button onClick={async () => { await endpoints.healing.approve(action.id, 'admin'); window.location.reload(); }} className="text-xs text-blue-500 hover:text-blue-400 mr-3">Approve</button>
-                        <button onClick={async () => { await endpoints.healing.rollback(action.id, 'Manual rollback'); window.location.reload(); }} className="text-xs text-red-500 hover:text-red-400">Rollback</button>
+                      <td className="px-4 py-3 flex gap-2">
+                        <button onClick={async () => { await endpoints.healing.approve(action.id, 'admin'); window.location.reload(); }} className="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transition-all">Approve</button>
+                        <button onClick={async () => { await endpoints.healing.rollback(action.id, 'Manual rollback'); window.location.reload(); }} className="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transition-all">Rollback</button>
                       </td>
                     </tr>
                   );
@@ -104,6 +107,7 @@ export default function HealingPage() {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

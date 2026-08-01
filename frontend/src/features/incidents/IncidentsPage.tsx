@@ -30,9 +30,10 @@ export default function IncidentsPage() {
   }, [data]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative z-0 bg-[#060911] p-6 rounded-3xl overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.12)_0%,transparent_50%)] pointer-events-none -z-10" />
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Incidents</h1>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent">Incidents</h1>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
@@ -43,7 +44,7 @@ export default function IncidentsPage() {
         </div>
       </div>
 
-      <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] overflow-hidden">
+      <div className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

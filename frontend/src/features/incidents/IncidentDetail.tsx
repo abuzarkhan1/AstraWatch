@@ -30,16 +30,17 @@ export default function IncidentDetail() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative z-0 bg-[#060911] p-6 rounded-3xl overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.12)_0%,transparent_50%)] pointer-events-none -z-10" />
       <Link to="/incidents" className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200">
         <ArrowLeft className="w-4 h-4" />
         Back to incidents
       </Link>
 
-      <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
+      <div className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold mb-1">{incident.title || 'Incident'}</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent mb-1">{incident.title || 'Incident'}</h1>
             <p className="text-sm text-gray-500">ID: {incident.id}</p>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
@@ -91,7 +92,7 @@ export default function IncidentDetail() {
       </div>
 
       {timeline && timeline.length > 0 && (
-        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
+        <div className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-gray-300 mb-4">Timeline</h2>
           <div className="space-y-3">
             {timeline.map((event: any) => (
@@ -119,7 +120,7 @@ export default function IncidentDetail() {
             await endpoints.incidents.resolve(incident.id, 'Resolved via dashboard');
             navigate(0);
           }}
-          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+          className="px-4 py-2 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white font-medium rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transition-all"
         >
           Resolve Incident
         </button>
@@ -129,7 +130,7 @@ export default function IncidentDetail() {
             await endpoints.incidents.escalate(incident.id, 'manager', 'Needs immediate attention');
             navigate(0);
           }}
-          className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
+          className="px-4 py-2 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white font-medium rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transition-all"
         >
           Escalate
         </button>

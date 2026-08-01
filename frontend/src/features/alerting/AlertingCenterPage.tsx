@@ -62,9 +62,11 @@ export default function AlertingCenterPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative min-h-screen bg-[#060911] p-6">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.12),transparent_50%)] pointer-events-none" />
+      <div className="space-y-6 relative z-10">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Alerting Center</h1>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent">Alerting Center</h1>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
           New Rule
@@ -85,8 +87,8 @@ export default function AlertingCenterPage() {
       ) : (
         <div className="grid gap-4">
           {rules.map((rule) => (
-            <Card key={rule.id}>
-              <CardContent className="flex items-center justify-between p-4">
+            <div key={rule.id} className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     {rule.status === 'active' ? (
@@ -110,7 +112,9 @@ export default function AlertingCenterPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge variant={statusColors[rule.status]}>{rule.status}</Badge>
+                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-400 font-medium capitalize">
+                    {rule.status}
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -119,11 +123,12 @@ export default function AlertingCenterPage() {
                     {rule.status === 'active' ? 'Disable' : 'Enable'}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -75,54 +75,61 @@ export default function TopologyPage() {
   const data = selectedNode?.data as { label?: string; health?: string; tier?: string } | undefined;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Service Topology</h1>
-        <span className="text-sm text-gray-500">{services?.length || 0} services</span>
+    <div className="relative min-h-screen bg-[#060911] text-white p-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[rgba(6,182,212,0.12)] blur-[120px]" />
+        <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-[rgba(6,182,212,0.12)] blur-[120px]" />
       </div>
 
-      <div className="flex gap-4">
-        <div className="flex-1 backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]" style={{ height: 600 }}>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full text-gray-500">Loading topology...</div>
-          ) : (
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onNodeClick={(_, node) => setSelectedNode(node)}
-              fitView
-              attributionPosition="bottom-left"
-            >
-              <Background color="#1e293b" gap={20} />
-              <Controls className="bg-neutral-950/80 border-white/10 rounded-lg" />
-              <MiniMap
-                style={{ background: '#0b101d' }}
-                nodeColor={(node: any) => SERVICE_COLORS[node.data?.health] || '#6b7280'}
-                maskColor="rgba(0,0,0,0.6)"
-              />
-            </ReactFlow>
-          )}
+      <div className="relative z-10 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent font-bold">Service Topology</h1>
+          <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-400 font-medium">{services?.length || 0} services</span>
         </div>
 
-        {data && (
-          <div className="w-72 backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-4 space-y-3 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
-            <h3 className="font-semibold text-lg">{data.label}</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Status</span>
-                <span style={{ color: SERVICE_COLORS[data.health || ''] || '#6b7280' }}>
-                  {data.health}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Tier</span>
-                <span>{data.tier}</span>
+        <div className="flex gap-4">
+          <div className="flex-1 backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl overflow-hidden" style={{ height: 600 }}>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full text-gray-500">Loading topology...</div>
+            ) : (
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onNodeClick={(_, node) => setSelectedNode(node)}
+                fitView
+                attributionPosition="bottom-left"
+              >
+                <Background color="#1e293b" gap={20} />
+                <Controls className="bg-neutral-950/80 border-white/10 rounded-lg text-black" />
+                <MiniMap
+                  style={{ background: '#0b101d' }}
+                  nodeColor={(node: any) => SERVICE_COLORS[node.data?.health] || '#6b7280'}
+                  maskColor="rgba(0,0,0,0.6)"
+                />
+              </ReactFlow>
+            )}
+          </div>
+
+          {data && (
+            <div className="w-72 backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6 space-y-4 h-fit">
+              <h3 className="font-semibold text-lg text-cyan-100">{data.label}</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Status</span>
+                  <span style={{ color: SERVICE_COLORS[data.health || ''] || '#6b7280' }} className="font-medium">
+                    {data.health}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Tier</span>
+                  <span className="text-gray-200">{data.tier}</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
