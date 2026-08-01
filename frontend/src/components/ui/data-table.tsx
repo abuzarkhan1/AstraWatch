@@ -44,7 +44,7 @@ export function DataTable<TData, TValue>({
           placeholder="Search..."
           value={globalFilter ?? ''}
           onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="max-w-sm backdrop-blur-xl bg-white/[0.03] border border-white/10 focus:border-blue-500/50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_1px_0_rgba(255,255,255,0.1)] rounded-xl text-white px-3 py-2 text-sm focus:outline-none transition-all"
         />
       </div>
       <div className="rounded-md border border-white/10 overflow-hidden">
@@ -55,7 +55,7 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 font-medium cursor-pointer hover:bg-white/10 transition-colors"
+                    className="px-4 py-3 font-medium cursor-pointer hover:bg-white/[0.04] transition-colors"
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {header.isPlaceholder ? null : (
@@ -80,7 +80,7 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-white/5 transition-colors"
+                  className="border-b border-white/10 hover:bg-white/[0.04] transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3">
@@ -107,14 +107,14 @@ export function DataTable<TData, TValue>({
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <button
-          className="bg-gradient-to-t from-neutral-950 to-neutral-800 border border-neutral-700 text-white font-medium rounded-xl px-4 py-2 hover:from-neutral-900 hover:to-neutral-700 transition-all disabled:opacity-50"
+          className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
         >
           Previous
         </button>
         <button
-          className="bg-gradient-to-t from-neutral-950 to-neutral-800 border border-neutral-700 text-white font-medium rounded-xl px-4 py-2 hover:from-neutral-900 hover:to-neutral-700 transition-all disabled:opacity-50"
+          className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
         >

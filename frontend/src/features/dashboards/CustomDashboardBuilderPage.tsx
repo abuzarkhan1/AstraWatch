@@ -48,11 +48,9 @@ export default function CustomDashboardBuilderPage() {
       type: 'default',
       position: { x: 100 + (widgetCount % 3) * 300, y: 100 + Math.floor(widgetCount / 3) * 200 },
       data: { label: widgetDef?.label || type },
+      className: 'backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl text-white',
       style: {
-        background: '#0b101d',
-        border: `2px solid ${widgetColors[type] || '#6b7280'}`,
-        color: '#f3f4f6',
-        borderRadius: 8,
+        borderColor: widgetColors[type] || 'rgba(255,255,255,0.1)',
         padding: 16,
         width: 260,
         height: 160,
@@ -69,9 +67,12 @@ export default function CustomDashboardBuilderPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Custom Dashboard Builder</h1>
+    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
+      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
+
+      <div className="relative z-10 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight text-white">Custom Dashboard Builder</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger>
             <Button>
@@ -102,7 +103,7 @@ export default function CustomDashboardBuilderPage() {
         </Dialog>
       </div>
 
-      <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]" style={{ height: 600 }}>
+      <div className="backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl overflow-hidden" style={{ height: 600 }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -120,6 +121,7 @@ export default function CustomDashboardBuilderPage() {
             maskColor="rgba(0,0,0,0.6)"
           />
         </ReactFlow>
+      </div>
       </div>
     </div>
   );

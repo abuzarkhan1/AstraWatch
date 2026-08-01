@@ -39,7 +39,7 @@ export default function IncidentsPage() {
           <input
             type="text"
             placeholder="Search incidents..."
-            className="pl-9 pr-4 py-2 bg-neutral-900/90 border border-neutral-700/80 rounded-xl text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 w-64 transition-all"
+            className="pl-9 pr-4 py-2 backdrop-blur-xl bg-white/[0.03] border border-white/10 focus:border-blue-500/50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_1px_0_rgba(255,255,255,0.1)] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none w-64 transition-all"
           />
         </div>
       </div>

@@ -35,11 +35,9 @@ export default function TopologyPage() {
         type: 'default',
         position: { x: 200 + (i % 3) * 250, y: 100 + Math.floor(i / 3) * 150 },
         data: { label: svc.name, health: svc.status, tier: svc.tier },
+        className: 'backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl text-white',
         style: {
-          background: '#0b101d',
-          border: `2px solid ${SERVICE_COLORS[svc.status] || '#6b7280'}`,
-          color: '#f3f4f6',
-          borderRadius: 8,
+          borderColor: SERVICE_COLORS[svc.status] || 'rgba(255,255,255,0.1)',
           padding: 12,
           width: 180,
         },
@@ -85,7 +83,7 @@ export default function TopologyPage() {
         </div>
 
         <div className="flex gap-4">
-          <div className="flex-1 backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] text-white rounded-2xl hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 overflow-hidden" style={{ height: 600 }}>
+          <div className="flex-1 backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl overflow-hidden" style={{ height: 600 }}>
             {isLoading ? (
               <div className="flex items-center justify-center h-full text-gray-500">Loading topology...</div>
             ) : (
@@ -110,7 +108,7 @@ export default function TopologyPage() {
           </div>
 
           {data && (
-            <div className="w-72 backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] text-white rounded-2xl p-6 space-y-4 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 h-fit">
+            <div className="w-72 backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl text-white p-6 space-y-4 h-fit">
               <h3 className="font-semibold text-lg text-white">{data.label}</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">

@@ -110,7 +110,7 @@ export default function TraceExplorerPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-9 bg-neutral-900/50 border-white/10 text-white"
+              className="pl-9 backdrop-blur-xl bg-white/[0.03] border border-white/10 focus:border-blue-500/50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_1px_0_rgba(255,255,255,0.1)] rounded-xl text-white"
             />
           </div>
           <Button onClick={handleSearch} className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">Search</Button>
@@ -128,8 +128,8 @@ export default function TraceExplorerPage() {
               traces.map((trace) => (
                 <div
                   key={trace.traceId}
-                  className={`backdrop-blur-2xl bg-neutral-950/40 border text-white rounded-2xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] cursor-pointer hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 ${
-                    selectedTrace?.traceId === trace.traceId ? 'border-blue-500/50 bg-blue-500/10' : 'border-white/10 hover:border-blue-500/40'
+                  className={`backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 cursor-pointer ${
+                    selectedTrace?.traceId === trace.traceId ? 'border-blue-500/50 bg-blue-500/10' : ''
                   }`}
                   onClick={() => setSelectedTrace(trace)}
                 >

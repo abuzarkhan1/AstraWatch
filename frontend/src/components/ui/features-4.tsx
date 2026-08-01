@@ -4,9 +4,8 @@ export function Features() {
     return (
         <section className="py-12 md:py-20">
             <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-16">
-                <div className="relative z-10 mx-auto max-w-xl space-y-6 text-center md:space-y-12">
-                    <h2 className="text-balance text-4xl font-medium lg:text-5xl">The foundation for autonomous observability</h2>
-                    <p className="text-gray-400">AstraWatch is evolving to be more than just telemetry. It supports an entire platform of agents, APIs, and tools helping developers and SRE teams observe, detect, and heal faster.</p>
+                <div className="relative z-10 mx-auto max-w-4xl text-center">
+                    <h2 className="text-2xl font-medium sm:text-3xl md:whitespace-nowrap lg:text-4xl">The foundation for autonomous observability</h2>
                 </div>
 
                 <div className="relative mx-auto grid max-w-2xl lg:max-w-4xl divide-x divide-y divide-white/15 border border-white/15 *:p-12 sm:grid-cols-2 lg:grid-cols-3">

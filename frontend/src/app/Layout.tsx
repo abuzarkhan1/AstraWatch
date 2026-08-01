@@ -59,12 +59,12 @@ export default function Layout() {
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-0'
-        } transition-all duration-300 bg-neutral-950/80 backdrop-blur-xl border-r border-white/10 overflow-hidden flex flex-col relative z-10`}
+        } transition-all duration-300 bg-neutral-950/40 backdrop-blur-2xl border-r border-white/10 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.15)] overflow-hidden flex flex-col relative z-10`}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-2.5">
             <BrandMark className="w-5 h-5" />
-            <span className="font-extrabold text-lg tracking-tight">AstraWatch</span>
+            <span className="font-extrabold text-lg tracking-tight text-white">AstraWatch</span>
           </div>
         </div>
 
@@ -77,15 +77,15 @@ export default function Layout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-200 ${
-                  isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                  isActive ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
                 {isActive && (
                   <motion.span
                     layoutId="active-nav-pill"
                     transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                    className="absolute inset-0 rounded-xl bg-gradient-to-t from-blue-500 to-blue-600 shadow-md shadow-blue-800/60 border border-blue-500"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/60 border border-blue-500"
                   />
                 )}
                 <Icon className="w-5 h-5 relative z-10" />
@@ -111,7 +111,7 @@ export default function Layout() {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden relative z-10">
-        <header className="h-14 bg-neutral-950/80 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-4 gap-3">
+        <header className="h-14 bg-neutral-950/40 backdrop-blur-2xl border-b border-white/10 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.12)] flex items-center justify-between px-4 gap-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -138,11 +138,11 @@ export default function Layout() {
             </Link>
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.04] border border-white/10 rounded-lg text-gray-400 hover:text-gray-200 hover:border-white/20 text-sm transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-xl text-gray-400 hover:text-gray-200 hover:border-white/20 text-sm transition-all"
             >
               <Search className="w-4 h-4" />
               <span>Search...</span>
-              <kbd className="ml-2 px-1.5 py-0.5 bg-neutral-900 rounded text-xs border border-white/10">⌘K</kbd>
+              <kbd className="ml-2 px-1.5 py-0.5 bg-neutral-900/80 rounded text-xs border border-white/10">⌘K</kbd>
             </button>
             <div className="relative">
             <button
