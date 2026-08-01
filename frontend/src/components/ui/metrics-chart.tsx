@@ -90,7 +90,7 @@ export function MetricsChart({
             y2: 0,
             colorStops: [
               { offset: 0, color: '#0ea5e9' }, // sky-500
-              { offset: 1, color: '#06b6d4' }, // cyan-500
+              { offset: 1, color: '#6366f1' }, // indigo-500
             ],
           },
         },
@@ -104,7 +104,7 @@ export function MetricsChart({
             y2: 1,
             colorStops: [
               { offset: 0, color: 'rgba(14, 165, 233, 0.3)' },
-              { offset: 1, color: 'rgba(6, 182, 212, 0.01)' },
+              { offset: 1, color: 'rgba(99, 102, 241, 0.01)' },
             ],
           },
         },

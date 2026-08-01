@@ -31,9 +31,9 @@ export default function IncidentsPage() {
 
   return (
     <div className="space-y-6 relative z-0 bg-[#060911] p-6 rounded-3xl overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.12)_0%,transparent_50%)] pointer-events-none -z-10" />
+      <div className="absolute inset-0 bg-[rgba(99,102,241,0.08)] blur-[140px] pointer-events-none -z-10" />
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent">Incidents</h1>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">Incidents</h1>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
@@ -44,7 +44,7 @@ export default function IncidentsPage() {
         </div>
       </div>
 
-      <div className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6 overflow-hidden">
+      <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -75,9 +75,7 @@ export default function IncidentsPage() {
                     }}
                   >
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
-                        severityColors[incident.severity] || 'bg-gray-500/10 text-gray-500'
-                      }`}>
+                      <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-300 font-medium">
                         {incident.severity}
                       </span>
                     </td>

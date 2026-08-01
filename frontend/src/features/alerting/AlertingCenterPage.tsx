@@ -63,11 +63,12 @@ export default function AlertingCenterPage() {
 
   return (
     <div className="relative min-h-screen bg-[#060911] p-6">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.12),transparent_50%)] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[rgba(99,102,241,0.08)] blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[rgba(59,130,246,0.08)] blur-[140px] pointer-events-none" />
       <div className="space-y-6 relative z-10">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent">Alerting Center</h1>
-        <Button>
+        <h1 className="text-2xl bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent font-bold">Alerting Center</h1>
+        <Button className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all">
           <Plus className="w-4 h-4 mr-2" />
           New Rule
         </Button>
@@ -79,7 +80,7 @@ export default function AlertingCenterPage() {
         <div className="text-center py-12 text-gray-500">
           <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No alert rules configured</p>
-          <Button variant="outline" className="mt-4">
+          <Button className="mt-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all">
             <Plus className="w-4 h-4 mr-2" />
             Create your first rule
           </Button>
@@ -87,7 +88,7 @@ export default function AlertingCenterPage() {
       ) : (
         <div className="grid gap-4">
           {rules.map((rule) => (
-            <div key={rule.id} className="backdrop-blur-2xl bg-neutral-950/80 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] rounded-2xl p-6">
+            <div key={rule.id} className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -112,12 +113,12 @@ export default function AlertingCenterPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-400 font-medium capitalize">
+                  <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-300 font-medium capitalize">
                     {rule.status}
                   </span>
                   <Button
-                    variant="outline"
                     size="sm"
+                    className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all"
                     onClick={() => toggleRule(rule.id)}
                   >
                     {rule.status === 'active' ? 'Disable' : 'Enable'}

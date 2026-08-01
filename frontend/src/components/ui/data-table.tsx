@@ -44,7 +44,7 @@ export function DataTable<TData, TValue>({
           placeholder="Search..."
           value={globalFilter ?? ''}
           onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          className="max-w-sm bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
       <div className="rounded-md border border-white/10 overflow-hidden">
