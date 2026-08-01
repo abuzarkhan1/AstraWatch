@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { endpoints } from "@/lib/api";
 
 const plans = [
   {
@@ -121,7 +122,26 @@ const PricingSwitch = ({ onSwitch }: { onSwitch: (value: string) => void }) => {
 
 export default function PricingSection6() {
   const [isYearly, setIsYearly] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const pricingRef = useRef<HTMLDivElement>(null);
+
+  const handleCheckout = async (planName: string, price: number) => {
+    try {
+      setLoadingPlan(planName);
+      const res = await endpoints.billing.createCheckoutSession({
+        planName,
+        isYearly,
+        price
+      });
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   const revealVariants = {
     visible: (i: number) => ({
@@ -290,19 +310,19 @@ export default function PricingSection6() {
 
               <CardContent className="pt-0 flex-1 flex flex-col justify-between">
                 <MagneticButton className="w-full mb-6" strength={0.3}>
-                  <Link to="/dashboard" className="block w-full">
-                    <button
-                      className={`w-full p-3.5 text-lg rounded-xl font-bold transition-all cursor-pointer ${
-                        plan.popular
-                          ? "bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800 border border-blue-500 text-white hover:from-blue-600 hover:to-blue-700"
-                          : plan.buttonVariant === "outline"
-                            ? "bg-gradient-to-t from-neutral-950 to-neutral-700 shadow-lg shadow-neutral-900 border border-neutral-700 text-white hover:from-neutral-900 hover:to-neutral-600"
-                            : ""
-                      }`}
-                    >
-                      {plan.buttonText}
-                    </button>
-                  </Link>
+                  <button
+                    onClick={() => handleCheckout(plan.name, isYearly ? plan.yearlyPrice : plan.price)}
+                    disabled={loadingPlan === plan.name}
+                    className={`w-full p-3.5 text-lg rounded-xl font-bold transition-all cursor-pointer ${
+                      plan.popular
+                        ? "bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800 border border-blue-500 text-white hover:from-blue-600 hover:to-blue-700"
+                        : plan.buttonVariant === "outline"
+                          ? "bg-gradient-to-t from-neutral-950 to-neutral-700 shadow-lg shadow-neutral-900 border border-neutral-700 text-white hover:from-neutral-900 hover:to-neutral-600"
+                          : ""
+                    } disabled:opacity-50`}
+                  >
+                    {loadingPlan === plan.name ? "Redirecting..." : plan.buttonText}
+                  </button>
                 </MagneticButton>
 
                 <div className="space-y-3 pt-4 border-t border-neutral-700">

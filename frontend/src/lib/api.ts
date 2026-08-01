@@ -101,4 +101,8 @@ export const endpoints = {
     collector: () => api.get('/v1/health'),
     orchestrator: () => api.get('/api/v1/health'),
   },
+  billing: {
+    createCheckoutSession: (data: { planName: string; isYearly: boolean; price?: number }) => api.post('/api/v1/billing/checkout-session', data),
+    createPortalSession: () => api.post('/api/v1/billing/portal-session'),
+  },
 };

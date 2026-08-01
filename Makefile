@@ -6,6 +6,7 @@ build:
 	@echo "Building all services..."
 	cd services/collector && go build ./...
 	cd services/operator && go build ./...
+	cd services/payment-service && go build ./...
 	cd services/orchestrator && mvn compile -q
 	cd services/realtime && npm install --no-optional && node --check src/server.js
 	cd frontend && npm install --no-optional && npx tsc --noEmit
@@ -17,6 +18,7 @@ test:
 	@echo "Running tests..."
 	cd services/collector && go test ./... -v -count=1
 	cd services/operator && go test ./... -v -count=1
+	cd services/payment-service && go test ./... -v -count=1
 	cd services/orchestrator && mvn test -q
 	cd services/analyzer && ( [ -d "venv" ] && PYTHONPATH=. venv/bin/python3 -m unittest discover -s tests || PYTHONPATH=. python3 -m unittest discover -s tests )
 	cd services/realtime && npm test
