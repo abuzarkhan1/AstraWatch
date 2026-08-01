@@ -1,60 +1,82 @@
 import { Cpu, Fingerprint, Pencil, Settings2, Sparkles, Zap } from 'lucide-react'
 
+const FEATURES = [
+  {
+    icon: Zap,
+    title: 'Faaast',
+    desc: 'Kernel-level eBPF probes capture telemetry with sub-millisecond overhead, no sidecars required.',
+  },
+  {
+    icon: Cpu,
+    title: 'Powerful',
+    desc: 'Multi-model ML anomaly detection over metrics, traces, and logs with confidence scoring.',
+  },
+  {
+    icon: Fingerprint,
+    title: 'Security',
+    desc: 'Zero sidecars, kernel CO-RE binaries, and 100% on-premise VPC-safe deployment by default.',
+  },
+  {
+    icon: Pencil,
+    title: 'Customization',
+    desc: 'Drag-and-drop dashboards, custom SLOs, and runbooks tailored to your exact stack.',
+  },
+  {
+    icon: Settings2,
+    title: 'Control',
+    desc: 'Blast-radius limits and idempotency locks on every auto-healing action keep you in command.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Built for AI',
+    desc: 'LLM-powered root-cause analysis and autonomous remediation across your entire fleet.',
+  },
+]
+
 export function Features() {
-    return (
-        <section className="py-12 md:py-20">
-            <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-16">
-                <div className="relative z-10 mx-auto max-w-4xl text-center">
-                    <h2 className="text-2xl font-medium sm:text-3xl md:whitespace-nowrap lg:text-4xl">The foundation for autonomous observability</h2>
+  return (
+    <section className="py-24 md:py-32 bg-black relative border-b border-white/10 text-white font-sans overflow-hidden">
+      {/* Ambient Glowing Light Orbs (matching sibling sections) */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(49,49,245,0.18),transparent_100%)] pointer-events-none blur-3xl" />
+      <div className="absolute bottom-10 left-10 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(32,108,232,0.14),transparent_70%)] pointer-events-none blur-2xl" />
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        {/* Section Header */}
+        <div className="mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight lg:whitespace-nowrap xl:text-5xl">
+            The foundation for autonomous observability
+          </h2>
+        </div>
+
+        {/* 6 Glassmorphism Feature Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {FEATURES.map((feature, idx) => {
+            const Icon = feature.icon;
+            return (
+              <div
+                key={idx}
+                className="group backdrop-blur-2xl bg-white/[0.03] border border-white/15 hover:border-blue-500/50 rounded-3xl p-6 sm:p-8 relative overflow-hidden transition-all duration-300 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] hover:-translate-y-1"
+              >
+                {/* Ambient Inner Glass Glow */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-t from-blue-600/20 to-blue-500/10 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-inner mb-6">
+                  <Icon className="h-5 w-5" />
                 </div>
 
-                <div className="relative mx-auto grid max-w-2xl lg:max-w-4xl divide-x divide-y divide-white/15 border border-white/15 *:p-12 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Zap className="size-4 text-blue-400" />
-                            <h3 className="text-sm font-medium">Faaast</h3>
-                        </div>
-                        <p className="text-sm text-gray-400">Kernel-level eBPF probes capture telemetry with sub-millisecond overhead, no sidecars required.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <Cpu className="size-4 text-blue-400" />
-                            <h3 className="text-sm font-medium">Powerful</h3>
-                        </div>
-                        <p className="text-sm text-gray-400">Multi-model ML anomaly detection over metrics, traces, and logs with confidence scoring.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <Fingerprint className="size-4 text-blue-400" />
-                            <h3 className="text-sm font-medium">Security</h3>
-                        </div>
-                        <p className="text-sm text-gray-400">Zero sidecars, kernel CO-RE binaries, and 100% on-premise VPC-safe deployment by default.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <Pencil className="size-4 text-blue-400" />
-                            <h3 className="text-sm font-medium">Customization</h3>
-                        </div>
-                        <p className="text-sm text-gray-400">Drag-and-drop dashboards, custom SLOs, and runbooks tailored to your exact stack.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <Settings2 className="size-4 text-blue-400" />
-                            <h3 className="text-sm font-medium">Control</h3>
-                        </div>
-                        <p className="text-sm text-gray-400">Blast-radius limits and idempotency locks on every auto-healing action keep you in command.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="size-4 text-blue-400" />
-                            <h3 className="text-sm font-medium">Built for AI</h3>
-                        </div>
-                        <p className="text-sm text-gray-400">LLM-powered root-cause analysis and autonomous remediation across your entire fleet.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    )
+                <h3 className="text-lg font-bold text-white tracking-tight mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-gray-400 font-light leading-relaxed">
+                  {feature.desc}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )
 }
 
 export default Features
