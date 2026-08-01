@@ -60,30 +60,29 @@ its own — you don't need to wait until everything is done to have something re
 ```
 ┌─────────────┐     ┌──────────────┐     ┌───────────┐
 │ C++ Agent   │────▶│ Go Collector │────▶│  Kafka    │
-│ (eBPF/host) │gRPC │ (Gin, Ingest)│     │  Broker   │
+│ (eBPF/host) │gRPC │ (Ingest)     │     │  Broker   │
 └─────────────┘     └──────────────┘     └─────┬─────┘
                                                 │
                     ┌───────────────────────────┼───────────────────────┐
                     ▼                           ▼                       ▼
             ┌───────────────┐          ┌────────────────┐      ┌──────────────┐
-            │ Python         │          │ TimescaleDB /   │      │ Node.js       │
-            │ Analyzer       │─events──▶│ ClickHouse       │      │ Realtime      │
-            │ (FastAPI, ML)  │          │ (raw metric store)│    │ Gateway       │
+            │ Python        │          │ TimescaleDB /  │      │ Node.js      │
+            │ Analyzer      │─events──▶│ ClickHouse     │      │ Realtime     │
+            │ (FastAPI, ML) │          │ (metric store) │      │ Gateway      │
             └───────┬───────┘          └────────────────┘      └──────┬───────┘
-                    │ anomaly-detected                                 │ WebSocket
-                    ▼                                                  ▼
-            ┌───────────────────┐                              ┌──────────────┐
-            │ Java Orchestrator  │◀────────approval/actions────│ React         │
-            │ (Spring Boot,      │────────healing-triggered───▶│ Dashboard     │
-            │  Temporal workflows)│                             └──────────────┘
-            └─────────┬─────────┘
-                      │ K8s API / CRDs
-                      ▼
-            ┌───────────────────┐
-            │ Kubernetes Operator │
-            │ (Go, controller-   │
-            │  runtime)          │
-            └───────────────────┘
+                    │ anomaly-detected                                │ WebSocket
+                    ▼                                                 ▼
+            ┌───────────────────┐                             ┌──────────────┐
+            │ Java Orchestrator │◀────────approval/actions────│ React        │
+            │ (Spring Boot)     │────────healing-triggered───▶│ Dashboard    │
+            └─────────┬─────────┘                             └──────┬───────┘
+                      │ K8s API / CRDs                               │ Billing API
+                      ▼                                              ▼
+            ┌───────────────────┐                             ┌──────────────┐
+            │ K8s Operator      │                             │ Go Payment   │
+            │ (Go controller)   │                             │ Service      │
+            └───────────────────┘                             │ (Stripe API) │
+                                                              └──────────────┘
 ```
 
 ### 2.2 Architectural Principles
@@ -348,6 +347,29 @@ etcd — prevents orphaned Temporal workflows.
 
 ---
 
+### 3.8 Go Payment & Billing Service (Go 1.22+, Stripe API)
+
+**Responsibility:** manage tenant subscriptions, Stripe Checkout sessions, billing portal redirects, and webhook lifecycle events. Runs on port `8085`.
+
+**Package layout:**
+```
+services/payment-service/
+├── cmd/server/main.go          # HTTP server entry point & router (:8085)
+├── go.mod                      # Module astrawatch/payment-service (Go 1.22+)
+├── internal/
+│   ├── config/                 # Environment variables (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PORT)
+│   ├── handlers/               # HTTP handlers for checkout, portal, subscriptions, webhook
+│   └── stripe/                 # Abstracted Stripe SDK client interface (mystripe.Client)
+```
+
+**Key behaviors:**
+- **Stripe Checkout Sessions:** `POST /api/v1/billing/checkout-session` generates Stripe Checkout URLs for Pro ($49/mo) and Enterprise ($299/mo) tiers.
+- **Stripe Customer Portal:** `POST /api/v1/billing/portal-session` generates Customer Portal URLs allowing users to update payment methods and view invoices.
+- **Stripe Webhook Listener:** `POST /api/v1/billing/webhook` handles signed events (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded`).
+- **Mockable Interface Architecture:** `mystripe.Client` interface allows full unit testing via `httptest` without live network calls to Stripe.
+
+---
+
 ## 4. Full API Contracts
 
 > Convention: all responses wrapped in `{ success, data, meta: { timestamp, traceId } }`. All
@@ -538,6 +560,16 @@ etcd — prevents orphaned Temporal workflows.
 | DELETE | `/api/v1/synthetic/checks/{id}` | — | `204` | |
 | GET | `/api/v1/synthetic/checks/{id}/results` | Query: `from, to` | `{results: [{timestamp, responseTime, statusCode, region, passed}]}` | |
 | POST | `/api/v1/synthetic/checks/{id}/run` | — | `{result}` | On-demand manual run |
+
+### 4.16 Stripe Payment & Billing API (Go)
+
+| Method | Path | Body | Response | Notes |
+|---|---|---|---|---|
+| POST | `/api/v1/billing/checkout-session` | `{planName, isYearly, price}` | `{url}` | Creates Stripe Checkout Session URL for Pro ($49/mo) and Enterprise ($299/mo) |
+| POST | `/api/v1/billing/portal-session` | `{returnUrl?}` | `{url}` | Creates Stripe Customer Billing Portal URL |
+| GET | `/api/v1/billing/subscriptions` | — | `{status, plan, periodEnd, items}` | Returns current tenant subscription details |
+| POST | `/api/v1/billing/webhook` | Stripe Event JSON | `{status}` | Webhook handler with `STRIPE_WEBHOOK_SECRET` signature verification |
+| GET | `/healthz` | — | `ok` | Service health check endpoint (:8085) |
 
 ---
 
@@ -2536,7 +2568,22 @@ Webhook delivery is retried with exponential backoff (3 attempts) and logged. Un
 | Testing | **envtest** | Real K8s API integration tests |
 | Chaos Mesh | **chaos-mesh/api** | `github.com/chaos-mesh/chaos-mesh/api/v1alpha1` |
 
-### 30.7 Shared Infrastructure
+### 30.9 Go Stripe Payment Service (Go, Port 8085)
+
+| Purpose | Library | Import Path |
+|---|---|---|
+| HTTP server | **net/http** | `net/http` |
+| Stripe SDK | **stripe-go** | `github.com/stripe/stripe-go/v78` |
+| Billing Portal | **stripe-go/billingportal** | `github.com/stripe/stripe-go/v78/billingportal/session` |
+| Checkout Session | **stripe-go/checkout** | `github.com/stripe/stripe-go/v78/checkout/session` |
+| Subscriptions | **stripe-go/subscription** | `github.com/stripe/stripe-go/v78/subscription` |
+| Webhooks | **stripe-go/webhook** | `github.com/stripe/stripe-go/v78/webhook` |
+| Config | **config** | `astrawatch/payment-service/internal/config` |
+| Testing | **httptest** + **testing** | `net/http/httptest` |
+
+---
+
+### 30.10 Shared Infrastructure
 
 | Component | Technology | Alternative |
 |---|---|---|

@@ -25,6 +25,14 @@
   --color-input: #1e293b;
   --color-ring: #3131f5;
   --radius: 0.75rem;
+
+  --container-container: 1280px;
+  --animate-marquee: marquee var(--duration) linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - var(--gap))); }
 }
 
 /* Liquid Glassmorphism Design Utilities */
