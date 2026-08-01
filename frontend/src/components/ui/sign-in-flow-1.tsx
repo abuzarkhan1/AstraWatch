@@ -270,7 +270,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
 
           {/* ── RIGHT COLUMN: Redesigned Auth Card ─────────────────────────── */}
           <div className="lg:col-span-5 w-full max-w-md mx-auto">
-            <div className="relative backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] overflow-hidden">
+            <div className="relative bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 shadow-[0px_-13px_300px_0px_rgba(9,0,255,0.15)] rounded-3xl p-6 sm:p-8 overflow-hidden">
               
               {/* Corner Blue Aura */}
               <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
@@ -298,7 +298,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
                     </div>
 
                     {/* Mode Toggle Switcher */}
-                    <div className="flex items-center p-1 rounded-full bg-black/60 border border-white/10 text-xs font-semibold">
+                    <div className="flex items-center p-1 rounded-full bg-neutral-950 border border-neutral-800 text-xs font-semibold">
                       <button
                         type="button"
                         onClick={() => { setMode("login"); setErrorMsg(""); }}
@@ -349,9 +349,9 @@ export const SignInPage = ({ className }: SignInPageProps) => {
                     </button>
 
                     <div className="flex items-center gap-3">
-                      <div className="h-px bg-white/10 flex-1" />
+                      <div className="h-px bg-neutral-800 flex-1" />
                       <span className="text-gray-500 text-[10px] font-mono uppercase tracking-wider">or business email</span>
-                      <div className="h-px bg-white/10 flex-1" />
+                      <div className="h-px bg-neutral-800 flex-1" />
                     </div>
 
                     {/* Email / Password Form */}
@@ -459,7 +459,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
 
                     {/* 6 Digits Container */}
                     <div className="w-full py-2">
-                      <div className="relative rounded-2xl py-4 px-3 border border-white/15 bg-black/60 shadow-inner">
+                      <div className="relative rounded-2xl py-4 px-3 border border-neutral-800 bg-neutral-950 shadow-inner">
                         <div className="flex items-center justify-center gap-1.5" role="group" aria-label="Verification code">
                           {code.map((digit, i) => (
                             <div key={i} className="flex items-center">

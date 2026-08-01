@@ -74,7 +74,7 @@ export default function FAQSection() {
   }, [searchQuery, activeCategory]);
 
   return (
-    <section id="faq" className="w-full py-24 lg:py-36 relative border-b border-white/10 text-white font-sans overflow-hidden">
+    <section id="faq" className="w-full py-24 lg:py-36 relative border-b border-neutral-800 text-white font-sans overflow-hidden">
       {/* Background Snippet Component rendering [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,#63e_100%)] */}
       <BackgroundSnippets />
 
@@ -107,10 +107,10 @@ export default function FAQSection() {
             </div>
 
           {/* RIGHT COLUMN: Single Vertical Radix Accordion with All FAQs */}
-          <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)]">
+          <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 shadow-[0px_-13px_300px_0px_rgba(9,0,255,0.15)]">
             <Accordion type="single" collapsible defaultValue="ebpf-overhead" className="w-full space-y-2">
               {FAQS.map((faq) => (
-                <AccordionItem key={faq.id} value={faq.id} className="border-b border-white/10 last:border-none">
+                <AccordionItem key={faq.id} value={faq.id} className="border-b border-neutral-800 last:border-none">
                   <AccordionTrigger className="hover:no-underline py-5 text-left font-bold text-white text-base sm:text-lg">
                     <div className="flex items-center gap-3 pr-2">
                       <span className="px-2.5 py-0.5 rounded-full backdrop-blur-md bg-blue-500/10 text-blue-300 font-mono text-[10px] font-bold border border-blue-500/30 shrink-0">

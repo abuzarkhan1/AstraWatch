@@ -52,16 +52,13 @@ export default function Layout() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-[#060911] text-gray-100 relative overflow-hidden">
-      {/* Ambient blue glow behind the app shell */}
-      <div className="absolute -top-40 left-1/3 w-[900px] h-[500px] bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(49,49,245,0.14),transparent_100%)] pointer-events-none blur-3xl" />
-
+    <div className="flex h-screen bg-black text-gray-100 relative overflow-hidden">
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-0'
-        } transition-all duration-300 bg-neutral-950/40 backdrop-blur-2xl border-r border-white/10 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.15)] overflow-hidden flex flex-col relative z-10`}
+        } transition-all duration-300 bg-neutral-950/40 backdrop-blur-2xl border-r border-neutral-800 overflow-hidden flex flex-col relative z-10`}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800">
           <div className="flex items-center gap-2.5">
             <BrandMark className="w-5 h-5" />
             <span className="font-extrabold text-lg tracking-tight text-white">AstraWatch</span>
@@ -85,7 +82,7 @@ export default function Layout() {
                   <motion.span
                     layoutId="active-nav-pill"
                     transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                    className="absolute inset-0 rounded-xl bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/60 border border-blue-500"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-t from-blue-500 to-blue-600 shadow-[0px_-4px_30px_0px_rgba(9,0,255,0.4)] border border-blue-500"
                   />
                 )}
                 <Icon className="w-5 h-5 relative z-10" />
@@ -95,7 +92,7 @@ export default function Layout() {
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-white/10">
+        <div className="px-3 py-4 border-t border-neutral-800">
           <button
             onClick={() => {
               localStorage.removeItem('accessToken');
@@ -111,7 +108,7 @@ export default function Layout() {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden relative z-10">
-        <header className="h-14 bg-neutral-950/40 backdrop-blur-2xl border-b border-white/10 shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.12)] flex items-center justify-between px-4 gap-3">
+        <header className="h-14 bg-neutral-950/40 backdrop-blur-2xl border-b border-neutral-800 flex items-center justify-between px-4 gap-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -138,11 +135,11 @@ export default function Layout() {
             </Link>
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-xl text-gray-400 hover:text-gray-200 hover:border-white/20 text-sm transition-all"
+              className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-neutral-700 hover:border-neutral-600 rounded-xl text-gray-400 hover:text-gray-200 text-sm transition-all"
             >
               <Search className="w-4 h-4" />
               <span>Search...</span>
-              <kbd className="ml-2 px-1.5 py-0.5 bg-neutral-900/80 rounded text-xs border border-white/10">⌘K</kbd>
+              <kbd className="ml-2 px-1.5 py-0.5 bg-neutral-950 rounded text-xs border border-neutral-800">⌘K</kbd>
             </button>
             <div className="relative">
             <button
@@ -153,8 +150,8 @@ export default function Layout() {
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl backdrop-blur-2xl bg-neutral-950/90 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] z-50 overflow-hidden">
-                  <div className="p-3 border-b border-white/10 font-medium text-sm">Notifications</div>
+                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 border border-neutral-800 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] z-50 overflow-hidden">
+                  <div className="p-3 border-b border-neutral-800 font-medium text-sm">Notifications</div>
                   <div className="p-4 text-sm text-gray-400">No new notifications</div>
                 </div>
               )}
@@ -168,8 +165,8 @@ export default function Layout() {
         >
           {searchOpen && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 flex justify-center p-12">
-              <div className="rounded-2xl backdrop-blur-2xl bg-neutral-950/90 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] w-full max-w-xl h-96 flex flex-col overflow-hidden">
-                <div className="p-4 border-b border-white/10 flex items-center gap-3">
+              <div className="rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 border border-neutral-800 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] w-full max-w-xl h-96 flex flex-col overflow-hidden">
+                <div className="p-4 border-b border-neutral-800 flex items-center gap-3">
                   <Search className="w-5 h-5 text-gray-400" />
                   <input
                     autoFocus

@@ -143,7 +143,7 @@ export default function LiveDemoPreview() {
   }, [logs]);
 
   return (
-    <section id="demo" className="py-24 md:py-32 bg-black border-b border-white/10 text-white font-sans relative overflow-hidden">
+    <section id="demo" className="py-24 md:py-32 border-b border-neutral-800 text-white font-sans relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -156,7 +156,7 @@ export default function LiveDemoPreview() {
           </p>
         </div>
 
-        <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 lg:p-8 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] relative overflow-hidden">
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 shadow-[0px_-13px_300px_0px_rgba(9,0,255,0.15)] rounded-3xl p-6 lg:p-8 relative overflow-hidden">
           
           <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-neutral-800">
             <div className="flex items-center gap-3">
@@ -211,7 +211,7 @@ export default function LiveDemoPreview() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-6 rounded-2xl">
+            <div className="backdrop-blur-xl bg-neutral-950/60 border border-neutral-800 p-6 rounded-2xl">
               <p className="text-xs font-semibold text-gray-400 font-mono uppercase tracking-wider">Cluster Health Status</p>
               <div className="flex items-center gap-3 mt-3">
                 {status === 'healthy' && (
@@ -241,7 +241,7 @@ export default function LiveDemoPreview() {
               </div>
             </div>
 
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-6 rounded-2xl">
+            <div className="backdrop-blur-xl bg-neutral-950/60 border border-neutral-800 p-6 rounded-2xl">
               <p className="text-xs font-semibold text-gray-400 font-mono uppercase tracking-wider">Target Pod CPU</p>
               <div className="flex items-baseline justify-between mt-2">
                 <p className={`text-3xl font-bold font-mono ${cpuVal > 80 ? 'text-red-400' : 'text-blue-400'}`}>
@@ -249,7 +249,7 @@ export default function LiveDemoPreview() {
                 </p>
                 <span className="text-xs text-gray-500 font-mono">Threshold: 85%</span>
               </div>
-              <div className="w-full bg-black/60 h-2 rounded-full mt-3 overflow-hidden border border-white/10">
+              <div className="w-full bg-neutral-800 h-2 rounded-full mt-3 overflow-hidden">
                 <div
                   className={`h-full transition-all duration-500 ${cpuVal > 80 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'bg-gradient-to-r from-blue-500 to-blue-400 shadow-[0_0_8px_rgba(49,49,245,0.6)]'}`}
                   style={{ width: `${cpuVal}%` }}
@@ -257,7 +257,7 @@ export default function LiveDemoPreview() {
               </div>
             </div>
 
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-6 rounded-2xl">
+            <div className="backdrop-blur-xl bg-neutral-950/60 border border-neutral-800 p-6 rounded-2xl">
               <p className="text-xs font-semibold text-gray-400 font-mono uppercase tracking-wider">Isolation Forest Score</p>
               <div className="flex items-baseline justify-between mt-2">
                 <p className={`text-3xl font-bold font-mono ${anomalyScore > 0.5 ? 'text-red-400' : 'text-blue-400'}`}>
@@ -265,7 +265,7 @@ export default function LiveDemoPreview() {
                 </p>
                 <span className="text-xs text-gray-500 font-mono">Critical: &gt;0.80</span>
               </div>
-              <div className="w-full bg-black/60 h-2 rounded-full mt-3 overflow-hidden border border-white/10">
+              <div className="w-full bg-neutral-800 h-2 rounded-full mt-3 overflow-hidden">
                 <div
                   className={`h-full transition-all duration-500 ${anomalyScore > 0.5 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'bg-gradient-to-r from-blue-500 to-blue-400 shadow-[0_0_8px_rgba(49,49,245,0.6)]'}`}
                   style={{ width: `${anomalyScore * 100}%` }}
@@ -275,7 +275,7 @@ export default function LiveDemoPreview() {
           </div>
 
           {/* Pod Cluster Matrix */}
-          <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-5 rounded-2xl space-y-4 mb-8 font-mono">
+          <div className="bg-neutral-950/60 border border-neutral-800 p-5 rounded-2xl space-y-4 mb-8 font-mono">
             <div className="flex items-center justify-between text-xs text-gray-400 pb-2 border-b border-neutral-800">
               <span>Deployment Pod Replicas (payment-api-7d9f)</span>
               <span className="text-blue-400 font-bold text-[11px]">6 REPLICAS ACTIVE</span>
@@ -316,7 +316,7 @@ export default function LiveDemoPreview() {
           </div>
 
           {/* Event Log Terminal */}
-          <div className="backdrop-blur-xl bg-black/70 border border-white/10 rounded-2xl p-5 font-mono text-xs shadow-inner space-y-3">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-5 font-mono text-xs shadow-inner space-y-3">
             <div className="flex flex-wrap items-center justify-between pb-3 border-b border-neutral-800 gap-2 text-gray-400">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1.5 font-bold text-white">

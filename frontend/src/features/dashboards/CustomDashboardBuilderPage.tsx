@@ -67,22 +67,22 @@ export default function CustomDashboardBuilderPage() {
   };
 
   return (
-    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
-
-      <div className="relative z-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Custom Dashboard Builder</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Custom Dashboard Builder</h1>
+          <p className="text-sm text-gray-500 mt-1">Drag and drop widgets to build your monitoring view</p>
+        </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
+            <button className="flex items-center gap-2 bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2.5 hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer text-sm">
+              <Plus className="w-4 h-4" />
               Add Widget
-            </Button>
+            </button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="bg-neutral-900 border border-neutral-800 text-white shadow-2xl">
             <DialogHeader>
-              <DialogTitle>Add Widget</DialogTitle>
+              <DialogTitle className="text-white">Add Widget</DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-1 gap-3 mt-2">
               {widgetTypes.map((w) => {
@@ -91,9 +91,9 @@ export default function CustomDashboardBuilderPage() {
                   <button
                     key={w.type}
                     onClick={() => addWidget(w.type)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-blue-500/40 transition-colors text-left"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 hover:border-blue-500/40 transition-colors text-left cursor-pointer"
                   >
-                    <Icon className="w-5 h-5 text-gray-300" />
+                    <Icon className="w-5 h-5 text-blue-400" />
                     <span className="text-sm text-gray-200">{w.label}</span>
                   </button>
                 );
@@ -103,7 +103,7 @@ export default function CustomDashboardBuilderPage() {
         </Dialog>
       </div>
 
-      <div className="backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl overflow-hidden" style={{ height: 600 }}>
+      <div className="rounded-2xl bg-neutral-900 border border-neutral-800 overflow-hidden" style={{ height: 600 }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -113,15 +113,14 @@ export default function CustomDashboardBuilderPage() {
           fitView
           attributionPosition="bottom-left"
         >
-          <Background color="#1e293b" gap={20} />
-          <Controls className="bg-neutral-950/80 border-white/10 rounded-lg" />
+          <Background color="#1a1a2e" gap={20} />
+          <Controls className="bg-neutral-900 border-neutral-700 rounded-lg" />
           <MiniMap
-            style={{ background: '#0b101d' }}
+            style={{ background: '#0a0a14' }}
             nodeColor={(node: any) => widgetColors[node.data?.label?.toLowerCase()] || '#6b7280'}
             maskColor="rgba(0,0,0,0.6)"
           />
         </ReactFlow>
-      </div>
       </div>
     </div>
   );

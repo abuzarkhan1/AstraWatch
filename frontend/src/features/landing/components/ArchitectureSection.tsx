@@ -142,7 +142,7 @@ export default function ArchitectureSection() {
   return (
     <section
       id="architecture"
-      className="w-full py-24 lg:py-36 relative border-b border-white/10 text-white font-sans overflow-hidden bg-black"
+      className="w-full py-24 lg:py-36 relative border-b border-neutral-800 text-white font-sans overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 relative z-10">
 
@@ -198,7 +198,7 @@ export default function ArchitectureSection() {
                   className={`w-full p-4.5 rounded-2xl border text-left transition-all duration-200 flex items-center justify-between cursor-pointer relative overflow-hidden ${
                     isSelected
                       ? 'bg-gradient-to-t from-blue-500 to-blue-600 text-white border-blue-500 shadow-xl shadow-blue-800/80 scale-[1.01] transform-gpu'
-                      : 'backdrop-blur-md bg-white/[0.02] border-white/10 text-gray-300 hover:bg-white/[0.05] hover:text-white hover:border-white/20'
+                      : 'bg-neutral-900 border-neutral-800 text-gray-300 hover:bg-neutral-800 hover:text-white hover:border-neutral-700'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -232,7 +232,7 @@ export default function ArchitectureSection() {
           </div>
 
           {/* RIGHT COLUMN: Active Phase Value & Capabilities Inspector */}
-          <div className="lg:col-span-7 backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] relative overflow-hidden min-h-[480px]">
+          <div className="lg:col-span-7 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 shadow-[0px_-13px_300px_0px_rgba(9,0,255,0.15)] rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden min-h-[480px]">
 
             {/* Corner Blue Glow Aura */}
             <div className="absolute -top-12 -right-12 w-64 h-64 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -247,7 +247,7 @@ export default function ArchitectureSection() {
                 className="space-y-6 relative z-10"
               >
                 {/* Header */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-white/10">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-neutral-800">
                   <div className="flex items-center gap-3.5">
                     <div className="h-12 w-12 rounded-2xl bg-gradient-to-t from-blue-600/20 to-blue-500/10 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-inner">
                       <Icon className="h-6 w-6" />
@@ -272,7 +272,7 @@ export default function ArchitectureSection() {
                   {current.highlights.map((h, hIdx) => (
                     <div
                       key={hIdx}
-                      className="backdrop-blur-md bg-white/[0.02] border border-white/10 p-4 rounded-2xl space-y-2 flex flex-col justify-between hover:border-blue-500/40 transition-colors"
+                      className="bg-neutral-950/60 border border-neutral-800 p-4 rounded-2xl space-y-2 flex flex-col justify-between hover:border-blue-500/30 hover:shadow-[0_4px_16px_0_rgba(32,108,232,0.15)] transition-colors"
                     >
                       <div>
                         <div className="flex items-center gap-1.5 mb-1">
@@ -289,7 +289,7 @@ export default function ArchitectureSection() {
                 </div>
 
                 {/* Live System Status Bar */}
-                <div className="backdrop-blur-md bg-black/60 border border-white/10 rounded-2xl p-4 flex items-center justify-between font-mono text-xs">
+                <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 flex items-center justify-between font-mono text-xs">
                   <div className="flex items-center gap-2 text-emerald-400 font-semibold">
                     <Activity className="h-4 w-4 animate-pulse" />
                     <span>{current.liveStatus}</span>

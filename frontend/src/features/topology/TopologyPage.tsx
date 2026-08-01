@@ -35,9 +35,9 @@ export default function TopologyPage() {
         type: 'default',
         position: { x: 200 + (i % 3) * 250, y: 100 + Math.floor(i / 3) * 150 },
         data: { label: svc.name, health: svc.status, tier: svc.tier },
-        className: 'backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl text-white',
+        className: 'relative rounded-2xl text-white bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border shadow-[0px_-13px_300px_0px_rgba(9,0,255,0.15)] hover:border-blue-500/30 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.25)] transition-all duration-300 p-6',
         style: {
-          borderColor: SERVICE_COLORS[svc.status] || 'rgba(255,255,255,0.1)',
+          borderColor: SERVICE_COLORS[svc.status] || '#262626',
           padding: 12,
           width: 180,
         },
@@ -73,58 +73,54 @@ export default function TopologyPage() {
   const data = selectedNode?.data as { label?: string; health?: string; tier?: string } | undefined;
 
   return (
-    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight text-white">Service Topology</h1>
+        <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">{services?.length || 0} services</span>
+      </div>
 
-      <div className="relative z-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-white">Service Topology</h1>
-          <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">{services?.length || 0} services</span>
-        </div>
-
-        <div className="flex gap-4">
-          <div className="flex-1 backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl overflow-hidden" style={{ height: 600 }}>
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full text-gray-500">Loading topology...</div>
-            ) : (
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onNodeClick={(_, node) => setSelectedNode(node)}
-                fitView
-                attributionPosition="bottom-left"
-              >
-                <Background color="#1e293b" gap={20} />
-                <Controls className="bg-neutral-950/80 border-white/10 rounded-lg text-black" />
-                <MiniMap
-                  style={{ background: '#0b101d' }}
-                  nodeColor={(node: any) => SERVICE_COLORS[node.data?.health] || '#6b7280'}
-                  maskColor="rgba(0,0,0,0.6)"
-                />
-              </ReactFlow>
-            )}
-          </div>
-
-          {data && (
-            <div className="w-72 backdrop-blur-2xl bg-neutral-950/50 border border-white/10 rounded-2xl shadow-xl text-white p-6 space-y-4 h-fit">
-              <h3 className="font-semibold text-lg text-white">{data.label}</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Status</span>
-                  <span style={{ color: SERVICE_COLORS[data.health || ''] || '#6b7280' }} className="font-medium">
-                    {data.health}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Tier</span>
-                  <span className="text-gray-200">{data.tier}</span>
-                </div>
-              </div>
-            </div>
+      <div className="flex gap-4">
+        <div className="flex-1 rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-0 overflow-hidden" style={{ height: 600 }}>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full text-gray-500">Loading topology...</div>
+          ) : (
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeClick={(_, node) => setSelectedNode(node)}
+              fitView
+              attributionPosition="bottom-left"
+            >
+              <Background color="#1a1a2e" gap={20} />
+              <Controls className="bg-neutral-950/80 border-white/10 rounded-lg text-black" />
+              <MiniMap
+                style={{ background: '#0a0a14' }}
+                nodeColor={(node: any) => SERVICE_COLORS[node.data?.health] || '#6b7280'}
+                maskColor="rgba(0,0,0,0.6)"
+              />
+            </ReactFlow>
           )}
         </div>
+
+        {data && (
+          <div className="w-80 rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6 space-y-4 h-fit">
+            <h3 className="font-semibold text-lg text-white">{data.label}</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Status</span>
+                <span style={{ color: SERVICE_COLORS[data.health || ''] || '#6b7280' }} className="font-medium">
+                  {data.health}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Tier</span>
+                <span className="text-gray-200">{data.tier}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

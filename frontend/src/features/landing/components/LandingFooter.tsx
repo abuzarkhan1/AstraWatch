@@ -62,7 +62,7 @@ export default function LandingFooter() {
   ];
 
   return (
-    <footer className="bg-black relative h-fit rounded-3xl overflow-hidden m-8 border border-white/10 text-slate-300">
+    <footer className="bg-black relative h-fit rounded-3xl overflow-hidden m-8 border border-neutral-800 text-slate-300">
       <div className="max-w-7xl mx-auto p-14 z-40 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-8 lg:gap-16 pb-12">
           {/* Brand section */}

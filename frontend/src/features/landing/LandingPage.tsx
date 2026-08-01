@@ -39,7 +39,7 @@ export default function LandingPage() {
 
         <div className="w-full max-w-full overflow-x-hidden [content-visibility:auto] [contain-intrinsic-size:1px_800px]">
           <TestimonialsSection
-            className="border-b border-white/10"
+            className="border-b border-neutral-800"
             title="Trusted by SRE Leaders Worldwide"
             description="4.9/5.0 from 120+ SRE reviews — enterprise teams running AstraWatch in production"
             testimonials={[

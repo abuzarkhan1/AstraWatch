@@ -27,12 +27,6 @@
   --radius: 0.75rem;
 
   --container-container: 1280px;
-  --animate-marquee: marquee var(--duration) linear infinite;
-
-  @keyframes marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(calc(-25% - var(--gap) / 4)); }
-  }
 }
 
 /* Liquid Glassmorphism Design Utilities */
@@ -166,6 +160,15 @@ body {
 }
 
 /* Animations */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-25% - var(--gap) / 4)); }
+}
+
+.animate-marquee {
+  animation: marquee var(--duration) linear infinite;
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-8px); }

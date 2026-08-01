@@ -5,10 +5,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Search } from 'lucide-react';
 
 const severityColors: Record<string, string> = {
-  CRITICAL: 'bg-red-500/10 text-red-500 border-red-500/20',
-  HIGH: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  MEDIUM: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  LOW: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  CRITICAL: 'border-red-500/30 bg-red-500/10 text-red-400',
+  HIGH: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
+  MEDIUM: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400',
+  LOW: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
 };
 
 const stateColors: Record<string, string> = {
@@ -30,25 +30,24 @@ export default function IncidentsPage() {
   }, [data]);
 
   return (
-    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden space-y-6">
-      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-white relative z-10">Incidents</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-white">Incidents</h1>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
             type="text"
             placeholder="Search incidents..."
-            className="pl-9 pr-4 py-2 backdrop-blur-xl bg-white/[0.03] border border-white/10 focus:border-blue-500/50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_1px_0_rgba(255,255,255,0.1)] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none w-64 transition-all"
+            className="pl-9 pr-4 py-2 bg-neutral-900 border border-neutral-700 focus:border-blue-500 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none w-64 transition-all"
           />
         </div>
       </div>
 
-      <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 overflow-hidden hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
-        <div className="overflow-x-auto">
+      <div className="rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6 overflow-hidden">
+        <div className="overflow-x-auto relative z-10">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-neutral-800">
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Severity</th>
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Title</th>
                 <th className="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Service</th>
@@ -68,14 +67,14 @@ export default function IncidentsPage() {
                 incidents.map((incident) => (
                   <tr
                     key={incident.id}
-                    className="border-b border-white/10 hover:bg-white/[0.04] cursor-pointer transition-colors"
+                    className="border-b border-neutral-800 hover:bg-white/[0.03] cursor-pointer transition-colors"
                     onClick={() => {
                       setSelectedIncident(incident);
                       navigate(`/incidents/${incident.id}`);
                     }}
                   >
                     <td className="px-4 py-3">
-                      <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">
+                      <span className={`rounded-full border px-3 py-1 text-xs font-medium ${severityColors[incident.severity] || severityColors.LOW}`}>
                         {incident.severity}
                       </span>
                     </td>

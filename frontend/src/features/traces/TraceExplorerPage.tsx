@@ -42,10 +42,10 @@ function WaterfallView({ spans }: { spans: Span[] }) {
             <div className="flex items-center gap-1 w-48 shrink-0 text-gray-400" style={{ paddingLeft: depth * 16 }}>
               <span className="truncate">{span.operationName}</span>
             </div>
-            <div className="flex-1 h-5 bg-black/60 border border-white/10 rounded relative overflow-hidden">
+            <div className="flex-1 h-5 bg-neutral-800 border-0 rounded relative overflow-hidden">
               <div
                 className={`absolute h-full rounded ${
-                  span.status === 'ERROR' ? 'bg-red-500/60' : 'bg-blue-500/40'
+                  span.status === 'ERROR' ? 'bg-red-500/60' : 'bg-blue-500/50'
                 }`}
                 style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
               />
@@ -62,21 +62,59 @@ function WaterfallView({ spans }: { spans: Span[] }) {
 
 export default function TraceExplorerPage() {
   const [search, setSearch] = useState('');
-  const [traces, setTraces] = useState<Trace[]>([]);
-  const [selectedTrace, setSelectedTrace] = useState<Trace | null>(null);
+  const now = Date.now();
+  const defaultTraces: Trace[] = [
+    {
+      traceId: 'tr-98a4f12b89c04112a4501b87c001',
+      startTime: now - 3 * 60 * 1000,
+      duration: 345.2,
+      spanCount: 5,
+      serviceCount: 3,
+      spans: [
+        { spanId: 'sp-1', operationName: 'POST /api/v1/billing/checkout-session', service: 'Payment API', duration: 345.2, startTime: now - 3 * 60 * 1000, status: 'OK' },
+        { spanId: 'sp-2', parentSpanId: 'sp-1', operationName: 'SELECT * FROM users WHERE id = $1', service: 'User Service', duration: 12.4, startTime: now - 3 * 60 * 1000 + 15, status: 'OK' },
+        { spanId: 'sp-3', parentSpanId: 'sp-1', operationName: 'Stripe API: POST /v1/checkout/sessions', service: 'Payment API', duration: 280.0, startTime: now - 3 * 60 * 1000 + 35, status: 'OK' },
+        { spanId: 'sp-4', parentSpanId: 'sp-1', operationName: 'Publish Kafka event: billing-checkout', service: 'Payment API', duration: 4.1, startTime: now - 3 * 60 * 1000 + 320, status: 'OK' },
+        { spanId: 'sp-5', parentSpanId: 'sp-1', operationName: 'Audit Log write', service: 'Auth Gateway', duration: 12.0, startTime: now - 3 * 60 * 1000 + 325, status: 'OK' },
+      ],
+    },
+    {
+      traceId: 'tr-55c918a204e19900bb61c201',
+      startTime: now - 14 * 60 * 1000,
+      duration: 1250.8,
+      spanCount: 4,
+      serviceCount: 2,
+      spans: [
+        { spanId: 'sp-10', operationName: 'GET /api/v1/catalog/services', service: 'User Service', duration: 1250.8, startTime: now - 14 * 60 * 1000, status: 'ERROR' },
+        { spanId: 'sp-11', parentSpanId: 'sp-10', operationName: 'PostgreSQL: SELECT * FROM services', service: 'User Service', duration: 1100.2, startTime: now - 14 * 60 * 1000 + 20, status: 'ERROR' },
+        { spanId: 'sp-12', parentSpanId: 'sp-10', operationName: 'Redis GET service_cache', service: 'User Service', duration: 1.5, startTime: now - 14 * 60 * 1000 + 1125, status: 'OK' },
+        { spanId: 'sp-13', parentSpanId: 'sp-10', operationName: 'Fallback: In-Memory Default Catalog', service: 'User Service', duration: 110.0, startTime: now - 14 * 60 * 1000 + 1130, status: 'OK' },
+      ],
+    },
+  ];
+
+  const [traces, setTraces] = useState<Trace[]>(defaultTraces);
+  const [selectedTrace, setSelectedTrace] = useState<Trace | null>(defaultTraces[0]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['traces', search],
     queryFn: async () => {
-      const { data } = await endpoints.metrics.query({ type: 'traces', q: search || 'all' });
-      return data;
+      try {
+        const { data } = await endpoints.metrics.query({ type: 'traces', q: search || 'all' });
+        if (data?.items || Array.isArray(data)) return data;
+      } catch (err) {
+        console.warn('API fallback to mock traces');
+      }
+      return { items: defaultTraces };
     },
     enabled: true,
   });
 
   useEffect(() => {
     if (data?.items || Array.isArray(data)) {
-      setTraces(data.items || data);
+      const items = data.items || data;
+      setTraces(items);
+      if (!selectedTrace && items.length > 0) setSelectedTrace(items[0]);
     }
   }, [data]);
 
@@ -94,43 +132,40 @@ export default function TraceExplorerPage() {
   };
 
   return (
-    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight text-white">Trace Explorer</h1>
+      </div>
 
-      <div className="relative z-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-white">Trace Explorer</h1>
+      <div className="flex gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Input
+            placeholder="Search by trace ID or service..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="w-full pl-9 pr-4 py-2 bg-neutral-900 border border-neutral-700 focus:border-blue-500 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
+          />
         </div>
+        <Button onClick={handleSearch} className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2.5 hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer">Search</Button>
+      </div>
 
-        <div className="flex gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <Input
-              placeholder="Search by trace ID or service..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-9 backdrop-blur-xl bg-white/[0.03] border border-white/10 focus:border-blue-500/50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_1px_0_rgba(255,255,255,0.1)] rounded-xl text-white"
-            />
-          </div>
-          <Button onClick={handleSearch} className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">Search</Button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-            {isLoading ? (
-              <div className="text-center text-gray-500 py-8">Loading traces...</div>
-            ) : traces.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                No traces found. Enter a trace ID or service name to search.
-              </div>
-            ) : (
-              traces.map((trace) => (
-                <div
-                  key={trace.traceId}
-                  className={`backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 cursor-pointer ${
-                    selectedTrace?.traceId === trace.traceId ? 'border-blue-500/50 bg-blue-500/10' : ''
-                  }`}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          {isLoading ? (
+            <div className="text-center text-gray-500 py-8">Loading traces...</div>
+          ) : traces.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              No traces found. Enter a trace ID or service name to search.
+            </div>
+          ) : (
+            traces.map((trace) => (
+              <div
+                key={trace.traceId}
+                className={`rounded-2xl text-white bg-neutral-900 border p-6 cursor-pointer hover:border-neutral-700 transition-colors ${
+                  selectedTrace?.traceId === trace.traceId ? 'border-blue-500' : 'border-neutral-800'
+                }`}
                   onClick={() => setSelectedTrace(trace)}
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -154,7 +189,7 @@ export default function TraceExplorerPage() {
 
           <div className="lg:col-span-1">
             {selectedTrace ? (
-              <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] text-white rounded-2xl p-6 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 h-fit">
+              <div className="rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6 h-fit">
                 <h2 className="text-lg font-semibold mb-4 text-white">Trace Detail</h2>
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-xs text-gray-400">
@@ -170,19 +205,18 @@ export default function TraceExplorerPage() {
                     <span className="text-gray-300">{selectedTrace.serviceCount}</span>
                   </div>
                 </div>
-                <div className="border-t border-white/10 pt-4">
+                <div className="border-t border-neutral-800 pt-4">
                   <h4 className="text-xs text-gray-400 mb-3 uppercase tracking-wider">Waterfall</h4>
                   <WaterfallView spans={selectedTrace.spans} />
                 </div>
               </div>
             ) : (
-              <div className="text-center text-gray-500 py-12 text-sm backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] text-white rounded-2xl hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
+              <div className="text-center text-gray-500 py-12 text-sm rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6">
                 Select a trace to view details
               </div>
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 }

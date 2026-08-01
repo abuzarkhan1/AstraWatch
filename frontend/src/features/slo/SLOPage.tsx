@@ -26,7 +26,7 @@ function ServiceSLO({ svc }: { svc: any }) {
   const isBreaching = current < target;
 
   return (
-    <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 text-white space-y-3">
+    <div className={`rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6 space-y-3 hover:border-neutral-700 transition-colors ${isBreaching ? 'border-t-2 border-t-red-500/50' : ''}`}>
       <div className="flex items-center justify-between">
         <h3 className="font-medium">{svc.name}</h3>
         {isBreaching ? (
@@ -47,9 +47,9 @@ function ServiceSLO({ svc }: { svc: any }) {
           <span className="text-gray-500">Target</span>
           <span className="text-gray-300">{target}%</span>
         </div>
-        <div className="w-full bg-black/60 border border-white/10 rounded-full h-2 mt-1 overflow-hidden">
+        <div className="w-full bg-neutral-800 border-0 rounded-full h-1.5 mt-1 overflow-hidden">
           <div
-            className={`h-2 rounded-full transition-all ${isBreaching ? 'bg-red-500' : 'bg-green-500'}`}
+            className={`h-1.5 rounded-full transition-all ${isBreaching ? 'bg-red-500' : 'bg-green-500'}`}
             style={{ width: `${Math.min(100, (current / target) * 100)}%` }}
           />
         </div>
@@ -66,14 +66,36 @@ function ServiceSLO({ svc }: { svc: any }) {
 export default function SLOPage() {
   const { data: services = [], isLoading } = useServices();
 
+  const totalServices = services.length;
+  const breachingServices = services.filter((svc: any) => {
+    const target = sloTargets[svc.name] ?? 99.0;
+    const current = svc.sloAttainment ?? svc.healthScore ?? target - 0.3;
+    return current < target;
+  }).length;
+
   return (
-    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
-      <div className="relative z-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-white">Service Level Objectives</h1>
-          <BarChart3 className="w-5 h-5 text-gray-500" />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight text-white">Service Level Objectives</h1>
+        <BarChart3 className="w-5 h-5 text-gray-500" />
+      </div>
+
+      <div className="rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold mb-1">SLO Overview</h2>
+          <p className="text-sm text-gray-400">Total trackable services and active breaches</p>
         </div>
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 bg-blue-500 rounded-full shrink-0"></div>
+            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">{totalServices} Total</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 bg-red-500 rounded-full shrink-0"></div>
+            <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs text-red-400 font-medium">{breachingServices} Breaching</span>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {isLoading ? (
@@ -83,7 +105,6 @@ export default function SLOPage() {
         ) : (
           services.map((svc: any) => <ServiceSLO key={svc.id} svc={svc} />)
         )}
-      </div>
       </div>
     </div>
   );

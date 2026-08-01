@@ -30,14 +30,13 @@ export default function IncidentDetail() {
   }
 
   return (
-    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden space-y-6">
-      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
+    <div className="space-y-6">
       <Link to="/incidents" className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200">
         <ArrowLeft className="w-4 h-4" />
         Back to incidents
       </Link>
 
-      <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
+      <div className="rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6">
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-white relative z-10 mb-1">{incident.title || 'Incident'}</h1>
@@ -49,28 +48,28 @@ export default function IncidentDetail() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-black/60 border border-white/10 rounded-xl p-3">
+          <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <Clock className="w-3 h-3" />
               State
             </div>
             <span className="text-sm font-medium">{incident.state}</span>
           </div>
-          <div className="bg-black/60 border border-white/10 rounded-xl p-3">
+          <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <Clock className="w-3 h-3" />
               Created
             </div>
             <span className="text-sm">{new Date(incident.createdAt).toLocaleString()}</span>
           </div>
-          <div className="bg-black/60 border border-white/10 rounded-xl p-3">
+          <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <User className="w-3 h-3" />
               Assigned To
             </div>
             <span className="text-sm">{incident.assignedTo || 'Unassigned'}</span>
           </div>
-          <div className="bg-black/60 border border-white/10 rounded-xl p-3">
+          <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <AlertTriangle className="w-3 h-3" />
               Service
@@ -82,13 +81,13 @@ export default function IncidentDetail() {
         {incident.description && (
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-400 mb-2">Description</h3>
-            <p className="text-sm text-gray-300 bg-black/60 border border-white/10 rounded-xl p-3">{incident.description}</p>
+            <p className="text-sm text-gray-300 bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">{incident.description}</p>
           </div>
         )}
       </div>
 
       {timeline && timeline.length > 0 && (
-        <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 text-white relative z-10 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300">
+        <div className="relative rounded-2xl text-white bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 shadow-[0px_-13px_300px_0px_rgba(9,0,255,0.15)] hover:border-blue-500/30 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.25)] transition-all duration-300 p-6 z-10">
           <h2 className="text-sm font-semibold text-gray-300 mb-4">Timeline</h2>
           <div className="space-y-3">
             {timeline.map((event: any) => (
@@ -98,7 +97,7 @@ export default function IncidentDetail() {
                   <span className="text-xs text-gray-500">{new Date(event.createdAt).toLocaleString()}</span>
                   <p className="text-sm text-gray-300 mt-0.5">{event.eventType}</p>
                   {event.payload && (
-                    <pre className="text-xs text-gray-500 mt-1 bg-black/60 border border-white/10 rounded-lg p-2 overflow-x-auto">
+                    <pre className="text-xs text-gray-500 mt-1 bg-neutral-950/60 border border-neutral-800 rounded-lg p-2 overflow-x-auto">
                       {JSON.stringify(JSON.parse(event.payload), null, 2)}
                     </pre>
                   )}
@@ -109,14 +108,14 @@ export default function IncidentDetail() {
         </div>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 relative z-10">
         <button
           onClick={async () => {
             const { endpoints } = await import('@/lib/api');
             await endpoints.incidents.resolve(incident.id, 'Resolved via dashboard');
             navigate(0);
           }}
-          className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all"
+          className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/50 border border-blue-500 text-white font-bold rounded-xl px-5 py-3 hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer"
         >
           Resolve Incident
         </button>
@@ -126,7 +125,7 @@ export default function IncidentDetail() {
             await endpoints.incidents.escalate(incident.id, 'manager', 'Needs immediate attention');
             navigate(0);
           }}
-          className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all"
+          className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/50 border border-blue-500 text-white font-bold rounded-xl px-5 py-3 hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer"
         >
           Escalate
         </button>

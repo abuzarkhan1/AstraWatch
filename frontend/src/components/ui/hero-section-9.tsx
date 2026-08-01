@@ -159,7 +159,7 @@ function MenuIcon({ className }: { className?: string }) {
 
 export const HeroSection = () => {
   return (
-    <div className="relative min-h-screen bg-black text-white font-sans overflow-hidden border-b border-white/10 w-full flex flex-col justify-center">
+    <div className="relative min-h-screen bg-black text-white font-sans overflow-hidden border-b border-neutral-800 w-full flex flex-col justify-center">
       
       {/* Background Sparkles & Grid Layer */}
       <div className="absolute top-0 h-96 w-screen overflow-hidden [mask-image:radial-gradient(50%_50%,white,transparent)] pointer-events-none z-0">

@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface AlertRule {
   id: string;
@@ -62,12 +61,10 @@ export default function AlertingCenterPage() {
   };
 
   return (
-    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
-      <div className="space-y-6 relative z-10">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-white">Alerting Center</h1>
-        <Button className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">
+        <Button className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2.5 hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer">
           <Plus className="w-4 h-4 mr-2" />
           New Rule
         </Button>
@@ -79,7 +76,7 @@ export default function AlertingCenterPage() {
         <div className="text-center py-12 text-gray-500">
           <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No alert rules configured</p>
-          <Button className="mt-4 bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">
+          <Button className="mt-4 bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2.5 hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer">
             <Plus className="w-4 h-4 mr-2" />
             Create your first rule
           </Button>
@@ -87,8 +84,8 @@ export default function AlertingCenterPage() {
       ) : (
         <div className="grid gap-4">
           {rules.map((rule) => (
-            <div key={rule.id} className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.15)] rounded-2xl p-6 hover:border-blue-500/40 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.2)] transition-all duration-300 text-white">
-              <div className="flex items-center justify-between">
+            <div key={rule.id} className="rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6 hover:border-neutral-700 transition-colors">
+              <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     {rule.status === 'active' ? (
@@ -100,12 +97,15 @@ export default function AlertingCenterPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-200">{rule.name}</p>
-                    <p className="text-xs text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white">{rule.name}</p>
+                      {rule.status === 'active' && <div className="h-2 w-2 bg-blue-500 rounded-full shrink-0" />}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">
                       {rule.metric} {rule.condition} {rule.threshold}ms &middot; {rule.serviceId}
                     </p>
                     {rule.lastTriggered && (
-                      <p className="text-xs text-gray-600 mt-0.5">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         Last triggered: {new Date(rule.lastTriggered).toLocaleString()}
                       </p>
                     )}
@@ -117,7 +117,7 @@ export default function AlertingCenterPage() {
                   </span>
                   <Button
                     size="sm"
-                    className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all"
+                    className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2.5 hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer"
                     onClick={() => toggleRule(rule.id)}
                   >
                     {rule.status === 'active' ? 'Disable' : 'Enable'}
@@ -128,7 +128,6 @@ export default function AlertingCenterPage() {
           ))}
         </div>
       )}
-      </div>
     </div>
   );
 }

@@ -35,10 +35,10 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section className="py-24 md:py-32 bg-black relative border-b border-white/10 text-white font-sans overflow-hidden">
+    <section className="py-24 md:py-32 relative border-b border-neutral-800 text-white font-sans overflow-hidden">
       {/* Ambient Glowing Light Orbs (matching sibling sections) */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(49,49,245,0.18),transparent_100%)] pointer-events-none blur-3xl" />
-      <div className="absolute bottom-10 left-10 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(32,108,232,0.14),transparent_70%)] pointer-events-none blur-2xl" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(32,108,232,0.22),transparent_100%)] pointer-events-none blur-3xl" />
+      <div className="absolute bottom-10 left-10 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(32,108,232,0.16),transparent_70%)] pointer-events-none blur-2xl" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Section Header */}
@@ -55,7 +55,7 @@ export function Features() {
             return (
               <div
                 key={idx}
-                className="group backdrop-blur-2xl bg-white/[0.03] border border-white/15 hover:border-blue-500/50 rounded-3xl p-6 sm:p-8 relative overflow-hidden transition-all duration-300 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] hover:-translate-y-1"
+                className="group relative rounded-3xl text-white bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 shadow-[0px_-13px_300px_0px_rgba(9,0,255,0.15)] hover:border-blue-500/30 hover:shadow-[0_12px_40px_0_rgba(32,108,232,0.25)] p-6 sm:p-8 overflow-hidden transition-all duration-300 hover:-translate-y-1"
               >
                 {/* Ambient Inner Glass Glow */}
                 <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

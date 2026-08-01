@@ -50,7 +50,7 @@ export default function ContactSection() {
     <div
       id="contact"
       ref={sectionRef}
-      className="min-h-screen mx-auto relative bg-black overflow-x-hidden border-b border-white/10"
+      className="min-h-screen mx-auto relative overflow-x-hidden border-b border-neutral-800"
     >
       {/* ── Top Sparkle Background ── */}
       <TimelineContent
@@ -107,7 +107,7 @@ export default function ContactSection() {
           timelineRef={sectionRef}
           customVariants={revealVariants}
         >
-          <div className="backdrop-blur-2xl bg-white/[0.03] border border-white/15 rounded-3xl p-2 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] relative overflow-hidden">
+          <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 shadow-[0px_-13px_300px_0px_rgba(9,0,255,0.15)] rounded-3xl p-2 relative overflow-hidden">
 
             {formState === 'sent' ? (
               /* ── Success State ── */
