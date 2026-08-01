@@ -30,20 +30,20 @@ export default function IncidentDetail() {
   }
 
   return (
-    <div className="space-y-6 relative z-0 bg-[#060911] p-6 rounded-3xl overflow-hidden">
-      <div className="absolute inset-0 bg-[rgba(99,102,241,0.08)] blur-[140px] pointer-events-none -z-10" />
+    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden space-y-6">
+      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
       <Link to="/incidents" className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200">
         <ArrowLeft className="w-4 h-4" />
         Back to incidents
       </Link>
 
-      <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
+      <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent mb-1">{incident.title || 'Incident'}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white relative z-10 mb-1">{incident.title || 'Incident'}</h1>
             <p className="text-sm text-gray-500">ID: {incident.id}</p>
           </div>
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-300 font-medium">
+          <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">
             {incident.severity}
           </span>
         </div>
@@ -88,7 +88,7 @@ export default function IncidentDetail() {
       </div>
 
       {timeline && timeline.length > 0 && (
-        <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10">
           <h2 className="text-sm font-semibold text-gray-300 mb-4">Timeline</h2>
           <div className="space-y-3">
             {timeline.map((event: any) => (
@@ -116,7 +116,7 @@ export default function IncidentDetail() {
             await endpoints.incidents.resolve(incident.id, 'Resolved via dashboard');
             navigate(0);
           }}
-          className="px-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all"
+          className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all"
         >
           Resolve Incident
         </button>
@@ -126,7 +126,7 @@ export default function IncidentDetail() {
             await endpoints.incidents.escalate(incident.id, 'manager', 'Needs immediate attention');
             navigate(0);
           }}
-          className="px-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all"
+          className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all"
         >
           Escalate
         </button>

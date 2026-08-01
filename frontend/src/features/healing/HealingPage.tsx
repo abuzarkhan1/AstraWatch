@@ -17,7 +17,7 @@ const statusColors: Record<string, string> = {
   PENDING: 'text-yellow-500',
   FAILED: 'text-red-500',
   ROLLED_BACK: 'text-orange-500',
-  EXECUTING: 'text-purple-500',
+  EXECUTING: 'text-blue-500',
 };
 
 const riskColor = (score: number) =>
@@ -30,12 +30,11 @@ export default function HealingPage() {
   const pending = actions.filter((a: any) => a.status === 'PENDING' || a.status === 'APPROVED').length;
 
   return (
-    <div className="min-h-screen bg-[#060911] text-white p-6 relative overflow-hidden">
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[rgba(99,102,241,0.08)] blur-[140px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[rgba(59,130,246,0.08)] blur-[140px] rounded-full pointer-events-none" />
+    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
+      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
       <div className="relative z-10 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">Healing Actions</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Healing Actions</h1>
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-green-500" />
             <span className="text-sm text-green-500">Auto-healing enabled</span>
@@ -43,21 +42,21 @@ export default function HealingPage() {
         </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl">
           <div className="text-2xl font-bold text-blue-500">{actions.length}</div>
           <div className="text-sm text-gray-500 mt-1">Total Actions</div>
         </div>
-        <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl">
           <div className="text-2xl font-bold text-green-500">{completed}</div>
           <div className="text-sm text-gray-500 mt-1">Completed</div>
         </div>
-        <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl">
           <div className="text-2xl font-bold text-yellow-500">{pending}</div>
           <div className="text-sm text-gray-500 mt-1">Pending / Approved</div>
         </div>
       </div>
 
-      <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6 overflow-hidden">
+      <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -80,7 +79,7 @@ export default function HealingPage() {
                   return (
                     <tr key={action.id} className="border-b border-white/10 hover:bg-white/[0.04]">
                       <td className="px-4 py-3">
-                        <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-300 font-medium">{action.actionType}</span>
+                        <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">{action.actionType}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-sm font-mono ${riskColor(action.riskScore)}`}>
@@ -97,8 +96,8 @@ export default function HealingPage() {
                         {new Date(action.createdAt).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 flex gap-2">
-                        <button onClick={async () => { await endpoints.healing.approve(action.id, 'admin'); window.location.reload(); }} className="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all">Approve</button>
-                        <button onClick={async () => { await endpoints.healing.rollback(action.id, 'Manual rollback'); window.location.reload(); }} className="px-3 py-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all">Rollback</button>
+                        <button onClick={async () => { await endpoints.healing.approve(action.id, 'admin'); window.location.reload(); }} className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">Approve</button>
+                        <button onClick={async () => { await endpoints.healing.rollback(action.id, 'Manual rollback'); window.location.reload(); }} className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">Rollback</button>
                       </td>
                     </tr>
                   );

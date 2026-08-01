@@ -94,15 +94,12 @@ export default function TraceExplorerPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#060911] text-white p-6 overflow-hidden">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[rgba(99,102,241,0.08)] blur-[140px]" />
-        <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-[rgba(59,130,246,0.08)] blur-[140px]" />
-      </div>
+    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
+      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
 
       <div className="relative z-10 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent font-bold">Trace Explorer</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Trace Explorer</h1>
         </div>
 
         <div className="flex gap-3 mb-6">
@@ -116,7 +113,7 @@ export default function TraceExplorerPage() {
               className="pl-9 bg-neutral-900/50 border-white/10 text-white"
             />
           </div>
-          <Button onClick={handleSearch} className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all">Search</Button>
+          <Button onClick={handleSearch} className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">Search</Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -131,19 +128,19 @@ export default function TraceExplorerPage() {
               traces.map((trace) => (
                 <div
                   key={trace.traceId}
-                  className={`backdrop-blur-xl bg-neutral-950/70 border shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6 cursor-pointer transition-colors ${
-                    selectedTrace?.traceId === trace.traceId ? 'border-indigo-500/50 bg-indigo-500/20' : 'border-white/10 hover:bg-neutral-900/80'
+                  className={`bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border text-white rounded-2xl p-6 shadow-xl cursor-pointer transition-colors ${
+                    selectedTrace?.traceId === trace.traceId ? 'border-blue-500/50 bg-blue-500/10' : 'border-neutral-800 hover:border-neutral-700'
                   }`}
                   onClick={() => setSelectedTrace(trace)}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-indigo-400" />
+                      <Clock className="w-4 h-4 text-blue-500" />
                       <span className="text-sm text-gray-300 font-mono">{trace.traceId.substring(0, 16)}...</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-300 font-medium">{trace.spanCount} spans</span>
-                      <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-300 font-medium">{trace.serviceCount} services</span>
+                      <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">{trace.spanCount} spans</span>
+                      <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">{trace.serviceCount} services</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500">
@@ -157,8 +154,8 @@ export default function TraceExplorerPage() {
 
           <div className="lg:col-span-1">
             {selectedTrace ? (
-              <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6 h-fit">
-                <h2 className="text-lg font-semibold mb-4 text-indigo-100">Trace Detail</h2>
+              <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl h-fit">
+                <h2 className="text-lg font-semibold mb-4 text-white">Trace Detail</h2>
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-xs text-gray-400">
                     <span>Trace ID</span>
@@ -179,7 +176,7 @@ export default function TraceExplorerPage() {
                 </div>
               </div>
             ) : (
-              <div className="text-center text-gray-500 py-12 text-sm backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl">
+              <div className="text-center text-gray-500 py-12 text-sm bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl shadow-xl">
                 Select a trace to view details
               </div>
             )}

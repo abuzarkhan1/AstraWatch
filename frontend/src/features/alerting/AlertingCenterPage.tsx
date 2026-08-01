@@ -62,13 +62,12 @@ export default function AlertingCenterPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#060911] p-6">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[rgba(99,102,241,0.08)] blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[rgba(59,130,246,0.08)] blur-[140px] pointer-events-none" />
+    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
+      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
       <div className="space-y-6 relative z-10">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent font-bold">Alerting Center</h1>
-        <Button className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all">
+        <h1 className="text-3xl font-bold tracking-tight text-white">Alerting Center</h1>
+        <Button className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">
           <Plus className="w-4 h-4 mr-2" />
           New Rule
         </Button>
@@ -80,7 +79,7 @@ export default function AlertingCenterPage() {
         <div className="text-center py-12 text-gray-500">
           <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No alert rules configured</p>
-          <Button className="mt-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all">
+          <Button className="mt-4 bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all">
             <Plus className="w-4 h-4 mr-2" />
             Create your first rule
           </Button>
@@ -88,7 +87,7 @@ export default function AlertingCenterPage() {
       ) : (
         <div className="grid gap-4">
           {rules.map((rule) => (
-            <div key={rule.id} className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
+            <div key={rule.id} className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -113,12 +112,12 @@ export default function AlertingCenterPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-300 font-medium capitalize">
+                  <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium capitalize">
                     {rule.status}
                   </span>
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.35)] transition-all"
+                    className="bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-900/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all"
                     onClick={() => toggleRule(rule.id)}
                   >
                     {rule.status === 'active' ? 'Disable' : 'Enable'}

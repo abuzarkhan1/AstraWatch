@@ -12,7 +12,7 @@ function StatCard({ icon: Icon, label, value, change, color }: {
   color: string;
 }) {
   return (
-    <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6 hover:border-white/20 transition-all">
+    <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10 hover:border-white/20 transition-all">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>
         <Icon className={`w-5 h-5 ${color}`} />
@@ -76,9 +76,9 @@ export default function Dashboard() {
   ).length;
 
   return (
-    <div className="space-y-6 relative z-0 bg-[#060911] p-6 rounded-3xl overflow-hidden">
-      <div className="absolute inset-0 bg-[rgba(99,102,241,0.08)] blur-[140px] pointer-events-none -z-10" />
-      <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">Dashboard</h1>
+    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden space-y-6">
+      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
+      <h1 className="text-3xl font-bold tracking-tight text-white relative z-10">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -110,8 +110,8 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent mb-4">Recent Incidents</h2>
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10">
+          <h2 className="text-3xl font-bold tracking-tight text-white relative z-10 mb-4">Recent Incidents</h2>
           {incidents.slice(0, 5).map((incident) => (
             <a
               key={incident.id}
@@ -131,8 +131,8 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent mb-4">Service Health</h2>
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl relative z-10">
+          <h2 className="text-3xl font-bold tracking-tight text-white relative z-10 mb-4">Service Health</h2>
           <div className="space-y-2">
             {services.slice(0, 8).map((service) => (
               <div key={service.id} className="flex items-center justify-between py-1.5">

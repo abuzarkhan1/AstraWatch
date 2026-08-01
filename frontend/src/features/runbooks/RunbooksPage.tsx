@@ -2,14 +2,13 @@ import React from 'react';
 
 export default function RunbooksPage() {
   return (
-    <div className="min-h-screen bg-[#060911] text-white p-6 relative overflow-hidden">
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[rgba(99,102,241,0.08)] blur-[140px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[rgba(59,130,246,0.08)] blur-[140px] rounded-full pointer-events-none" />
+    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
+      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
       <div className="relative z-10 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">Runbooks</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Runbooks</h1>
         </div>
-        <div className="backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6">
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl">
           <p className="text-gray-400">Operational runbooks and playbooks go here.</p>
         </div>
       </div>

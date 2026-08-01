@@ -38,13 +38,13 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="w-full text-white bg-[#060911]/50 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/5">
+    <div className="w-full text-white bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl relative z-10">
       <div className="flex items-center py-4">
         <input
           placeholder="Search..."
           value={globalFilter ?? ''}
           onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="max-w-sm bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
       <div className="rounded-md border border-white/10 overflow-hidden">
@@ -107,14 +107,14 @@ export function DataTable<TData, TValue>({
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <button
-          className="px-3 py-1 text-sm bg-white/10 rounded disabled:opacity-50 hover:bg-white/20 transition-colors"
+          className="bg-gradient-to-t from-neutral-950 to-neutral-800 border border-neutral-700 text-white font-medium rounded-xl px-4 py-2 hover:from-neutral-900 hover:to-neutral-700 transition-all disabled:opacity-50"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
         >
           Previous
         </button>
         <button
-          className="px-3 py-1 text-sm bg-white/10 rounded disabled:opacity-50 hover:bg-white/20 transition-colors"
+          className="bg-gradient-to-t from-neutral-950 to-neutral-800 border border-neutral-700 text-white font-medium rounded-xl px-4 py-2 hover:from-neutral-900 hover:to-neutral-700 transition-all disabled:opacity-50"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
         >

@@ -16,7 +16,7 @@ export function MetricsChart({
   height = 300,
 }: MetricsChartProps) {
   const options: EChartsOption = {
-    backgroundColor: '#060911',
+    backgroundColor: 'transparent',
     title: {
       text: title,
       textStyle: {
@@ -89,8 +89,8 @@ export function MetricsChart({
             x2: 1,
             y2: 0,
             colorStops: [
-              { offset: 0, color: '#0ea5e9' }, // sky-500
-              { offset: 1, color: '#6366f1' }, // indigo-500
+              { offset: 0, color: '#206ce8' }, // sky-500
+              { offset: 1, color: '#206ce8' }, // indigo-500
             ],
           },
         },
@@ -103,8 +103,8 @@ export function MetricsChart({
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(14, 165, 233, 0.3)' },
-              { offset: 1, color: 'rgba(99, 102, 241, 0.01)' },
+              { offset: 0, color: 'rgba(32, 108, 232, 0.3)' },
+              { offset: 1, color: 'rgba(32, 108, 232, 0.01)' },
             ],
           },
         },

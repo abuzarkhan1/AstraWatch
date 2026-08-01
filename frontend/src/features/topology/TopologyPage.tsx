@@ -75,20 +75,17 @@ export default function TopologyPage() {
   const data = selectedNode?.data as { label?: string; health?: string; tier?: string } | undefined;
 
   return (
-    <div className="relative min-h-screen bg-[#060911] text-white p-6 overflow-hidden">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[rgba(99,102,241,0.08)] blur-[140px]" />
-        <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-[rgba(59,130,246,0.08)] blur-[140px]" />
-      </div>
+    <div className="bg-black min-h-screen text-white p-6 relative overflow-hidden">
+      <div className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #206ce8 0%, transparent 70%)', opacity: 0.25, mixBlendMode: 'screen' }} />
 
       <div className="relative z-10 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent font-bold">Service Topology</h1>
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-300 font-medium">{services?.length || 0} services</span>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Service Topology</h1>
+          <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400 font-medium">{services?.length || 0} services</span>
         </div>
 
         <div className="flex gap-4">
-          <div className="flex-1 backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden" style={{ height: 600 }}>
+          <div className="flex-1 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl shadow-xl overflow-hidden" style={{ height: 600 }}>
             {isLoading ? (
               <div className="flex items-center justify-center h-full text-gray-500">Loading topology...</div>
             ) : (
@@ -113,8 +110,8 @@ export default function TopologyPage() {
           </div>
 
           {data && (
-            <div className="w-72 backdrop-blur-xl bg-neutral-950/70 border border-white/10 shadow-[0_16px_40px_0_rgba(0,0,0,0.5)] rounded-2xl p-6 space-y-4 h-fit">
-              <h3 className="font-semibold text-lg text-indigo-100">{data.label}</h3>
+            <div className="w-72 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-neutral-800 text-white rounded-2xl p-6 shadow-xl space-y-4 h-fit">
+              <h3 className="font-semibold text-lg text-white">{data.label}</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Status</span>
