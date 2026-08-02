@@ -10,4 +10,9 @@ export default {
   JWT_REVALIDATION_INTERVAL_MS: parseInt(process.env.JWT_REVALIDATION_INTERVAL_MS || '600000', 10),
   EVENT_CACHE_MAX: parseInt(process.env.EVENT_CACHE_MAX || '5000', 10),
   EVENT_CACHE_TTL_MS: parseInt(process.env.EVENT_CACHE_TTL_MS || '3600000', 10),
+  // Orchestrator sync for API-key auth (audit: the in-memory key store was never
+  // populated, so API keys could never authenticate).
+  ORCHESTRATOR_URL: process.env.ORCHESTRATOR_URL || '',
+  INTERNAL_API_TOKEN: process.env.INTERNAL_API_TOKEN || '',
+  API_KEY_SYNC_INTERVAL_MS: parseInt(process.env.API_KEY_SYNC_INTERVAL_MS || '60000', 10),
 };

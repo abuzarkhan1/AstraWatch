@@ -304,6 +304,96 @@ func (h *Handler) IngestTraces(c *gin.Context) {
 	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": len(traces)}, nil)
 }
 
+// IngestOTLPLogs accepts OTLP/JSON logs (first-class OpenTelemetry path —
+// strategy gap 2: OTel ingestion was traces-only via the custom proto).
+func (h *Handler) IngestOTLPLogs(c *gin.Context) {
+	tenantID, err := extractTenant(c)
+	if err != nil {
+		writeEnvelope(c, http.StatusUnauthorized, nil, gin.H{"error": err.Error()})
+		return
+	}
+	if !h.limiter.Allow(tenantID) {
+		c.Header("Retry-After", "1")
+		writeEnvelope(c, http.StatusTooManyRequests, nil, gin.H{"error": "rate limit exceeded"})
+		return
+	}
+
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		writeEnvelope(c, http.StatusBadRequest, nil, gin.H{"error": "cannot read body"})
+		return
+	}
+	if len(body) > 10*1024*1024 {
+		writeEnvelope(c, http.StatusRequestEntityTooLarge, nil, gin.H{"error": "body exceeds 10MB limit"})
+		return
+	}
+
+	entries, err := pkg.ParseOTLPLogs(body)
+	if err != nil {
+		writeEnvelope(c, http.StatusBadRequest, nil, gin.H{"error": "invalid OTLP logs: " + err.Error()})
+		return
+	}
+
+	accepted := 0
+	for i := range entries {
+		entries[i].TenantID = tenantID
+		h.enricher.EnrichLog(&entries[i])
+		if err := h.producer.ProduceLog(&entries[i]); err != nil {
+			h.log.Error("failed to produce log", zap.Error(err))
+			continue
+		}
+		accepted++
+	}
+
+	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": accepted}, nil)
+}
+
+// IngestOTLPMetrics accepts OTLP/JSON metrics (first-class OpenTelemetry path).
+func (h *Handler) IngestOTLPMetrics(c *gin.Context) {
+	tenantID, err := extractTenant(c)
+	if err != nil {
+		writeEnvelope(c, http.StatusUnauthorized, nil, gin.H{"error": err.Error()})
+		return
+	}
+	if !h.limiter.Allow(tenantID) {
+		c.Header("Retry-After", "1")
+		writeEnvelope(c, http.StatusTooManyRequests, nil, gin.H{"error": "rate limit exceeded"})
+		return
+	}
+
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		writeEnvelope(c, http.StatusBadRequest, nil, gin.H{"error": "cannot read body"})
+		return
+	}
+	if len(body) > 10*1024*1024 {
+		writeEnvelope(c, http.StatusRequestEntityTooLarge, nil, gin.H{"error": "body exceeds 10MB limit"})
+		return
+	}
+
+	batches, err := pkg.ParseOTLPMetrics(body)
+	if err != nil {
+		writeEnvelope(c, http.StatusBadRequest, nil, gin.H{"error": "invalid OTLP metrics: " + err.Error()})
+		return
+	}
+
+	accepted := 0
+	for i := range batches {
+		batches[i].TenantID = tenantID
+		batches[i].Source = "otlp"
+		for j := range batches[i].Metrics {
+			h.enricher.EnrichMetric(&batches[i].Metrics[j])
+		}
+		if err := h.producer.ProduceMetrics(batches[i]); err != nil {
+			h.log.Error("failed to produce metrics batch", zap.Error(err))
+			continue
+		}
+		accepted += len(batches[i].Metrics)
+	}
+
+	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": accepted}, nil)
+}
+
 func (h *Handler) HealthCheck(c *gin.Context) {
 	lag, err := h.producer.GetKafkaLag()
 	status := "healthy"
@@ -351,6 +441,11 @@ func init() {
 func extractTenant(c *gin.Context) (string, error) {
 	claims, exists := c.Get("claims")
 	if !exists {
+		// Internal/OTel paths carry the tenant explicitly via header (they are
+		// authenticated by the internal token middleware, not a user JWT).
+		if h := c.GetHeader("X-Tenant-Id"); h != "" {
+			return h, nil
+		}
 		return "", fmt.Errorf("authentication required: missing JWT claims")
 	}
 	jwtClaims, ok := claims.(jwt.MapClaims)

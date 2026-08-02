@@ -104,6 +104,9 @@ func main() {
 	if err := mgr.AddHealthzCheck("healthz", func(req *http.Request) error { return nil }); err != nil {
 		logger.Info("health check not available", zap.Error(err))
 	}
+	// MTTR / healing-action Prometheus metrics (audit Phase B) are registered on
+	// the controller-runtime metrics registry (internal/controller/telemetry.go),
+	// so the manager's built-in /metrics endpoint serves them automatically.
 
 	logger.Info("starting operator",
 		zap.Bool("standalone_trigger", standaloneTrigger),

@@ -158,4 +158,23 @@ export const endpoints = {
     updateRole: (userId: string, role: string) => api.put(`/api/v1/users/${userId}/role`, { role }),
     toggleStatus: (userId: string) => api.post(`/api/v1/users/${userId}/toggle-status`),
   },
+  synthetics: {
+    list: () => api.get('/api/v1/synthetics/checks'),
+    create: (data: { name: string; url: string; type: string; intervalSeconds?: number }) =>
+      api.post('/api/v1/synthetics/checks', data),
+    toggle: (id: string) => api.post(`/api/v1/synthetics/checks/${id}/toggle`),
+    remove: (id: string) => api.delete(`/api/v1/synthetics/checks/${id}`),
+  },
+  authExtra: {
+    acceptInvite: (token: string) => api.post('/api/v1/auth/accept-invite', { token }),
+    createApiKey: (name: string) => api.post('/api/v1/auth/api-keys', { name }),
+    listApiKeys: () => api.get('/api/v1/auth/api-keys'),
+    revokeApiKey: (id: string) => api.delete(`/api/v1/auth/api-keys/${id}`),
+    sessions: () => api.get('/api/v1/auth/sessions'),
+    terminateSession: (id: string) => api.delete(`/api/v1/auth/sessions/${id}`),
+    resetPassword: (token: string, newPassword: string) =>
+      api.post('/api/v1/auth/reset-password', { token, newPassword }),
+    changePassword: (currentPassword: string, newPassword: string) =>
+      api.post('/api/v1/auth/change-password', { currentPassword, newPassword }),
+  },
 };

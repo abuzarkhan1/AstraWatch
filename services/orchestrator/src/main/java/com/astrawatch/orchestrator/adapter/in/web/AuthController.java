@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -15,6 +17,8 @@ import java.util.UUID;
 import com.astrawatch.orchestrator.adapter.in.web.dto.UserDTO;
 import com.astrawatch.orchestrator.adapter.out.persistence.UserRepository;
 import com.astrawatch.orchestrator.application.service.AuthService;
+import com.astrawatch.orchestrator.domain.model.ApiKey;
+import com.astrawatch.orchestrator.domain.model.Session;
 import com.astrawatch.orchestrator.domain.model.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,24 +67,42 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Map<String, String>>> login(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> login(@RequestBody Map<String, String> body, HttpServletRequest request) {
         try {
             Map<String, String> tokens = authService.login(body.get("email"), body.get("password"));
             ResponseCookie accessCookie = createAccessTokenCookie(tokens.get("accessToken"));
             ResponseCookie refreshCookie = createRefreshTokenCookie(tokens.get("refreshToken"));
+
+            // Persist a real session row (audit: sessions were fabricated).
+            createSessionRow(tokens, request);
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                     .body(ApiResponse.ok(tokens));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(false, Map.of("error", "Invalid credentials"), Map.of()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Invalid credentials";
+            Map<String, String> err = new LinkedHashMap<>();
+            err.put("error", msg.contains("locked") ? msg : "Invalid credentials");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, err, Map.of()));
+        }
+    }
+
+    private void createSessionRow(Map<String, String> tokens, HttpServletRequest request) {
+        try {
+            String userId = tokens.get("userId");
+            if (userId != null) {
+                authService.createSession(UUID.fromString(userId),
+                        request.getHeader("User-Agent"),
+                        request.getRemoteAddr());
+            }
+        } catch (Exception sessionEx) {
+            // Session persistence must never break login.
         }
     }
 
     @PostMapping("/oauth2/google")
-    public ResponseEntity<ApiResponse<Map<String, String>>> oauth2Google(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> oauth2Google(@RequestBody Map<String, String> body, HttpServletRequest request) {
         try {
             Map<String, String> tokens = authService.processOAuth2Login(
                     "google",
@@ -95,6 +117,8 @@ public class AuthController {
             ResponseCookie accessCookie = createAccessTokenCookie(tokens.get("accessToken"));
             ResponseCookie refreshCookie = createRefreshTokenCookie(tokens.get("refreshToken"));
 
+            createSessionRow(tokens, request);
+
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
@@ -106,7 +130,7 @@ public class AuthController {
     }
 
     @PostMapping("/oauth2/github")
-    public ResponseEntity<ApiResponse<Map<String, String>>> oauth2GitHub(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> oauth2GitHub(@RequestBody Map<String, String> body, HttpServletRequest request) {
         try {
             Map<String, String> tokens = authService.processOAuth2Login(
                     "github",
@@ -120,6 +144,8 @@ public class AuthController {
             );
             ResponseCookie accessCookie = createAccessTokenCookie(tokens.get("accessToken"));
             ResponseCookie refreshCookie = createRefreshTokenCookie(tokens.get("refreshToken"));
+
+            createSessionRow(tokens, request);
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -213,27 +239,51 @@ public class AuthController {
 
     @PostMapping("/verify-email")
     public ResponseEntity<ApiResponse<Map<String, Object>>> verifyEmail(@RequestBody Map<String, String> body) {
+        boolean ok = authService.verifyEmail(body.get("code") != null ? body.get("code") : body.get("token"));
+        if (!ok) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, Map.of("error", "Invalid or expired verification code"), Map.of()));
+        }
         return ResponseEntity.ok(ApiResponse.ok(Map.of("verified", true)));
     }
 
     @PostMapping("/resend-verification")
     public ResponseEntity<Void> resendVerification(@RequestBody Map<String, String> body) {
+        authService.resendVerification(body.get("email"));
         return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@RequestBody Map<String, String> body) {
+        // Never leak whether the email exists — always accept.
+        authService.forgotPassword(body.get("email"));
         return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(@RequestBody Map<String, String> body) {
+        boolean ok = authService.resetPassword(body.get("token"), body.get("newPassword"));
+        if (!ok) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, Map.of("error", "Invalid or expired reset token"), Map.of()));
+        }
         return ResponseEntity.ok(ApiResponse.ok(Map.of("success", true)));
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> changePassword(@RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("success", true)));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> changePassword(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Authentication required"), Map.of()));
+        }
+        try {
+            authService.changePassword(user.getId(), body.get("currentPassword"), body.get("newPassword"));
+            return ResponseEntity.ok(ApiResponse.ok(Map.of("success", true)));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, Map.of("error", e.getMessage() != null ? e.getMessage() : "Password change failed"), Map.of()));
+        }
     }
 
     @PostMapping("/switch-team")
@@ -342,63 +392,136 @@ public class AuthController {
     // ─── Lockout Status ─────────────────────────────────────────────────
 
     @GetMapping("/lockout/status")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> lockoutStatus() {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of(
-                "locked", false,
-                "remainingAttempts", 5,
-                "cooldownSeconds", 0
-        )));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> lockoutStatus(@RequestParam(required = false) String email) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.lockoutStatus(email)));
     }
 
-    // ─── Session Management ─────────────────────────────────────────────
+    // ─── Session Management (audit: fabricated session row) ─────────────
 
     @GetMapping("/sessions")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> listSessions() {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("sessions", List.of(Map.of(
-                "id", UUID.randomUUID().toString(),
-                "device", "Mozilla/5.0",
-                "ip", "192.168.1.1",
-                "lastActive", Instant.now().toString(),
-                "createdAt", Instant.now().toString()
-        )))));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> listSessions(HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Authentication required"), Map.of()));
+        }
+        List<Map<String, Object>> sessions = new ArrayList<>();
+        for (Session s : authService.listSessions(user.getId())) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", s.getId().toString());
+            row.put("device", s.getDevice() != null ? s.getDevice() : "");
+            row.put("ip", s.getIp() != null ? s.getIp() : "");
+            row.put("lastActive", s.getLastActiveAt() != null ? s.getLastActiveAt().toString() : Instant.now().toString());
+            row.put("createdAt", s.getCreatedAt() != null ? s.getCreatedAt().toString() : Instant.now().toString());
+            sessions.add(row);
+        }
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("sessions", sessions)));
     }
 
     @DeleteMapping("/sessions/{id}")
-    public ResponseEntity<Void> terminateSession(@PathVariable UUID id) {
+    public ResponseEntity<Void> terminateSession(@PathVariable UUID id, HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user != null) {
+            authService.terminateSession(user.getId(), id);
+        }
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/sessions")
-    public ResponseEntity<Void> terminateAllSessions() {
+    public ResponseEntity<Void> terminateAllSessions(HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user != null) {
+            authService.terminateAllSessions(user.getId());
+        }
         return ResponseEntity.noContent().build();
     }
 
-    // ─── API Keys ───────────────────────────────────────────────────────
+    // ─── API Keys (audit: fabricated ak_ tokens) ────────────────────────
 
     @PostMapping("/api-keys")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> createApiKey(@RequestBody Map<String, Object> body) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(Map.of(
-                "id", UUID.randomUUID().toString(),
-                "key", "ak_" + UUID.randomUUID().toString().replace("-", ""),
-                "createdAt", Instant.now().toString()
-        )));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> createApiKey(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Authentication required"), Map.of()));
+        }
+        try {
+            String name = body.get("name") != null ? String.valueOf(body.get("name")) : "default";
+            String plaintext = authService.createApiKey(user.getId(), name);
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(Map.of(
+                    "key", plaintext,
+                    "name", name,
+                    "createdAt", Instant.now().toString()
+            )));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, Map.of("error", e.getMessage()), Map.of()));
+        }
     }
 
     @GetMapping("/api-keys")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> listApiKeys() {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("keys", List.of())));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> listApiKeys(HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Authentication required"), Map.of()));
+        }
+        List<Map<String, Object>> keys = new ArrayList<>();
+        for (ApiKey k : authService.listApiKeys(user.getId())) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", k.getId().toString());
+            row.put("name", k.getName());
+            row.put("prefix", k.getKeyPrefix());
+            row.put("permissions", k.getPermissions());
+            row.put("createdAt", k.getCreatedAt() != null ? k.getCreatedAt().toString() : "");
+            keys.add(row);
+        }
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("keys", keys)));
     }
 
     @DeleteMapping("/api-keys/{id}")
-    public ResponseEntity<Void> revokeApiKey(@PathVariable UUID id) {
+    public ResponseEntity<Void> revokeApiKey(@PathVariable UUID id, HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user != null) {
+            authService.revokeApiKey(user.getId(), id);
+        }
         return ResponseEntity.noContent().build();
     }
 
-    // ─── Invitations ────────────────────────────────────────────────────
+    // ─── Invitations (audit: acceptInvite threw / invite fabricated IDs) ─
 
     @PostMapping("/invite")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> inviteUser(@RequestBody Map<String, String> body) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(Map.of("inviteId", UUID.randomUUID().toString())));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> inviteUser(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        // Admin-only (audit: anyone could mint invites with any role, including
+        // ADMIN, because the endpoint sat behind permitAll /api/v1/auth/**).
+        User inviter = resolveCurrentUser(request);
+        if (inviter == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Authentication required"), Map.of()));
+        }
+        if (!"ADMIN".equalsIgnoreCase(inviter.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>(false, Map.of("error", "Admin role required to invite users"), Map.of()));
+        }
+        try {
+            UUID teamId = body.get("teamId") != null && !body.get("teamId").isBlank()
+                    ? UUID.fromString(body.get("teamId")) : null;
+            Map<String, String> invite = authService.createInvite(
+                    body.get("email"),
+                    teamId,
+                    body.get("role"),
+                    inviter.getId()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(Map.of(
+                    "inviteId", invite.get("inviteId"),
+                    "token", invite.get("token"),
+                    "email", invite.get("email"),
+                    "expiresAt", invite.get("expiresAt")
+            )));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, Map.of("error", e.getMessage() != null ? e.getMessage() : "Invite failed"), Map.of()));
+        }
     }
 
     @PostMapping("/accept-invite")

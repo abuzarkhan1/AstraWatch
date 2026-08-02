@@ -66,18 +66,22 @@ class AnomalyService:
             for m in request.metrics
         ]
 
-        result = self.detector.detect(
-            service_id=request.serviceId,
-            metrics=metrics_dict,
-            window_seconds=request.window or 300,
-            use_deep_learning=use_deep_learning,
-            threshold=getattr(request, "threshold", None),
-            tenant_id=getattr(request, "tenantId", "default"),
-        )
+        from app.metrics import ANOMALIES_DETECTED, DETECT_LATENCY
+        with DETECT_LATENCY.time():
+            result = self.detector.detect(
+                service_id=request.serviceId,
+                metrics=metrics_dict,
+                window_seconds=request.window or 300,
+                use_deep_learning=use_deep_learning,
+                threshold=getattr(request, "threshold", None),
+                tenant_id=getattr(request, "tenantId", "default"),
+            )
 
         prediction = []
         ai_diagnosis = None
         if result["isAnomaly"]:
+            ANOMALIES_DETECTED.labels(outcome="detected").inc()
+
             values = [m.value for m in request.metrics if m.name == result.get(
                 "details", {}
             ).get("primary_metric", request.metrics[0].name)]
@@ -95,7 +99,13 @@ class AnomalyService:
             ai_diagnosis_dict = generate_ai_diagnosis(
                 root_causes, service_id=request.serviceId, log_evidence=log_evidence
             )
+            # Optional LLM prose pass on top of the deterministic evidence
+            # (strategy gap 3). Fails closed to the deterministic diagnosis.
+            from app.services.llm_diagnosis import llm_enhance
+            ai_diagnosis_dict = await llm_enhance(ai_diagnosis_dict)
             ai_diagnosis = AIDiagnosis(**ai_diagnosis_dict)
+        else:
+            ANOMALIES_DETECTED.labels(outcome="normal").inc()
 
         return AnomalyResult(
             isAnomaly=result["isAnomaly"],
@@ -122,6 +132,9 @@ class AnomalyService:
         # Drop empty/degenerate series so granger causality never sees empty input.
         metric_groups = {k: v for k, v in metric_groups.items() if len(v) >= 3}
 
+        from app.metrics import ROOT_CAUSE_ANALYSES
+        ROOT_CAUSE_ANALYSES.inc()
+
         ranked_causes = []
         if len(metric_groups) >= 2:
             min_len = min(len(v) for v in metric_groups.values())
@@ -136,6 +149,9 @@ class AnomalyService:
             ]
 
         ai_diagnosis_dict = generate_ai_diagnosis(ranked_causes, service_id=service_id)
+        # Optional LLM prose pass (strategy gap 3); fails closed.
+        from app.services.llm_diagnosis import llm_enhance
+        ai_diagnosis_dict = await llm_enhance(ai_diagnosis_dict)
         ai_diagnosis = AIDiagnosis(**ai_diagnosis_dict)
 
         return RootCauseResult(
@@ -273,6 +289,11 @@ class AnomalyService:
                 logger.info(f"Feedback for anomaly {anomaly_id} published to {settings.kafka_feedback_topic} for async retrain")
             except Exception as e:
                 logger.error(f"Failed to publish feedback event for async retrain: {e}")
+
+            from app.metrics import FEEDBACK_RECEIVED
+            FEEDBACK_RECEIVED.labels(
+                is_true_positive=str(feedback.get('isTruePositive', True)).lower()
+            ).inc()
 
             logger.info(
                 f"Feedback recorded for anomaly {anomaly_id}: "

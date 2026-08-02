@@ -158,7 +158,18 @@ func (h *HealingConsumer) handleMessage(ctx context.Context, value []byte) strin
 		zap.Int("risk_score", msg.RiskScore),
 	)
 
+	// MTTR telemetry (audit Phase B): measure orchestrator-publish -> completion.
+	// The orchestrator stamps each approved action with an ISO-8601 timestamp; use
+	// it when present so the metric really reflects publish-to-completion, falling
+	// back to the moment this consumer picked the action up.
+	startedAt := time.Now()
+	if msg.Timestamp != "" {
+		if ts, err := time.Parse(time.RFC3339Nano, msg.Timestamp); err == nil {
+			startedAt = ts
+		}
+	}
 	err = h.executor.Execute(ctx, namespace, actionType, params, false)
+	RecordHealingOutcome(actionType, startedAt, err)
 	if err != nil {
 		h.reportFailure(ctx, msg.ActionID, err.Error())
 		return msg.ActionID

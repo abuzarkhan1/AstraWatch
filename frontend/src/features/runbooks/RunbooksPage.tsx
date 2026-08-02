@@ -6,7 +6,16 @@ import RightChevron from '@/components/ui/right-chevron';
 import ClockIcon from '@/components/ui/clock-icon';
 import HashtagIcon from '@/components/ui/hashtag-icon';
 
-const sampleRunbooks: any[] = [];
+interface Runbook {
+  id: string;
+  title: string;
+  lastUpdated: string;
+  steps: number;
+  tags: string[];
+  severity: 'CRITICAL' | 'HIGH' | 'STANDARD';
+}
+
+const sampleRunbooks: Runbook[] = [];
 
 const severityBadge: Record<string, string> = {
   CRITICAL: 'border-red-500/30 bg-red-500/10 text-red-400',

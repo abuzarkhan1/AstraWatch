@@ -1,0 +1,46 @@
+# Stage 1 — build eBPF objects
+FROM ubuntu:22.04 AS ebpf-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    clang llvm libbpf-dev linux-headers-generic make \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY services/cxx-agent/bpf/ /bpf/
+RUN mkdir -p /build/ebpf && \
+    for f in sched_switch tcp_probe block_io; do \
+        clang -g -O2 -target bpf -D__TARGET_ARCH_x86 \
+            -I/usr/include/x86_64-linux-gnu \
+            -c /bpf/${f}.bpf.c -o /build/ebpf/${f}.bpf.o 2>/dev/null || touch /build/ebpf/empty.bpf.o; \
+    done
+
+# Stage 2 — build agent binary
+FROM ubuntu:22.04 AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake ninja-build libcurl4-openssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY services/cxx-agent/ .
+
+RUN cmake -S . -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_TESTING=OFF && \
+    cmake --build build && \
+    cmake --install build --prefix /install
+
+# Stage 3 — minimal runtime image
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcurl4 ca-certificates \
+    && rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /var/lib/astrawatch /etc/astrawatch/ebpf
+
+COPY --from=ebpf-builder /build/ebpf/ /etc/astrawatch/ebpf/
+COPY --from=builder /install/usr/local/bin/astrawatch-agent /usr/local/bin/
+
+ENV ASTRAWATCH_BUFFER_PATH=/var/lib/astrawatch/agent_buffer
+
+ENTRYPOINT ["/usr/local/bin/astrawatch-agent"]

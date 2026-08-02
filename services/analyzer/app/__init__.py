@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.kafka_client import kafka_client
 from app.ml.ensemble import EnsembleDetector
+from app.metrics import metrics_router
 from app.routers import anomaly, predict, rootcause
 from app.schemas import AnomalyDetectRequest, MetricPoint
 from app.services.log_miner import log_miner
@@ -187,6 +188,9 @@ app.add_middleware(
 app.include_router(anomaly.router)
 app.include_router(predict.router)
 app.include_router(rootcause.router)
+# Prometheus /metrics (audit Phase 7 — the analyzer had no metrics endpoint
+# despite declaring prometheus-client in requirements.txt).
+app.include_router(metrics_router)
 
 
 @app.get("/healthz")

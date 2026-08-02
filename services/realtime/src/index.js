@@ -40,7 +40,32 @@ class RealtimeGateway {
     this.setupEventHandlers();
     await this.setupKafkaBridge();
     this.setupMetrics();
+    // Sync API keys from the orchestrator so WebSocket clients authenticating
+    // with a persisted API key actually validate (audit: store never populated).
+    this.syncApiKeys();
+    this.apiKeySyncTimer = setInterval(() => this.syncApiKeys(), config.API_KEY_SYNC_INTERVAL_MS);
     logger.info('Realtime gateway initialized');
+  }
+
+  async syncApiKeys() {
+    if (!config.ORCHESTRATOR_URL || !config.INTERNAL_API_TOKEN) {
+      return; // not configured — JWT-only auth remains available
+    }
+    try {
+      const res = await fetch(`${config.ORCHESTRATOR_URL}/api/v1/internal/api-keys`, {
+        headers: { 'X-Internal-Token': config.INTERNAL_API_TOKEN },
+      });
+      if (!res.ok) {
+        logger.warn(`API key sync failed: HTTP ${res.status}`);
+        return;
+      }
+      const body = await res.json();
+      const keys = body?.data?.keys || [];
+      socketAuth.replaceApiKeys(keys);
+      logger.info(`Synced ${keys.length} API keys from orchestrator`);
+    } catch (err) {
+      logger.warn(`API key sync error: ${err.message}`);
+    }
   }
 
   async setupRedisAdapter() {
@@ -299,6 +324,7 @@ class RealtimeGateway {
 
   async shutdown() {
     logger.info('Shutting down realtime gateway');
+    if (this.apiKeySyncTimer) clearInterval(this.apiKeySyncTimer);
     await this.kafkaConsumer.disconnect();
     this.io.close();
   }

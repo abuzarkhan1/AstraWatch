@@ -11,6 +11,7 @@ import java.util.UUID;
 
 public interface NotificationRepository {
     List<NotificationChannel> findChannelsByOrgId(UUID orgId);
+    List<NotificationChannel> findAllChannels();
     NotificationChannel saveChannel(NotificationChannel channel);
     Optional<NotificationChannel> findChannelById(UUID id);
     void deleteChannelById(UUID id);

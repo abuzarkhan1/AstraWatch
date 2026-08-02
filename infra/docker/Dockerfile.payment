@@ -1,0 +1,12 @@
+FROM golang:1.23-alpine AS builder
+WORKDIR /app
+COPY services/payment-service/go.mod services/payment-service/go.sum ./
+RUN go mod download
+COPY services/payment-service/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /payment ./cmd/server
+
+FROM alpine:3.19
+RUN apk --no-cache add ca-certificates
+COPY --from=builder /payment /usr/local/bin/payment
+EXPOSE 8085
+CMD ["payment"]

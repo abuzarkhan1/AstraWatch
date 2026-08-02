@@ -31,6 +31,9 @@ class AIDiagnosis(BaseModel):
     why: str
     suggestedFix: Optional[SuggestedFix] = None
     suggestedAction: Optional[dict] = None
+    # Optional LLM-written prose (strategy gap 3). Absent when the LLM layer is
+    # not configured or fails closed — never required.
+    aiSummary: Optional[str] = None
 
 
 class AnomalyResult(BaseModel):

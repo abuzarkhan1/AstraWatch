@@ -141,6 +141,11 @@ func (p *Producer) IsDuplicate(batchID string) bool {
 	return !ok
 }
 
+// GetKafkaLag reports the total end-offset backlog of the raw-metrics topic
+// (sum of the latest offset across partitions). Despite the name, this is the
+// topic's total message count / backlog — not end-minus-committed consumer lag
+// (the collector produces this topic; nothing consumes with an offset commit to
+// diff against). It feeds the astrawatch_kafka_raw_metrics_backlog_total gauge.
 func (p *Producer) GetKafkaLag() (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

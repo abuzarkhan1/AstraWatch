@@ -18,6 +18,10 @@ import org.thymeleaf.context.Context;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -207,6 +211,18 @@ public class NotificationService implements NotificationPort {
 
             sendEmailWithRetry(recipient, subject, htmlBody);
         }
+
+        // Fan out to configured Slack/webhook channels (strategy gap 1).
+        deliverToChannels(
+                "[AstraWatch Alert] [" + (incident.getSeverity() != null ? incident.getSeverity().name() : "HIGH") + "] "
+                        + (incident.getTitle() != null ? incident.getTitle() : "Anomaly Detected"),
+                (incident.getRootCause() != null ? incident.getRootCause() : "Analysis pending"),
+                Map.of(
+                        "incident", incident.getId() != null ? incident.getId().toString() : "",
+                        "service", incident.getServiceId() != null ? incident.getServiceId().toString() : "",
+                        "dashboard", dashboardUrl + "/incidents/" + (incident.getId() != null ? incident.getId().toString() : "")
+                )
+        );
     }
 
     @Override
@@ -261,6 +277,19 @@ public class NotificationService implements NotificationPort {
 
             sendEmailWithRetry(recipient, subject, htmlBody);
         }
+
+        // Fan out to configured Slack/webhook channels (strategy gap 1).
+        deliverToChannels(
+                "[AstraWatch Healing] Action " + (status != null ? status : "") + ": "
+                        + (action.getActionType() != null ? action.getActionType() : "UNKNOWN"),
+                "Healing action risk " + action.getRiskScore(),
+                Map.of(
+                        "action", action.getId() != null ? action.getId().toString() : "",
+                        "incident", action.getIncidentId() != null ? action.getIncidentId().toString() : "",
+                        "status", pending ? "awaiting approval" : (status != null ? status : ""),
+                        "dashboard", dashboardUrl + "/incidents/" + (action.getIncidentId() != null ? action.getIncidentId().toString() : "")
+                )
+        );
     }
 
     private List<String> resolveHealingRecipients(HealingAction action) {
@@ -323,6 +352,118 @@ public class NotificationService implements NotificationPort {
                 }
             }
         }
+    }
+
+    // ─── Channel dispatch (audit/strategy gap 1: email-only notifications) ──
+    // NotificationChannel rows carry a type ("slack" | "webhook") and a JSON
+    // config ({"url": ...}). Alerts fan out to every enabled channel so SRE
+    // teams can receive incidents in Slack instead of email-only.
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(5))
+            .build();
+
+    /**
+     * Dispatches an alert payload to all enabled Slack/webhook channels. Best
+     * effort: failures are logged, never thrown (a dead webhook must not break
+     * the incident lifecycle).
+     */
+    private void deliverToChannels(String title, String message, Map<String, String> extras) {
+        List<NotificationChannel> channels;
+        try {
+            channels = notificationRepository.findAllChannels();
+        } catch (Exception e) {
+            log.warn("Failed to list notification channels: {}", e.getMessage());
+            return;
+        }
+        if (channels == null || channels.isEmpty()) return;
+
+        for (NotificationChannel ch : channels) {
+            if (ch == null || !ch.isEnabled()) continue;
+            String type = ch.getType() == null ? "" : ch.getType().toLowerCase();
+            String config = ch.getConfig();
+            if (config == null || config.isBlank()) continue;
+
+            String url = extractUrl(config);
+            if (url == null || url.isBlank()) {
+                log.warn("Channel {} has no url in config; skipping", ch.getName());
+                continue;
+            }
+
+            try {
+                String payload;
+                if ("slack".equals(type)) {
+                    payload = buildSlackPayload(title, message, extras);
+                } else {
+                    payload = buildWebhookPayload(title, message, extras);
+                }
+                HttpRequest req = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(payload))
+                        .timeout(java.time.Duration.ofSeconds(10))
+                        .build();
+                HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+                log.info("Delivered alert to channel '{}' ({}): HTTP {}", ch.getName(), type, resp.statusCode());
+            } catch (Exception e) {
+                log.warn("Failed to deliver alert to channel '{}' ({}): {}", ch.getName(), type, e.getMessage());
+            }
+        }
+    }
+
+    private final com.fasterxml.jackson.databind.ObjectMapper channelMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    private String extractUrl(String config) {
+        try {
+            var node = channelMapper.readTree(config);
+            var url = node != null ? node.get("url") : null;
+            return url != null && url.isTextual() ? url.asText() : null;
+        } catch (Exception e) {
+            log.warn("Channel config is not valid JSON: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private String buildSlackPayload(String title, String message, Map<String, String> extras) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"text\":\"" + jsonEscape(title) + "\\n" + jsonEscape(message) + "\"");
+        if (extras != null && !extras.isEmpty()) {
+            sb.append(",\"attachments\":[{\"color\":\"#ff4500\",\"fields\":[");
+            boolean first = true;
+            for (Map.Entry<String, String> e : extras.entrySet()) {
+                if (!first) sb.append(",");
+                first = false;
+                sb.append("{\"title\":\"" + jsonEscape(e.getKey()) + "\",\"value\":\"" + jsonEscape(e.getValue()) + "\",\"short\":true}");
+            }
+            sb.append("]}]");
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    private String buildWebhookPayload(String title, String message, Map<String, String> extras) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"title\":\"" + jsonEscape(title) + "\",\"message\":\"" + jsonEscape(message) + "\"");
+        if (extras != null && !extras.isEmpty()) {
+            sb.append(",\"fields\":{");
+            boolean first = true;
+            for (Map.Entry<String, String> e : extras.entrySet()) {
+                if (!first) sb.append(",");
+                first = false;
+                sb.append("\"" + jsonEscape(e.getKey()) + "\":\"" + jsonEscape(e.getValue()) + "\"");
+            }
+            sb.append("}");
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    private String jsonEscape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
     }
 
     @Override

@@ -96,6 +96,119 @@ services:
     networks:
       - astrawatch-net
 
+  # ── Application services (audit V2: compose ran infra only; make dev never
+  # started the product). All services share the JWT_SECRET/INTERNAL_API_TOKEN
+  # env vars and join the same network. Build contexts are the repo root.
+
+  collector:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.collector
+    environment:
+      PORT: "8080"
+      KAFKA_BROKERS: kafka:29092
+      CLICKHOUSE_ADDR: clickhouse:9000
+      REDIS_ADDR: redis:6379
+      JWT_SECRET: ${JWT_SECRET:-}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-internal-dev-token}
+      ALLOWED_ORIGINS: "*"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+      - clickhouse
+      - redis
+    networks:
+      - astrawatch-net
+
+  orchestrator:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.orchestrator
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-internal-dev-token}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/astrawatch
+      SPRING_DATASOURCE_USERNAME: astrawatch
+      SPRING_DATASOURCE_PASSWORD: astrawatch
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_MAIL_HOST: mailhog
+      SPRING_MAIL_PORT: "1025"
+      ASTRAWATCH_DASHBOARD_URL: http://localhost:5173
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+      - kafka
+      - redis
+      - mailhog
+    networks:
+      - astrawatch-net
+
+  analyzer:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.analyzer
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-internal-dev-token}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "9000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - kafka
+      - clickhouse
+    networks:
+      - astrawatch-net
+
+  realtime:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.realtime
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-internal-dev-token}
+      KAFKA_BROKERS: kafka:29092
+      REDIS_URL: redis://redis:6379/0
+      ORCHESTRATOR_URL: http://orchestrator:8082
+      PORT: "8084"
+    ports:
+      - "8084:8084"
+    depends_on:
+      - kafka
+      - redis
+      - orchestrator
+    networks:
+      - astrawatch-net
+
+  payment:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.payment
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-}
+      PORT: "8085"
+    ports:
+      - "8085:8085"
+    networks:
+      - astrawatch-net
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - orchestrator
+      - collector
+      - realtime
+    networks:
+      - astrawatch-net
+
 volumes:
   postgres-data:
   clickhouse-data:

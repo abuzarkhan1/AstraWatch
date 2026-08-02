@@ -27,6 +27,11 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     }
 
     @Override
+    public List<NotificationChannel> findAllChannels() {
+        return channelJpa.findAll();
+    }
+
+    @Override
     public NotificationChannel saveChannel(NotificationChannel channel) {
         return channelJpa.save(channel);
     }

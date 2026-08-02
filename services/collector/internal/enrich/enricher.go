@@ -124,6 +124,24 @@ func (e *Enricher) EnrichBatch(batch *pkg.MetricBatch) {
 	}
 }
 
+// EnrichMetric decorates a single metric point with pod/namespace context when
+// a matching pod is known (used by the OTLP ingestion path, which produces
+// per-point batches instead of a pre-grouped batch).
+func (e *Enricher) EnrichMetric(m *pkg.MetricPoint) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	if m.Labels == nil {
+		m.Labels = make(map[string]string)
+	}
+	if pod, ok := e.lookupPod(m.Labels["pod"], m.Labels["namespace"]); ok {
+		m.Labels["namespace"] = pod.Namespace
+		if _, exists := m.Labels["service"]; !exists {
+			m.Labels["service"] = pod.Service
+		}
+	}
+}
+
 func (e *Enricher) EnrichLog(entry *pkg.LogEntry) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

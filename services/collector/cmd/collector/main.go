@@ -15,6 +15,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 	"github.com/astrawatch/collector/internal/consumer"
@@ -72,6 +74,34 @@ func main() {
 	}
 	go kafkaConsumer.Start(context.Background())
 
+	// Kafka backlog observability (audit Phase 7): GetKafkaLag() existed but was
+	// never wired to /metrics — consumer lag monitoring was dead code. Refresh a
+	// gauge every 30s so unbounded topic growth is visible/alertable.
+	kafkaLagGauge := promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "astrawatch_kafka_raw_metrics_backlog_total",
+		Help: "Total messages currently in the raw-metrics Kafka topic (end offsets across partitions).",
+	})
+	// Cancellable so the probe loop stops on graceful shutdown (review fix: the
+	// old select on context.Background().Done() could never fire).
+	probeCtx, stopProbe := context.WithCancel(context.Background())
+	defer stopProbe()
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			if lag, err := producer.GetKafkaLag(); err == nil {
+				kafkaLagGauge.Set(float64(lag))
+			} else {
+				logger.Warn("kafka lag probe failed", zap.Error(err))
+			}
+			select {
+			case <-ticker.C:
+			case <-probeCtx.Done():
+				return
+			}
+		}
+	}()
+
 	enricher := enrich.NewEnricher()
 	validator := validate.NewValidator()
 	limiter := ratelimit.NewRateLimiter(1000, 2000)
@@ -115,6 +145,20 @@ func main() {
 			ingestGroup.POST("/metrics/batch", handler.IngestMetricsBatch)
 			ingestGroup.POST("/logs/stream", handler.IngestLogsStream)
 			ingestGroup.POST("/traces", handler.IngestTraces)
+		}
+
+		// First-class OpenTelemetry ingestion (strategy gap 2): standard OTLP/HTTP
+		// JSON endpoints so the OTel Collector can ship logs/metrics/traces here
+		// directly — no custom agent required. The OTel Collector cannot carry a
+		// user JWT, so this group is guarded by the shared internal token (same
+		// pattern as /api/v1/metrics) instead of the auth middleware above; the
+		// tenant is taken from an X-Tenant-Id header set in the collector config.
+		otelGroup := v1.Group("/otel")
+		otelGroup.Use(internalTokenMiddleware())
+		{
+			otelGroup.POST("/v1/logs", handler.IngestOTLPLogs)
+			otelGroup.POST("/v1/metrics", handler.IngestOTLPMetrics)
+			otelGroup.POST("/v1/traces", handler.IngestTraces)
 		}
 
 		agentGroup := v1.Group("/agent")
@@ -329,7 +373,12 @@ func authMiddleware(secret string) gin.HandlerFunc {
 		// /api/v1/catalog is intentionally NOT bypassed (audit V2: it was wide open
 		// and returned fake data). Catalog reads now require a valid JWT and are
 		// tenant-scoped like every other protected route.
-		bypassed := path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" || path == "/v1/telemetry" || strings.HasPrefix(path, "/api/v1/metrics")
+		bypassed := path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" || path == "/v1/telemetry" || strings.HasPrefix(path, "/v1/otel/") || strings.HasPrefix(path, "/api/v1/metrics")
+		// Note: /v1/otel/* is bypassed from the JWT check so the OTel Collector
+		// (which cannot carry a user JWT) is authenticated by the internal-token
+		// middleware on the otelGroup instead (review fix: previously the global
+		// auth middleware 401'd token-less OTel requests before the group's
+		// internal-token check ever ran).
 
 		auth := c.GetHeader("Authorization")
 		if auth == "" {

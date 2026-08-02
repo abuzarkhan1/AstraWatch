@@ -67,6 +67,7 @@ start_bg "collector" bash -c \
 # ── Orchestrator (Java, :8082) ──────────────────────────────────────
 start_bg "orchestrator" bash -c \
   "cd ${ROOT}/services/orchestrator && JWT_SECRET='${JWT_SECRET}' \
+   INTERNAL_API_TOKEN='${INTERNAL_API_TOKEN:-internal-dev-token}' \
    SPRING_DATASOURCE_URL='jdbc:postgresql://localhost:5432/astrawatch' \
    SPRING_KAFKA_BOOTSTRAP_SERVERS=localhost:9092 \
    mvn -q spring-boot:run"
@@ -81,6 +82,8 @@ start_bg "analyzer" bash -c \
 # ── Realtime (Node, :8084) ──────────────────────────────────────────
 start_bg "realtime" bash -c \
   "cd ${ROOT}/services/realtime && JWT_SECRET='${JWT_SECRET}' PORT=8084 \
+   INTERNAL_API_TOKEN='${INTERNAL_API_TOKEN:-internal-dev-token}' \
+   ORCHESTRATOR_URL='http://localhost:8082' \
    REDIS_URL='redis://localhost:6379/0' KAFKA_BROKERS=localhost:9092 npm start"
 
 # ── Payment (Go, :8085) ─────────────────────────────────────────────

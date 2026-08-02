@@ -53,6 +53,18 @@ public class User {
     @Column(name = "team_id")
     private UUID teamId;
 
+    @Column(name = "email_verification_token")
+    private String emailVerificationToken;
+
+    @Column(name = "email_verification_expires_at")
+    private Instant emailVerificationExpiresAt;
+
+    @Column(name = "reset_token_hash")
+    private String resetTokenHash;
+
+    @Column(name = "reset_token_expires_at")
+    private Instant resetTokenExpiresAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -82,13 +94,21 @@ public class User {
     public void setActive(boolean isActive) { this.isActive = isActive; }
     public UUID getTeamId() { return teamId; }
     public void setTeamId(UUID teamId) { this.teamId = teamId; }
+    public String getEmailVerificationToken() { return emailVerificationToken; }
+    public void setEmailVerificationToken(String emailVerificationToken) { this.emailVerificationToken = emailVerificationToken; }
+    public Instant getEmailVerificationExpiresAt() { return emailVerificationExpiresAt; }
+    public void setEmailVerificationExpiresAt(Instant emailVerificationExpiresAt) { this.emailVerificationExpiresAt = emailVerificationExpiresAt; }
+    public String getResetTokenHash() { return resetTokenHash; }
+    public void setResetTokenHash(String resetTokenHash) { this.resetTokenHash = resetTokenHash; }
+    public Instant getResetTokenExpiresAt() { return resetTokenExpiresAt; }
+    public void setResetTokenExpiresAt(Instant resetTokenExpiresAt) { this.resetTokenExpiresAt = resetTokenExpiresAt; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
     public static UserBuilder builder() { return new UserBuilder(); }
     public static class UserBuilder {
         private UUID id; private String email; private String name; private String avatarUrl; private String passwordHash; private String oauthProvider; private String oauthProviderId; private String mfaSecret; private boolean mfaEnabled; private boolean emailVerified;
-        private String role = "VIEWER"; private boolean isActive = true; private UUID teamId; private Instant createdAt;
+        private String role = "VIEWER"; private boolean isActive = true; private UUID teamId; private String emailVerificationToken; private Instant emailVerificationExpiresAt; private String resetTokenHash; private Instant resetTokenExpiresAt; private Instant createdAt;
 
         public UserBuilder id(UUID id) { this.id = id; return this; }
         public UserBuilder email(String email) { this.email = email; return this; }
@@ -103,11 +123,15 @@ public class User {
         public UserBuilder role(String role) { this.role = role; return this; }
         public UserBuilder isActive(boolean isActive) { this.isActive = isActive; return this; }
         public UserBuilder teamId(UUID teamId) { this.teamId = teamId; return this; }
+        public UserBuilder emailVerificationToken(String emailVerificationToken) { this.emailVerificationToken = emailVerificationToken; return this; }
+        public UserBuilder emailVerificationExpiresAt(Instant emailVerificationExpiresAt) { this.emailVerificationExpiresAt = emailVerificationExpiresAt; return this; }
+        public UserBuilder resetTokenHash(String resetTokenHash) { this.resetTokenHash = resetTokenHash; return this; }
+        public UserBuilder resetTokenExpiresAt(Instant resetTokenExpiresAt) { this.resetTokenExpiresAt = resetTokenExpiresAt; return this; }
         public UserBuilder createdAt(Instant createdAt) { this.createdAt = createdAt; return this; }
         public User build() {
             User u = new User();
             u.id = this.id; u.email = this.email; u.name = this.name; u.avatarUrl = this.avatarUrl; u.passwordHash = this.passwordHash; u.oauthProvider = this.oauthProvider; u.oauthProviderId = this.oauthProviderId; u.mfaSecret = this.mfaSecret; u.mfaEnabled = this.mfaEnabled; u.emailVerified = this.emailVerified;
-            u.role = this.role != null ? this.role : "VIEWER"; u.isActive = this.isActive; u.teamId = this.teamId; u.createdAt = this.createdAt;
+            u.role = this.role != null ? this.role : "VIEWER"; u.isActive = this.isActive; u.teamId = this.teamId; u.emailVerificationToken = this.emailVerificationToken; u.emailVerificationExpiresAt = this.emailVerificationExpiresAt; u.resetTokenHash = this.resetTokenHash; u.resetTokenExpiresAt = this.resetTokenExpiresAt; u.createdAt = this.createdAt;
             return u;
         }
     }

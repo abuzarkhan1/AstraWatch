@@ -1,12 +1,22 @@
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import config from '../config.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'astrawatch-super-secret-jwt-token-signing-key-2026-secure-32bytes-long!';
+// No hardcoded fallback secret (audit V2: a default signing key in source was a
+// security hole). The secret comes from the shared JWT_SECRET env var; if it is
+// missing, all token validation fails closed.
+const JWT_SECRET = config.JWT_SECRET || '';
 
-// In-memory API key store. In production this would be a DB/Redis lookup.
+// In-memory API key store, populated from the orchestrator's internal endpoint
+// (see RealtimeGateway.syncApiKeys). Unknown keys are rejected — accepting any
+// 16+ char string as a valid key was an auth bypass.
 const apiKeyStore = new Map();
 
 class SocketAuth {
   validateToken(token) {
+    if (!JWT_SECRET) {
+      return { valid: false, error: 'JWT_SECRET not configured on realtime' };
+    }
     try {
       const decoded = jwt.verify(token, JWT_SECRET, {
         algorithms: ['HS256', 'RS256'],
@@ -46,14 +56,18 @@ class SocketAuth {
       return { valid: false, error: 'API key too short' };
     }
 
+    // The orchestrator persists only the SHA-256 of each key; the gateway stores
+    // the same hashes, so the presented plaintext is hashed before lookup. The
+    // plaintext key itself is never stored.
+    const keyHash = sha256(key);
     const prefix = key.substring(0, 8);
-    if (apiKeyStore.has(key)) {
-      const entry = apiKeyStore.get(key);
+    const entry = apiKeyStore.get(keyHash);
+    if (entry) {
       if (entry.revoked) {
         return { valid: false, error: 'API key has been revoked' };
       }
       if (entry.expiresAt && Date.now() > entry.expiresAt) {
-        apiKeyStore.delete(key);
+        apiKeyStore.delete(keyHash);
         return { valid: false, error: 'API key has expired' };
       }
       return {
@@ -67,13 +81,13 @@ class SocketAuth {
       };
     }
 
-    // Unknown API key → reject. Real validation should hit the orchestrator DB;
-    // accepting any 16+ char string as a valid key was an auth bypass.
+    // Unknown API key → reject. Keys are only valid once synced from the
+    // orchestrator's persisted API-key store.
     return { valid: false, error: 'Unknown API key' };
   }
 
   registerApiKey(key, metadata = {}) {
-    apiKeyStore.set(key, {
+    apiKeyStore.set(sha256(key), {
       userId: metadata.userId || null,
       roles: metadata.roles || [],
       permissions: metadata.permissions || ['read'],
@@ -85,17 +99,44 @@ class SocketAuth {
   }
 
   revokeApiKey(key) {
-    if (apiKeyStore.has(key)) {
-      const entry = apiKeyStore.get(key);
-      entry.revoked = true;
-      apiKeyStore.set(key, entry);
+    apiKeyStore.delete(sha256(key));
+  }
+
+  /**
+   * Replace the entire store with the keys returned by the orchestrator's
+   * internal endpoint (each entry carries its SHA-256 keyHash). This is what
+   * makes created API keys actually usable for WebSocket auth (audit: the store
+   * was never populated).
+   */
+  replaceApiKeys(keys) {
+    apiKeyStore.clear();
+    if (!Array.isArray(keys)) return;
+    for (const k of keys) {
+      if (!k || !k.keyHash) continue;
+      apiKeyStore.set(k.keyHash, {
+        userId: k.userId || null,
+        roles: k.roles || [],
+        permissions: k.permissions || ['read'],
+        tenantId: k.tenantId || 'default',
+        revoked: !!k.revoked,
+        expiresAt: k.expiresAt ? new Date(k.expiresAt).getTime() : null,
+        createdAt: Date.now(),
+      });
     }
+  }
+
+  countApiKeys() {
+    return apiKeyStore.size;
   }
 
   isTokenExpiringSoon(decoded, windowSeconds = 300) {
     if (!decoded.exp) return false;
     return (decoded.exp * 1000) - Date.now() < windowSeconds * 1000;
   }
+}
+
+function sha256(value) {
+  return crypto.createHash('sha256').update(String(value)).digest('base64url');
 }
 
 export default new SocketAuth();
