@@ -2,14 +2,13 @@ import React, { useState, useCallback, useMemo } from 'react';
 import NumberFlow from '@number-flow/react';
 import { motion } from 'framer-motion';
 import {
-  RotateCcw,
-  AlertTriangle,
-  ShieldCheck,
   Terminal,
-  RefreshCw,
   Copy,
-  Check
 } from 'lucide-react';
+import RefreshIcon from '@/components/ui/refresh-icon';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
+import ShieldCheckIcon from '@/components/ui/shield-check';
+import CheckedIcon from '@/components/ui/checked-icon';
 
 type SimStatus = 'healthy' | 'anomaly' | 'healing' | 'recovered';
 
@@ -176,7 +175,7 @@ export default function LiveDemoPreview() {
                   onClick={handleSimulateSpike}
                   className="px-5 py-2.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-lg"
                 >
-                  <AlertTriangle className="h-4 w-4 text-red-400 animate-pulse" />
+                  <TriangleAlertIcon className="h-4 w-4 text-red-400 animate-pulse" />
                   <span>Simulate CPU & Memory Spike</span>
                 </button>
               )}
@@ -186,14 +185,14 @@ export default function LiveDemoPreview() {
                   onClick={handleAutoHeal}
                   className="px-5 py-2.5 rounded-full bg-gradient-to-t from-blue-500 to-blue-600 border border-blue-500 text-white hover:from-blue-600 hover:to-blue-700 text-xs font-bold flex items-center gap-2 transition-colors shadow-xl shadow-blue-800 cursor-pointer"
                 >
-                  <ShieldCheck className="h-4 w-4" />
+                  <ShieldCheckIcon className="h-4 w-4" />
                   <span>Auto-Remediate Pod Now</span>
                 </button>
               )}
 
               {status === 'healing' && (
                 <div className="px-5 py-2.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-bold flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 text-blue-400 animate-spin" />
+                  <RefreshIcon className="h-4 w-4 text-blue-400 animate-spin" />
                   <span>Auto-Healing Pod Replacement in Progress...</span>
                 </div>
               )}
@@ -203,7 +202,7 @@ export default function LiveDemoPreview() {
                   onClick={handleReset}
                   className="px-5 py-2.5 rounded-full bg-neutral-900 border border-neutral-700 text-gray-200 hover:bg-neutral-800 hover:text-white text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer"
                 >
-                  <RotateCcw className="h-4 w-4" />
+                  <RefreshIcon className="h-4 w-4" />
                   <span>Reset Sandbox Simulation</span>
                 </button>
               )}
@@ -228,13 +227,13 @@ export default function LiveDemoPreview() {
                 )}
                 {status === 'healing' && (
                   <>
-                    <RefreshCw className="h-4 w-4 text-blue-400 animate-spin" />
+                    <RefreshIcon className="h-4 w-4 text-blue-400 animate-spin" />
                     <span className="text-lg font-bold text-blue-400 font-mono">REMEDIATING...</span>
                   </>
                 )}
                 {status === 'recovered' && (
                   <>
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                    <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
                     <span className="text-lg font-bold text-emerald-400 font-mono">AUTO-HEALED (1.4s)</span>
                   </>
                 )}
@@ -342,7 +341,7 @@ export default function LiveDemoPreview() {
                 onClick={handleCopyLogs}
                 className="p-1.5 rounded-lg bg-neutral-800 border border-neutral-700 text-gray-200 hover:text-white hover:bg-neutral-700 transition-colors cursor-pointer flex items-center gap-1.5 text-[11px]"
               >
-                {copied ? <Check className="h-3.5 w-3.5 text-blue-400" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? <CheckedIcon className="h-3.5 w-3.5 text-blue-400" /> : <Copy className="h-3.5 w-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy Logs'}</span>
               </button>
             </div>

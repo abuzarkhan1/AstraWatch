@@ -1,27 +1,46 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/hooks/useStore';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Activity, Shield, AlertTriangle, BarChart3, Network, Bell, LayoutGrid, ScrollText, GitBranch, Menu, X, LogOut, Search, Settings, Book, FileText, Globe, Box, Users } from 'lucide-react';
+import { LayoutDashboardIcon } from '@/components/ui/layout-dashboard-icon';
+import { ChartLineIcon } from '@/components/ui/chart-line-icon';
+import { ShieldCheck } from '@/components/ui/shield-check';
+import { TriangleAlertIcon } from '@/components/ui/triangle-alert-icon';
+import { ChartBarIcon } from '@/components/ui/chart-bar-icon';
+import { PlugConnectedIcon } from '@/components/ui/plug-connected-icon';
+import { FilledBellIcon } from '@/components/ui/filled-bell-icon';
+import { StackIcon } from '@/components/ui/stack-icon';
+import { DotsHorizontalIcon } from '@/components/ui/dots-horizontal-icon';
+import { XIcon } from '@/components/ui/x-icon';
+import { LogoutIcon } from '@/components/ui/logout-icon';
+import { MagnifierIcon } from '@/components/ui/magnifier-icon';
+import { GearIcon } from '@/components/ui/gear-icon';
+import { BookIcon } from '@/components/ui/book-icon';
+import { FileDescriptionIcon } from '@/components/ui/file-description-icon';
+import { WorldIcon } from '@/components/ui/world-icon';
+import { CpuIcon } from '@/components/ui/cpu-icon';
+import { UsersIcon } from '@/components/ui/users-icon';
+import { CodeIcon } from '@/components/ui/code-icon';
+import { GithubIcon } from '@/components/ui/github-icon';
 import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
 
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/incidents', label: 'Incidents', icon: AlertTriangle },
-  { path: '/alerting', label: 'Alerting', icon: Bell },
-  { path: '/healing', label: 'Healing', icon: Shield },
-  { path: '/slo', label: 'SLO', icon: BarChart3 },
-  { path: '/topology', label: 'Topology', icon: Network },
-  { path: '/dashboards', label: 'Dashboards', icon: LayoutGrid },
-  { path: '/logs', label: 'Logs', icon: ScrollText },
-  { path: '/traces', label: 'Traces', icon: GitBranch },
-  { path: '/catalog', label: 'Catalog', icon: Box },
-  { path: '/status-page', label: 'Status Page', icon: Globe },
-  { path: '/runbooks', label: 'Runbooks', icon: Book },
-  { path: '/postmortems', label: 'Postmortems', icon: FileText },
-  { path: '/synthetics', label: 'Synthetics', icon: Activity },
-  { path: '/admin', label: 'Admin', icon: Settings },
-  { path: '/users', label: 'User Management', icon: Users },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
+  { path: '/incidents', label: 'Incidents', icon: TriangleAlertIcon },
+  { path: '/alerting', label: 'Alerting', icon: FilledBellIcon },
+  { path: '/healing', label: 'Healing', icon: ShieldCheck },
+  { path: '/slo', label: 'SLO', icon: ChartBarIcon },
+  { path: '/topology', label: 'Topology', icon: PlugConnectedIcon },
+  { path: '/dashboards', label: 'Dashboards', icon: StackIcon },
+  { path: '/logs', label: 'Logs', icon: CodeIcon },
+  { path: '/traces', label: 'Traces', icon: GithubIcon },
+  { path: '/catalog', label: 'Catalog', icon: CpuIcon },
+  { path: '/status-page', label: 'Status Page', icon: WorldIcon },
+  { path: '/runbooks', label: 'Runbooks', icon: BookIcon },
+  { path: '/postmortems', label: 'Postmortems', icon: FileDescriptionIcon },
+  { path: '/synthetics', label: 'Synthetics', icon: ChartLineIcon },
+  { path: '/admin', label: 'Admin', icon: GearIcon },
+  { path: '/users', label: 'User Management', icon: UsersIcon },
 ];
 
 function BrandMark({ className = "w-5 h-5" }: { className?: string }) {
@@ -244,7 +263,7 @@ export default function Layout() {
             }}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-gray-400 hover:bg-white/[0.05] hover:text-white border border-transparent hover:border-white/10 transition-all"
           >
-            <LogOut className="w-5 h-5" />
+            <LogoutIcon className="w-5 h-5" />
             <span className="text-sm font-medium">Logout</span>
           </button>
         </div>
@@ -257,7 +276,7 @@ export default function Layout() {
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-400 hover:text-white transition-colors"
             >
-              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {sidebarOpen ? <XIcon className="w-5 h-5" /> : <DotsHorizontalIcon className="w-5 h-5" />}
             </button>
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <span className="relative flex h-2 w-2">
@@ -273,14 +292,14 @@ export default function Layout() {
               to="/landing"
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30 hover:bg-blue-500/20 transition-colors text-sm font-medium"
             >
-              <Globe className="w-4 h-4" />
+              <WorldIcon className="w-4 h-4" />
               <span>SaaS Landing Page</span>
             </Link>
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-neutral-700 hover:border-neutral-600 rounded-xl text-gray-400 hover:text-gray-200 text-sm transition-all"
             >
-              <Search className="w-4 h-4" />
+              <MagnifierIcon className="w-4 h-4" />
               <span>Search...</span>
               <kbd className="ml-2 px-1.5 py-0.5 bg-neutral-950 rounded text-xs border border-neutral-800">⌘K</kbd>
             </button>
@@ -289,7 +308,7 @@ export default function Layout() {
               onClick={() => setNotificationsOpen(!notificationsOpen)}
               className="p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-400 hover:text-white relative transition-all duration-200 hover:scale-105 active:scale-95"
             >
-              <Bell className="w-5 h-5" />
+              <FilledBellIcon className="w-5 h-5" />
               {notifications.length > 0 && (
                 <span className="absolute top-1 right-1 min-w-4 h-4 px-1 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">
                   {notifications.length > 9 ? '9+' : notifications.length}
@@ -340,7 +359,7 @@ export default function Layout() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 flex justify-center p-12">
               <div className="rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 border border-neutral-800 shadow-[0_16px_40px_0_rgba(0,0,0,0.6)] w-full max-w-xl h-96 flex flex-col overflow-hidden">
                 <div className="p-4 border-b border-neutral-800 flex items-center gap-3">
-                  <Search className="w-5 h-5 text-gray-400" />
+                  <MagnifierIcon className="w-5 h-5 text-gray-400" />
                   <input
                     autoFocus
                     value={searchQuery}
@@ -352,7 +371,7 @@ export default function Layout() {
                     onClick={() => setSearchOpen(false)}
                     className="text-gray-400 hover:text-gray-200 transition-colors"
                   >
-                    <X className="w-5 h-5" />
+                    <XIcon className="w-5 h-5" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-auto p-2">

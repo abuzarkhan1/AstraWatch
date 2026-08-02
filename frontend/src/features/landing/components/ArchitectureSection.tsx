@@ -4,20 +4,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import VerticalCutReveal from '@/components/ui/vertical-cut-reveal';
 import { Badge } from '@/components/ui/badge';
 import {
-  Cpu,
   Server,
   Database,
-  Brain,
-  Workflow,
-  ShieldCheck,
-  ArrowRight,
   Play,
   Pause,
-  Zap,
-  Activity,
-  CheckCircle2,
-  Lock,
 } from 'lucide-react';
+import CpuIcon from '@/components/ui/cpu-icon';
+import SparklesIcon from '@/components/ui/sparkles-icon';
+import PlugConnectedIcon from '@/components/ui/plug-connected-icon';
+import ShieldCheckIcon from '@/components/ui/shield-check';
+import ArrowNarrowRightIcon from '@/components/ui/arrow-narrow-right-icon';
+import RocketIcon from '@/components/ui/rocket-icon';
+import ChartLineIcon from '@/components/ui/chart-line-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import LockIcon from '@/components/ui/lock-icon';
 
 interface PipelineStep {
   step: string;
@@ -38,7 +38,7 @@ const PIPELINE_STEPS: PipelineStep[] = [
     headline: 'Zero-Code eBPF Kernel Probes',
     tech: 'Kernel Socket Tracepoints & RingBuffer',
     badge: '<0.32% CPU Overhead',
-    icon: Cpu,
+    icon: CpuIcon,
     desc: 'Capture instant TCP latency, HTTP/gRPC traces, and CPU bottlenecks directly at Linux kernel socket tracepoints without modifying a single line of code or injecting heavy sidecar proxies.',
     highlights: [
       { title: 'Zero Sidecars Needed', desc: 'No Envoy or proxy sidecars consuming cluster RAM', metric: '0MB Sidecar RAM' },
@@ -83,7 +83,7 @@ const PIPELINE_STEPS: PipelineStep[] = [
     headline: 'Ensemble Isolation Forest Engine',
     tech: 'FastAPI & Isolation Forest Models',
     badge: '<15ms Inference',
-    icon: Brain,
+    icon: SparklesIcon,
     desc: 'Multi-dimensional anomaly detection evaluating telemetry across 12 feature dimensions simultaneously with dynamic Z-score and Isolation Forest ML models.',
     highlights: [
       { title: 'Zero Noise Alerts', desc: '85%+ confidence thresholding eliminates false positive fatigue', metric: '85% Confidence Cap' },
@@ -98,7 +98,7 @@ const PIPELINE_STEPS: PipelineStep[] = [
     headline: 'Kubernetes Auto-Remediation Operator',
     tech: 'Spring Boot & Safety-Bounded CRDs',
     badge: '1.4s Auto-Healing',
-    icon: Workflow,
+    icon: PlugConnectedIcon,
     desc: 'Kubernetes operator executing automated remediation rules (pod restarts, traffic cordoning, image rollbacks) with strict safety bounds and idempotency locks.',
     highlights: [
       { title: 'Blast-Radius Caps', desc: 'Configurable caps limit maximum pod restarts per hour', metric: 'Max 10% Restart Cap' },
@@ -113,7 +113,7 @@ const PIPELINE_STEPS: PipelineStep[] = [
     headline: 'Enterprise Audit & Private VPC Boundary',
     tech: 'SOC2 Type II & Multi-Window SLOs',
     badge: '99.999% Platform SLA',
-    icon: ShieldCheck,
+    icon: ShieldCheckIcon,
     desc: 'Real-time multi-window SLO burn rate tracking, immutable audit trails, and strict private VPC data boundary enforcement for HIPAA and SOC2 compliance.',
     highlights: [
       { title: 'Private VPC Boundary', desc: 'All telemetry stays strictly within your cloud perimeter', metric: '100% On-Prem / VPC' },
@@ -224,7 +224,7 @@ export default function ArchitectureSection() {
                     }`}>
                       {step.badge}
                     </span>
-                    <ArrowRight className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-gray-500'}`} />
+                    <ArrowNarrowRightIcon className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-gray-500'}`} />
                   </div>
                 </button>
               );
@@ -276,7 +276,7 @@ export default function ArchitectureSection() {
                     >
                       <div>
                         <div className="flex items-center gap-1.5 mb-1">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                          <CheckedIcon className="h-3.5 w-3.5 text-blue-400 shrink-0" />
                           <h4 className="text-xs font-bold text-white">{h.title}</h4>
                         </div>
                         <p className="text-[11px] text-gray-400 leading-tight font-light">{h.desc}</p>
@@ -291,7 +291,7 @@ export default function ArchitectureSection() {
                 {/* Live System Status Bar */}
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 flex items-center justify-between font-mono text-xs">
                   <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-                    <Activity className="h-4 w-4 animate-pulse" />
+                    <ChartLineIcon className="h-4 w-4 animate-pulse" />
                     <span>{current.liveStatus}</span>
                   </div>
                   <span className="text-gray-500 text-[10px] hidden sm:inline-block">Status: Healthy</span>

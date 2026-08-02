@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Check, Mail } from 'lucide-react';
+import SendIcon from '@/components/ui/send-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import MailFilledIcon from '@/components/ui/mail-filled-icon';
 import MagneticButton from '@/components/ui/magnetic-button';
 import { TimelineContent } from '@/components/ui/timeline-animation';
 import { VerticalCutReveal } from '@/components/ui/vertical-cut-reveal';
@@ -118,7 +120,7 @@ export default function ContactSection() {
                 className="flex flex-col items-center justify-center py-20 text-center gap-6 px-8"
               >
                 <div className="h-16 w-16 rounded-full bg-gradient-to-t from-blue-500 to-blue-600 border border-blue-500 flex items-center justify-center shadow-2xl shadow-blue-800/60">
-                  <Check className="h-8 w-8 text-white" />
+                  <CheckedIcon className="h-8 w-8 text-white" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-white tracking-tight">Message Sent!</h3>
@@ -143,7 +145,7 @@ export default function ContactSection() {
                 {/* Header */}
                 <div className="flex items-center gap-3 pb-5 border-b border-neutral-700">
                   <div className="h-10 w-10 rounded-xl bg-gradient-to-t from-blue-600/20 to-blue-500/10 border border-blue-500/40 flex items-center justify-center text-blue-400">
-                    <Mail className="h-5 w-5" />
+                    <MailFilledIcon className="h-5 w-5" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white tracking-tight">Contact Us</h3>
@@ -255,7 +257,7 @@ export default function ContactSection() {
                       </>
                     ) : (
                       <>
-                        <Send className="h-5 w-5" />
+                        <SendIcon className="h-5 w-5" />
                         Send Message
                       </>
                     )}

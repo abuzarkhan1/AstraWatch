@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import MagneticButton from "@/components/ui/magnetic-button";
 import { motion, type Variants } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowNarrowRightIcon } from "@/components/ui/arrow-narrow-right-icon";
+import { SparklesIcon } from "@/components/ui/sparkles-icon";
+
 import { Link } from "react-router-dom";
 import VerticalCutReveal from "@/components/ui/vertical-cut-reveal";
 import NumberFlow from "@number-flow/react";
@@ -65,7 +67,7 @@ export function HeroSection() {
           <Link to="/dashboard">
             <button className="gap-2 bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/80 border border-blue-500 text-white font-bold rounded-full px-8 py-3.5 text-sm hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer flex items-center">
               <span>Get Started</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowNarrowRightIcon className="h-4 w-4" />
             </button>
           </Link>
         </MagneticButton>

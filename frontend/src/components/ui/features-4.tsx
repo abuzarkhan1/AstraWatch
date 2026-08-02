@@ -1,33 +1,39 @@
-import { Cpu, Fingerprint, Pencil, Settings2, Sparkles, Zap } from 'lucide-react'
+import { CpuIcon } from '@/components/ui/cpu-icon'
+import { SparklesIcon } from '@/components/ui/sparkles-icon'
+import { GearIcon } from '@/components/ui/gear-icon'
+import { PenIcon } from '@/components/ui/pen-icon'
+import { RocketIcon } from '@/components/ui/rocket-icon' // using rocket for Zap
+import { ShieldCheck } from '@/components/ui/shield-check' // using shield-check for Fingerprint
+
 
 const FEATURES = [
   {
-    icon: Zap,
+    icon: RocketIcon,
     title: 'Faaast',
     desc: 'Kernel-level eBPF probes capture telemetry with sub-millisecond overhead, no sidecars required.',
   },
   {
-    icon: Cpu,
+    icon: CpuIcon,
     title: 'Powerful',
     desc: 'Multi-model ML anomaly detection over metrics, traces, and logs with confidence scoring.',
   },
   {
-    icon: Fingerprint,
+    icon: ShieldCheck,
     title: 'Security',
     desc: 'Zero sidecars, kernel CO-RE binaries, and 100% on-premise VPC-safe deployment by default.',
   },
   {
-    icon: Pencil,
+    icon: PenIcon,
     title: 'Customization',
     desc: 'Drag-and-drop dashboards, custom SLOs, and runbooks tailored to your exact stack.',
   },
   {
-    icon: Settings2,
+    icon: GearIcon,
     title: 'Control',
     desc: 'Blast-radius limits and idempotency locks on every auto-healing action keep you in command.',
   },
   {
-    icon: Sparkles,
+    icon: SparklesIcon,
     title: 'Built for AI',
     desc: 'LLM-powered root-cause analysis and autonomous remediation across your entire fleet.',
   },

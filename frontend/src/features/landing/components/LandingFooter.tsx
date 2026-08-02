@@ -1,14 +1,14 @@
 import React from "react";
 import {
-  Mail,
-  Phone,
   MapPin,
   Facebook,
   Instagram,
   Twitter,
   Dribbble,
-  Globe,
 } from "lucide-react";
+import MailFilledIcon from "@/components/ui/mail-filled-icon";
+import TelephoneIcon from "@/components/ui/telephone-icon";
+import WorldIcon from "@/components/ui/world-icon";
 import { FooterBackgroundGradient, TextHoverEffect } from "@/components/ui/hover-footer";
 
 export default function LandingFooter() {
@@ -38,12 +38,12 @@ export default function LandingFooter() {
 
   const contactInfo = [
     {
-      icon: <Mail size={18} className="text-white" />,
+      icon: <MailFilledIcon size={18} className="text-white" />,
       text: "support@astrawatch.io",
       href: "mailto:support@astrawatch.io",
     },
     {
-      icon: <Phone size={18} className="text-white" />,
+      icon: <TelephoneIcon size={18} className="text-white" />,
       text: "+1 (800) 555-ASTRA",
       href: "tel:+18005552787",
     },
@@ -58,7 +58,7 @@ export default function LandingFooter() {
     { icon: <Instagram size={20} />, label: "Instagram", href: "#" },
     { icon: <Twitter size={20} />, label: "Twitter", href: "#" },
     { icon: <Dribbble size={20} />, label: "Dribbble", href: "#" },
-    { icon: <Globe size={20} />, label: "Globe", href: "#" },
+    { icon: <WorldIcon size={20} />, label: "Globe", href: "#" },
   ];
 
   return (

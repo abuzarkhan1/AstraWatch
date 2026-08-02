@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { Book, Plus, Search, ChevronRight, Clock, Tag } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import BookIcon from '@/components/ui/book-icon';
+import MagnifierIcon from '@/components/ui/magnifier-icon';
+import RightChevron from '@/components/ui/right-chevron';
+import ClockIcon from '@/components/ui/clock-icon';
+import HashtagIcon from '@/components/ui/hashtag-icon';
 
 const sampleRunbooks = [
   { id: '1', title: 'Database Connection Pool Exhaustion', tags: ['database', 'postgresql'], lastUpdated: new Date(Date.now() - 86400000 * 2).toISOString(), severity: 'HIGH', steps: 6 },
@@ -36,7 +41,7 @@ export default function RunbooksPage() {
       </div>
 
       <div className="max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <MagnifierIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
         <input
           type="text"
           placeholder="Search runbooks..."
@@ -55,13 +60,13 @@ export default function RunbooksPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-start gap-4">
                 <div className="p-2 rounded-xl bg-neutral-800 border border-neutral-700 group-hover:border-blue-500/30 transition-colors">
-                  <Book className="w-5 h-5 text-blue-400" />
+                  <BookIcon className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white text-base group-hover:text-blue-300 transition-colors">{runbook.title}</h3>
                   <div className="flex items-center gap-3 mt-1.5">
                     <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Clock className="w-3 h-3" />
+                      <ClockIcon className="w-3 h-3" />
                       {new Date(runbook.lastUpdated).toLocaleDateString()}
                     </div>
                     <span className="text-gray-600">·</span>
@@ -70,7 +75,7 @@ export default function RunbooksPage() {
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {runbook.tags.map(tag => (
                       <span key={tag} className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-xs text-gray-400">
-                        <Tag className="w-2.5 h-2.5" />
+                        <HashtagIcon className="w-2.5 h-2.5" />
                         {tag}
                       </span>
                     ))}
@@ -81,7 +86,7 @@ export default function RunbooksPage() {
                 <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${severityBadge[runbook.severity] || severityBadge.STANDARD}`}>
                   {runbook.severity}
                 </span>
-                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-blue-400 transition-colors" />
+                <RightChevron className="w-4 h-4 text-gray-600 group-hover:text-blue-400 transition-colors" />
               </div>
             </div>
           </div>

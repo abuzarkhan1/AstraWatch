@@ -1,14 +1,17 @@
-import { Shield, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import ShieldCheck from '@/components/ui/shield-check';
+import CheckedIcon from '@/components/ui/checked-icon';
+import XIcon from '@/components/ui/x-icon';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
 import { useHealingActions } from '@/hooks/useApi';
 import { endpoints } from '@/lib/api';
 
 const statusIcons: Record<string, React.ElementType> = {
-  COMPLETED: CheckCircle,
-  APPROVED: CheckCircle,
-  PENDING: AlertTriangle,
-  FAILED: XCircle,
-  ROLLED_BACK: XCircle,
-  EXECUTING: Shield,
+  COMPLETED: CheckedIcon,
+  APPROVED: CheckedIcon,
+  PENDING: TriangleAlertIcon,
+  FAILED: XIcon,
+  ROLLED_BACK: XIcon,
+  EXECUTING: ShieldCheck,
 };
 
 const statusColors: Record<string, string> = {
@@ -34,7 +37,7 @@ export default function HealingPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-white">Healing Actions</h1>
         <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-green-500" />
+          <ShieldCheck className="w-5 h-5 text-green-500" />
           <span className="text-sm text-green-500">Auto-healing enabled</span>
         </div>
       </div>
@@ -73,7 +76,7 @@ export default function HealingPage() {
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 border-b border-neutral-800 hover:bg-white/[0.03] transition-colors">No healing actions</td></tr>
               ) : (
                 actions.map((action: any) => {
-                  const Icon: any = statusIcons[action.status] || Shield;
+                  const Icon: any = statusIcons[action.status] || ShieldCheck;
                   return (
                     <tr key={action.id} className="border-b border-neutral-800 hover:bg-white/[0.03] transition-colors">
                       <td className="px-4 py-3">

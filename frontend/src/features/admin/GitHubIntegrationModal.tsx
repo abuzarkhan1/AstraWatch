@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, GitPullRequest, CheckCircle2, AlertCircle, RefreshCw, Github, Shield, Sparkles } from 'lucide-react';
+import { XIcon } from '@/components/ui/x-icon';
+import { CheckedIcon } from '@/components/ui/checked-icon';
+import { TriangleAlertIcon } from '@/components/ui/triangle-alert-icon';
+import { RefreshIcon } from '@/components/ui/refresh-icon';
+import { GithubIcon } from '@/components/ui/github-icon';
+import { ShieldCheck } from '@/components/ui/shield-check';
+import { SparklesIcon } from '@/components/ui/sparkles-icon';
+import { CodeIcon } from '@/components/ui/code-icon';
 import { endpoints } from '@/lib/api';
 
 interface GitHubIntegrationModalProps {
@@ -100,7 +107,7 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
         <div className="flex items-center justify-between border-b border-neutral-800/80 pb-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-              <Github className="w-6 h-6" />
+              <GithubIcon className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white tracking-tight">GitHub Integration</h2>
@@ -111,7 +118,7 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
             onClick={onClose}
             className="rounded-full p-1.5 text-gray-400 hover:text-white hover:bg-neutral-800 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <XIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -124,7 +131,7 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
                 : 'bg-red-500/10 border-red-500/30 text-red-400'
             }`}
           >
-            {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+            {message.type === 'success' ? <CheckedIcon className="w-4 h-4 shrink-0" /> : <TriangleAlertIcon className="w-4 h-4 shrink-0" />}
             <span>{message.text}</span>
           </div>
         )}
@@ -145,7 +152,7 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
               disabled={testing}
               className="text-xs font-medium text-purple-400 hover:text-purple-300 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              {testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Shield className="w-3.5 h-3.5" />}
+              {testing ? <RefreshIcon className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
               <span>{testing ? 'Testing...' : 'Test Connection'}</span>
             </button>
           </div>
@@ -189,7 +196,7 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <SparklesIcon className="w-4 h-4 text-purple-400" />
                   <span className="text-sm font-bold text-white">Automated AI Remediation Pull Requests</span>
                 </div>
                 <p className="text-xs text-gray-400 leading-relaxed">
@@ -218,7 +225,7 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
             {autoPR && (
               <div className="mt-3 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-purple-300 font-mono">
                 <span className="flex items-center gap-1.5">
-                  <GitPullRequest className="w-3.5 h-3.5" />
+                  <CodeIcon className="w-3.5 h-3.5" />
                   Mode: Active Auto-PR Generation
                 </span>
                 <span className="text-emerald-400 font-bold">Enabled</span>
@@ -242,7 +249,7 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
             >
               {loading ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <RefreshIcon className="w-3.5 h-3.5 animate-spin" />
                   <span>Saving...</span>
                 </>
               ) : (

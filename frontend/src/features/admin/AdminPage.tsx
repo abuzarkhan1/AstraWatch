@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { endpoints } from '@/lib/api';
-import { Github, GitPullRequest, Settings2, CheckCircle2 } from 'lucide-react';
+import { GithubIcon } from '@/components/ui/github-icon';
+import { GearIcon } from '@/components/ui/gear-icon';
+import { CheckedIcon } from '@/components/ui/checked-icon';
+import { CodeIcon } from '@/components/ui/code-icon';
 import GitHubIntegrationModal from './GitHubIntegrationModal';
 
 export default function AdminPage() {
@@ -43,27 +46,27 @@ export default function AdminPage() {
             onClick={() => setIsGitHubModalOpen(true)}
             className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-900/40 border border-purple-500/50 text-white font-bold rounded-xl px-4 py-2.5 text-xs transition-all cursor-pointer"
           >
-            <Settings2 className="w-4 h-4" />
+            <GearIcon className="w-4 h-4" />
             <span>Configure Integration</span>
           </button>
         </div>
 
         <div className="rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <Github className="w-32 h-32 text-purple-400" />
+            <GithubIcon className="w-32 h-32 text-purple-400" />
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
             <div className="space-y-3 max-w-xl">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-                  <Github className="w-6 h-6" />
+                  <GithubIcon className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold text-white">GitHub Remediation Bot</h2>
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                      <CheckCircle2 className="w-3 h-3" /> Connected
+                      <CheckedIcon className="w-3 h-3" /> Connected
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 font-mono mt-0.5">Target Repo: <span className="text-purple-300 font-semibold">{githubRepo}</span></p>
@@ -78,7 +81,7 @@ export default function AdminPage() {
             <div className="bg-neutral-950/80 border border-neutral-800 rounded-2xl p-4 min-w-[280px] space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-400 flex items-center gap-1.5">
-                  <GitPullRequest className="w-4 h-4 text-purple-400" />
+                  <CodeIcon className="w-4 h-4 text-purple-400" />
                   Automated AI Remediation PRs
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${autoPR ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'bg-gray-800 text-gray-500'}`}>

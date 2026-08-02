@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, BellOff, Plus, AlertTriangle } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import FilledBellIcon from '@/components/ui/filled-bell-icon';
+import BellOffIcon from '@/components/ui/bell-off-icon';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
 import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -74,7 +77,7 @@ export default function AlertingCenterPage() {
         <div className="text-center text-gray-500 py-8">Loading alert rules...</div>
       ) : rules.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
-          <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <FilledBellIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No alert rules configured</p>
           <Button className="mt-4 bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800/50 border border-blue-500 text-white font-bold rounded-xl px-4 py-2.5 hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer">
             <Plus className="w-4 h-4 mr-2" />
@@ -89,11 +92,11 @@ export default function AlertingCenterPage() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     {rule.status === 'active' ? (
-                      <Bell className="w-5 h-5 text-green-500" />
+                      <FilledBellIcon className="w-5 h-5 text-green-500" />
                     ) : rule.status === 'error' ? (
-                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                      <TriangleAlertIcon className="w-5 h-5 text-red-500" />
                     ) : (
-                      <BellOff className="w-5 h-5 text-gray-500" />
+                      <BellOffIcon className="w-5 h-5 text-gray-500" />
                     )}
                   </div>
                   <div>

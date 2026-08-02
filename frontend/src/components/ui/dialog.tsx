@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
+import { XIcon } from '@/components/ui/x-icon';
 
 interface DialogContextValue {
   open: boolean;
@@ -73,7 +73,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
             onClick={() => onOpenChange(false)}
             className="absolute right-4 top-4 rounded-sm p-1 text-gray-500 hover:text-gray-300"
           >
-            <X className="h-4 w-4" />
+            <XIcon className="h-4 w-4" />
           </button>
           {children}
         </div>

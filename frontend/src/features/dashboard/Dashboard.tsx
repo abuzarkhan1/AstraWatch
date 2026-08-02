@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '@/hooks/useStore';
 import { useServices, useIncidents } from '@/hooks/useApi';
 import wsManager from '@/hooks/useWebSocket';
-import { Activity, AlertTriangle, Shield, BarChart3, ArrowUp, ArrowDown } from 'lucide-react';
+import ChartLineIcon from '@/components/ui/chart-line-icon';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
+import ShieldCheckIcon from '@/components/ui/shield-check';
+import ChartBarIcon from '@/components/ui/chart-bar-icon';
+import ArrowNarrowUpIcon from '@/components/ui/arrow-narrow-up-icon';
+import ArrowNarrowDownIcon from '@/components/ui/arrow-narrow-down-icon';
 
 function StatCard({ icon: Icon, label, value, change, color }: {
   icon: React.ComponentType<{ className?: string }>;
@@ -24,7 +29,7 @@ function StatCard({ icon: Icon, label, value, change, color }: {
       <div className="text-2xl font-bold relative z-10">{value}</div>
       {change !== undefined && (
         <div className={`flex items-center gap-1 mt-1 text-xs relative z-10 ${change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-          {change >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+          {change >= 0 ? <ArrowNarrowUpIcon className="w-3 h-3" /> : <ArrowNarrowDownIcon className="w-3 h-3" />}
           {Math.abs(change)}%
         </div>
       )}
@@ -82,27 +87,27 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
         <StatCard
-          icon={Activity}
+          icon={ChartLineIcon}
           label="Services"
           value={services.length}
           change={2}
           color="text-blue-500"
         />
         <StatCard
-          icon={AlertTriangle}
+          icon={TriangleAlertIcon}
           label="Active Incidents"
           value={activeIncidents}
           change={-15}
           color="text-red-500"
         />
         <StatCard
-          icon={Shield}
+          icon={ShieldCheckIcon}
           label="Healthy Services"
           value={`${services.length > 0 ? Math.round((healthyServices / services.length) * 100) : 0}%`}
           color="text-green-500"
         />
         <StatCard
-          icon={BarChart3}
+          icon={ChartBarIcon}
           label="Critical"
           value={criticalIncidents}
           color="text-orange-500"

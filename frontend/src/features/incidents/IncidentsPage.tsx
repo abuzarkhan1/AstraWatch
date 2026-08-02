@@ -2,7 +2,8 @@ import { useIncidents } from '@/hooks/useApi';
 import { useAppStore } from '@/hooks/useStore';
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Search } from 'lucide-react';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
+import MagnifierIcon from '@/components/ui/magnifier-icon';
 
 const severityColors: Record<string, string> = {
   CRITICAL: 'border-red-500/30 bg-red-500/10 text-red-400',
@@ -34,7 +35,7 @@ export default function IncidentsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-white">Incidents</h1>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <MagnifierIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
             type="text"
             placeholder="Search incidents..."
@@ -59,7 +60,7 @@ export default function IncidentsPage() {
               {incidents.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-gray-500">
-                    <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <TriangleAlertIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     No incidents found
                   </td>
                 </tr>

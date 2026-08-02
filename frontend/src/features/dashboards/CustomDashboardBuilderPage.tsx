@@ -12,15 +12,18 @@ import {
   type Connection,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Plus, BarChart3, Bell, Activity } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import ChartBarIcon from '@/components/ui/chart-bar-icon';
+import FilledBellIcon from '@/components/ui/filled-bell-icon';
+import ChartLineIcon from '@/components/ui/chart-line-icon';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const widgetTypes = [
-  { type: 'metric-chart', label: 'Metric Chart', icon: BarChart3 },
-  { type: 'status', label: 'Status', icon: Activity },
-  { type: 'alert-list', label: 'Alert List', icon: Bell },
+  { type: 'metric-chart', label: 'Metric Chart', icon: ChartBarIcon },
+  { type: 'status', label: 'Status', icon: ChartLineIcon },
+  { type: 'alert-list', label: 'Alert List', icon: FilledBellIcon },
 ];
 
 const widgetColors: Record<string, string> = {

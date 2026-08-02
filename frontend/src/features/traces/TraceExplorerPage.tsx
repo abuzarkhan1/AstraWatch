@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Search, Clock, ArrowRight } from 'lucide-react';
+import MagnifierIcon from '@/components/ui/magnifier-icon';
+import ClockIcon from '@/components/ui/clock-icon';
 import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { Input } from '@/components/ui/input';
@@ -139,7 +140,7 @@ export default function TraceExplorerPage() {
 
       <div className="flex gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <MagnifierIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <Input
             placeholder="Search by trace ID or service..."
             value={search}
@@ -170,7 +171,7 @@ export default function TraceExplorerPage() {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-500" />
+                      <ClockIcon className="w-4 h-4 text-blue-500" />
                       <span className="text-sm text-gray-300 font-mono">{trace.traceId.substring(0, 16)}...</span>
                     </div>
                     <div className="flex items-center gap-2">

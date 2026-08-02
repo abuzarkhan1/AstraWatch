@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { FileText, Plus, Search, Clock, ChevronRight, AlertCircle } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import FileDescriptionIcon from '@/components/ui/file-description-icon';
+import MagnifierIcon from '@/components/ui/magnifier-icon';
+import ClockIcon from '@/components/ui/clock-icon';
+import RightChevron from '@/components/ui/right-chevron';
+import InfoCircleIcon from '@/components/ui/info-circle-icon';
 
 const samplePostmortems = [
   { id: '1', title: 'P0 Outage: Payment Service Timeout Storm', date: new Date(Date.now() - 86400000 * 3).toISOString(), severity: 'CRITICAL', status: 'Published', duration: '2h 14m', author: 'SRE Team' },
@@ -54,7 +59,7 @@ export default function PostmortemsPage() {
       </div>
 
       <div className="relative z-10 max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <MagnifierIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
         <input
           type="text"
           placeholder="Search postmortems..."
@@ -73,18 +78,18 @@ export default function PostmortemsPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-start gap-4">
                 <div className="p-2 rounded-xl bg-neutral-800 border border-neutral-700 group-hover:border-blue-500/30 transition-colors shrink-0">
-                  <FileText className="w-5 h-5 text-blue-400" />
+                  <FileDescriptionIcon className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white group-hover:text-blue-300 transition-colors">{pm.title}</h3>
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Clock className="w-3 h-3" />
+                      <ClockIcon className="w-3 h-3" />
                       {new Date(pm.date).toLocaleDateString()}
                     </div>
                     <span className="text-gray-600">·</span>
                     <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <AlertCircle className="w-3 h-3" />
+                      <InfoCircleIcon className="w-3 h-3" />
                       Duration: {pm.duration}
                     </div>
                     <span className="text-gray-600">·</span>
@@ -95,7 +100,7 @@ export default function PostmortemsPage() {
               <div className="flex items-center gap-2 shrink-0">
                 <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${severityBadge[pm.severity] || severityBadge.STANDARD}`}>{pm.severity}</span>
                 <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadge[pm.status]}`}>{pm.status}</span>
-                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-blue-400 transition-colors ml-1" />
+                <RightChevron className="w-4 h-4 text-gray-600 group-hover:text-blue-400 transition-colors ml-1" />
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, PhoneCall, HelpCircle } from 'lucide-react';
+
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,

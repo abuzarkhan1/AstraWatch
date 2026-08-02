@@ -6,19 +6,15 @@ import NumberFlow from "@number-flow/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import {
-  Sparkles,
-  ShieldCheck,
-  Zap,
-  Cpu,
-  Activity,
-  CheckCircle2,
-  Lock,
-  ArrowRight,
-  Eye,
-  EyeOff,
-  ChevronLeft,
-} from "lucide-react";
+import { ShieldCheck } from '@/components/ui/shield-check';
+import { CpuIcon } from '@/components/ui/cpu-icon';
+import { ChartLineIcon } from '@/components/ui/chart-line-icon';
+import { CheckedIcon } from '@/components/ui/checked-icon';
+import { LockIcon } from '@/components/ui/lock-icon';
+import { ArrowNarrowRightIcon } from '@/components/ui/arrow-narrow-right-icon';
+import { ArrowNarrowLeftIcon } from '@/components/ui/arrow-narrow-left-icon';
+import { EyeIcon } from '@/components/ui/eye-icon';
+import { EyeOffIcon } from '@/components/ui/eye-off-icon';
 
 export class CanvasRevealEffect extends React.Component<any> {
   render() {
@@ -488,7 +484,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors cursor-pointer p-1"
                           >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                           </button>
                         </div>
                       </div>
@@ -511,7 +507,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
                           ) : (
                             <>
                               <span>{mode === "login" ? "Sign In to Dashboard" : "Create Account"}</span>
-                              <ArrowRight className="h-4 w-4" />
+                              <ArrowNarrowRightIcon className="h-4 w-4" />
                             </>
                           )}
                         </button>
@@ -582,7 +578,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
                         onClick={handleBackClick}
                         className="text-gray-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1"
                       >
-                        <ChevronLeft className="h-3.5 w-3.5" />
+                        <ArrowNarrowLeftIcon className="h-3.5 w-3.5" />
                         <span>Back</span>
                       </button>
                       <button
@@ -626,7 +622,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
 
                     <div className="py-6">
                       <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-t from-blue-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-blue-800/80 border border-blue-500">
-                        <CheckCircle2 className="h-8 w-8 text-white" />
+                        <CheckedIcon className="h-8 w-8 text-white" />
                       </div>
                     </div>
 
@@ -639,7 +635,7 @@ export const SignInPage = ({ className }: SignInPageProps) => {
                         className="w-full py-3.5 rounded-xl bg-gradient-to-t from-blue-500 to-blue-600 text-white font-bold text-sm shadow-xl shadow-blue-800 border border-blue-500 transition-all cursor-pointer flex items-center justify-center gap-2"
                       >
                         <span>Launch Control Plane Dashboard</span>
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowNarrowRightIcon className="h-4 w-4" />
                       </button>
                     </MagneticButton>
                   </motion.div>

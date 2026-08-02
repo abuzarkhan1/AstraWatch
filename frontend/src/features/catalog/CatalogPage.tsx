@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useServices } from '@/hooks/useApi';
-import { Box, Search, Tag, ExternalLink, Circle } from 'lucide-react';
+import { Box, Circle } from 'lucide-react';
+import MagnifierIcon from '@/components/ui/magnifier-icon';
+import HashtagIcon from '@/components/ui/hashtag-icon';
 import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 
@@ -45,7 +47,7 @@ export default function CatalogPage() {
 
       {/* Search */}
       <div className="max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <MagnifierIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
         <input
           type="text"
           placeholder="Search services..."
@@ -108,7 +110,7 @@ export default function CatalogPage() {
                 <div className="flex flex-wrap gap-1.5">
                   {svc.tags.slice(0, 3).map((tag: string) => (
                     <span key={tag} className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-xs text-gray-400">
-                      <Tag className="w-2.5 h-2.5" />
+                      <HashtagIcon className="w-2.5 h-2.5" />
                       {tag}
                     </span>
                   ))}

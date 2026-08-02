@@ -1,4 +1,6 @@
-import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import ChartBarIcon from '@/components/ui/chart-bar-icon';
+import ArrowNarrowUpIcon from '@/components/ui/arrow-narrow-up-icon';
+import ArrowNarrowDownIcon from '@/components/ui/arrow-narrow-down-icon';
 import { useServices } from '@/hooks/useApi';
 
 const sloTargets: Record<string, number> = {
@@ -30,9 +32,9 @@ function ServiceSLO({ svc }: { svc: any }) {
       <div className="flex items-center justify-between">
         <h3 className="font-medium">{svc.name}</h3>
         {isBreaching ? (
-          <TrendingDown className="w-4 h-4 text-red-500" />
+          <ArrowNarrowDownIcon className="w-4 h-4 text-red-500" />
         ) : (
-          <TrendingUp className="w-4 h-4 text-green-500" />
+          <ArrowNarrowUpIcon className="w-4 h-4 text-green-500" />
         )}
       </div>
 
@@ -77,7 +79,7 @@ export default function SLOPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-white">Service Level Objectives</h1>
-        <BarChart3 className="w-5 h-5 text-gray-500" />
+        <ChartBarIcon className="w-5 h-5 text-gray-500" />
       </div>
 
       <div className="rounded-2xl text-white bg-neutral-900 border border-neutral-800 p-6 flex justify-between items-center">

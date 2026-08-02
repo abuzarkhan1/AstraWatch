@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { endpoints } from '@/lib/api';
 import { User, UserRole } from '@/types';
+import { UsersIcon } from '@/components/ui/users-icon';
+import { ShieldCheck } from '@/components/ui/shield-check';
+import { GearIcon } from '@/components/ui/gear-icon';
+import { MagnifierIcon } from '@/components/ui/magnifier-icon';
+import { CheckedIcon } from '@/components/ui/checked-icon';
+import { SparklesIcon } from '@/components/ui/sparkles-icon';
+import { DownChevron } from '@/components/ui/down-chevron';
+import { RefreshIcon } from '@/components/ui/refresh-icon';
+import { DotsHorizontalIcon } from '@/components/ui/dots-horizontal-icon';
+import { TriangleAlertIcon } from '@/components/ui/triangle-alert-icon';
+import { EyeIcon } from '@/components/ui/eye-icon';
 import {
-  Users,
-  ShieldCheck,
-  Wrench,
-  Eye,
-  Search,
-  CheckCircle2,
-  Sparkles,
   UserX,
   CreditCard,
-  ChevronDown,
-  RefreshCw,
-  Sliders,
   UserCheck,
-  ShieldAlert,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -150,14 +150,14 @@ export default function UserManagementPage() {
       case 'OPERATOR':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
-            <Wrench className="w-3.5 h-3.5 text-cyan-400" />
+            <GearIcon className="w-3.5 h-3.5 text-cyan-400" />
             OPERATOR
           </span>
         );
       case 'VIEWER':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neutral-900 text-gray-300 border border-neutral-700">
-            <Eye className="w-3.5 h-3.5 text-gray-400" />
+            <EyeIcon className="w-3.5 h-3.5 text-gray-400" />
             VIEWER
           </span>
         );
@@ -192,7 +192,7 @@ export default function UserManagementPage() {
           disabled={loading}
           className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white font-medium rounded-lg px-4 py-2 transition-colors cursor-pointer self-start md:self-auto text-sm"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh List</span>
         </button>
       </div>
@@ -202,7 +202,7 @@ export default function UserManagementPage() {
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-400">Total Users</span>
-            <Users className="w-5 h-5 text-blue-500" />
+            <UsersIcon className="w-5 h-5 text-blue-500" />
           </div>
           <span className="text-3xl font-bold text-white">{totalUsers}</span>
         </div>
@@ -216,14 +216,14 @@ export default function UserManagementPage() {
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-400">Operators</span>
-            <Wrench className="w-5 h-5 text-emerald-500" />
+            <GearIcon className="w-5 h-5 text-emerald-500" />
           </div>
           <span className="text-3xl font-bold text-white">{operatorCount}</span>
         </div>
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-400">Viewers & Billing</span>
-            <Eye className="w-5 h-5 text-gray-400" />
+            <EyeIcon className="w-5 h-5 text-gray-400" />
           </div>
           <span className="text-3xl font-bold text-white">{viewerCount + billingCount}</span>
         </div>
@@ -234,7 +234,7 @@ export default function UserManagementPage() {
         {/* Filters */}
         <div className="p-4 border-b border-neutral-800 bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="relative w-full sm:w-96">
-            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <MagnifierIcon className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search by email or name..."
@@ -276,7 +276,7 @@ export default function UserManagementPage() {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
                     <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />
+                      <RefreshIcon className="w-5 h-5 animate-spin text-blue-500" />
                       <span>Loading accounts...</span>
                     </div>
                   </td>
@@ -321,8 +321,8 @@ export default function UserManagementPage() {
                           'bg-neutral-800 text-gray-300 border-neutral-700'
                         }`}>
                           {user.role === 'ADMIN' && <ShieldCheck className="w-3.5 h-3.5" />}
-                          {user.role === 'OPERATOR' && <Wrench className="w-3.5 h-3.5" />}
-                          {user.role === 'VIEWER' && <Eye className="w-3.5 h-3.5" />}
+                          {user.role === 'OPERATOR' && <GearIcon className="w-3.5 h-3.5" />}
+                          {user.role === 'VIEWER' && <EyeIcon className="w-3.5 h-3.5" />}
                           {user.role === 'BILLING_OWNER' && <CreditCard className="w-3.5 h-3.5" />}
                           {user.role}
                         </span>
@@ -384,7 +384,7 @@ export default function UserManagementPage() {
                                 : 'bg-neutral-800 text-gray-500 cursor-not-allowed opacity-50'
                             }`}
                           >
-                            {isUpdating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                            {isUpdating ? <RefreshIcon className="w-3.5 h-3.5 animate-spin" /> : <CheckedIcon className="w-3.5 h-3.5" />}
                             Update
                           </button>
                         </div>

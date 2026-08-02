@@ -5,15 +5,15 @@ import { Link } from "react-router-dom";
 import { HeroSection as ShadcnHeroSection } from "@/components/ui/hero-section-shadcnui";
 import { SparklesComp } from "@/components/ui/sparkles";
 import { TimelineContent } from "@/components/ui/timeline-animation";
-import {
-  Zap,
-  Activity,
-  Cpu,
-  Server,
-  Terminal,
-  Database,
-  X,
-} from "lucide-react";
+import { XIcon } from '@/components/ui/x-icon';
+import { CpuIcon } from '@/components/ui/cpu-icon';
+import { RocketIcon } from '@/components/ui/rocket-icon';
+import { ChartLineIcon } from '@/components/ui/chart-line-icon';
+import { GithubIcon } from '@/components/ui/github-icon';
+import { BrandOpenaiIcon } from '@/components/ui/brand-openai-icon';
+import { BrandVercelIcon } from '@/components/ui/brand-vercel-icon';
+import { TerminalIcon } from '@/components/ui/terminal-icon';
+import { PawPrintIcon } from '@/components/ui/paw-print-icon';
 
 const navLinksData = [
   { label: 'Features', href: '#features' },
@@ -110,7 +110,7 @@ export function FloatingNavbar() {
           onClick={toggleMenu}
           aria-label={isOpen ? 'Close Menu' : 'Open Menu'}
         >
-          {isOpen ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+          {isOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
         </button>
       </div>
 
@@ -222,27 +222,27 @@ export const HeroSection = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14 opacity-75 hover:opacity-100 transition-opacity">
             <div className="flex items-center gap-2.5 text-gray-300 font-bold text-sm">
-              <Cpu className="h-5 w-5 text-blue-400" />
+              <CpuIcon className="h-5 w-5 text-blue-400" />
               <span>NVIDIA</span>
             </div>
             <div className="flex items-center gap-2.5 text-gray-300 font-bold text-sm">
-              <Server className="h-5 w-5 text-blue-400" />
+              <GithubIcon className="h-5 w-5 text-blue-400" />
               <span>GitHub</span>
             </div>
             <div className="flex items-center gap-2.5 text-gray-300 font-bold text-sm">
-              <Zap className="h-5 w-5 text-blue-400" />
+              <BrandOpenaiIcon className="h-5 w-5 text-blue-400" />
               <span>OpenAI</span>
             </div>
             <div className="flex items-center gap-2.5 text-gray-300 font-bold text-sm">
-              <Activity className="h-5 w-5 text-blue-400" />
+              <BrandVercelIcon className="h-5 w-5 text-blue-400" />
               <span>Vercel</span>
             </div>
             <div className="flex items-center gap-2.5 text-gray-300 font-bold text-sm">
-              <Terminal className="h-5 w-5 text-blue-400" />
+              <TerminalIcon className="h-5 w-5 text-blue-400" />
               <span>Tailwind CSS</span>
             </div>
             <div className="flex items-center gap-2.5 text-gray-300 font-bold text-sm">
-              <Database className="h-5 w-5 text-blue-400" />
+              <PawPrintIcon className="h-5 w-5 text-blue-400" />
               <span>Datadog</span>
             </div>
           </div>

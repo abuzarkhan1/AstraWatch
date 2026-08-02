@@ -5,7 +5,12 @@ import { MiniNavbar } from '@/components/ui/sign-in-flow-1';
 import { SparklesComp } from '@/components/ui/sparkles';
 import MagneticButton from '@/components/ui/magnetic-button';
 import VerticalCutReveal from '@/components/ui/vertical-cut-reveal';
-import { ArrowRight, Mail, CheckCircle2, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
+import ArrowNarrowRightIcon from '@/components/ui/arrow-narrow-right-icon';
+import MailFilledIcon from '@/components/ui/mail-filled-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import ShieldCheckIcon from '@/components/ui/shield-check';
+import ArrowNarrowLeftIcon from '@/components/ui/arrow-narrow-left-icon';
 import { endpoints } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
@@ -108,7 +113,7 @@ export default function ForgotPasswordPage() {
 
             <div className="flex items-center gap-4 text-xs text-gray-400 font-mono pt-4">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-blue-400" />
+                <ShieldCheckIcon className="h-4 w-4 text-blue-400" />
                 <span>256-Bit TLS Encrypted</span>
               </div>
               <div className="w-1 h-1 rounded-full bg-neutral-700" />
@@ -134,7 +139,7 @@ export default function ForgotPasswordPage() {
                   >
                     <div className="text-center space-y-2">
                       <div className="mx-auto w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner">
-                        <Mail className="h-6 w-6" />
+                        <MailFilledIcon className="h-6 w-6" />
                       </div>
                       <h2 className="text-2xl font-bold tracking-tight text-white">Forgot Password?</h2>
                       <p className="text-xs text-gray-400 font-mono">
@@ -183,7 +188,7 @@ export default function ForgotPasswordPage() {
                           ) : (
                             <>
                               <span>Send Reset Link</span>
-                              <ArrowRight className="h-4 w-4" />
+                              <ArrowNarrowRightIcon className="h-4 w-4" />
                             </>
                           )}
                         </button>
@@ -195,7 +200,7 @@ export default function ForgotPasswordPage() {
                         to="/auth/login"
                         className="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors group"
                       >
-                        <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
+                        <ArrowNarrowLeftIcon className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
                         <span>Back to Sign In</span>
                       </Link>
                     </div>
@@ -209,7 +214,7 @@ export default function ForgotPasswordPage() {
                     className="space-y-6 text-center py-4"
                   >
                     <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                      <CheckCircle2 className="h-8 w-8" />
+                      <CheckedIcon className="h-8 w-8" />
                     </div>
 
                     <div className="space-y-2">
@@ -234,7 +239,7 @@ export default function ForgotPasswordPage() {
                         to="/auth/login"
                         className="w-full py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-neutral-700"
                       >
-                        <ArrowLeft className="h-4 w-4" />
+                        <ArrowNarrowLeftIcon className="h-4 w-4" />
                         <span>Return to Sign In</span>
                       </Link>
                     </div>

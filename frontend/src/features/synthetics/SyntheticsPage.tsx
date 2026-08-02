@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Activity, Plus, Play, Pause, CheckCircle2, XCircle, Clock, Globe, Wifi } from 'lucide-react';
+import { Plus, Play, Pause } from 'lucide-react';
+import ChartLineIcon from '@/components/ui/chart-line-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import XIcon from '@/components/ui/x-icon';
+import ClockIcon from '@/components/ui/clock-icon';
+import WorldIcon from '@/components/ui/world-icon';
+import WifiIcon from '@/components/ui/wifi-icon';
 
 type CheckStatus = 'passing' | 'failing' | 'paused';
 
@@ -24,15 +30,15 @@ const sampleChecks: SyntheticCheck[] = [
 ];
 
 const statusConfig: Record<CheckStatus, { icon: React.ElementType; color: string; badge: string; label: string }> = {
-  passing: { icon: CheckCircle2, color: 'text-green-500', badge: 'border-green-500/30 bg-green-500/10 text-green-400', label: 'Passing' },
-  failing: { icon: XCircle, color: 'text-red-500', badge: 'border-red-500/30 bg-red-500/10 text-red-400', label: 'Failing' },
+  passing: { icon: CheckedIcon, color: 'text-green-500', badge: 'border-green-500/30 bg-green-500/10 text-green-400', label: 'Passing' },
+  failing: { icon: XIcon, color: 'text-red-500', badge: 'border-red-500/30 bg-red-500/10 text-red-400', label: 'Failing' },
   paused: { icon: Pause, color: 'text-gray-500', badge: 'border-neutral-600 bg-neutral-800 text-gray-400', label: 'Paused' },
 };
 
 const typeIcon: Record<string, React.ElementType> = {
-  http: Globe,
-  tcp: Wifi,
-  dns: Activity,
+  http: WorldIcon,
+  tcp: WifiIcon,
+  dns: ChartLineIcon,
 };
 
 export default function SyntheticsPage() {
@@ -93,7 +99,7 @@ export default function SyntheticsPage() {
             <tbody>
               {checks.map((check) => {
                 const { icon: StatusIcon, color, badge, label } = statusConfig[check.status];
-                const TypeIcon = typeIcon[check.type] || Globe;
+                const TypeIcon = typeIcon[check.type] || WorldIcon;
                 return (
                   <tr key={check.id} className="border-b border-neutral-800 hover:bg-white/[0.02] transition-colors">
                     <td className="px-4 py-3">
@@ -126,7 +132,7 @@ export default function SyntheticsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Clock className="w-3 h-3" />
+                        <ClockIcon className="w-3 h-3" />
                         {new Date(check.lastRun).toLocaleTimeString()}
                       </div>
                     </td>

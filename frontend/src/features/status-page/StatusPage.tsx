@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { Globe, CheckCircle2, AlertTriangle, XCircle, Clock, ArrowUpRight } from 'lucide-react';
+import WorldIcon from '@/components/ui/world-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
+import XIcon from '@/components/ui/x-icon';
+import ExternalLinkIcon from '@/components/ui/external-link-icon';
 import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';
 import { useServices } from '@/hooks/useApi';
 
 const statusIcon: Record<string, React.ElementType> = {
-  HEALTHY: CheckCircle2,
-  DEGRADED: AlertTriangle,
-  DOWN: XCircle,
+  HEALTHY: CheckedIcon,
+  DEGRADED: TriangleAlertIcon,
+  DOWN: XIcon,
 };
 
 const statusColor: Record<string, string> = {
@@ -40,9 +44,9 @@ export default function StatusPage() {
           <p className="text-sm text-gray-500 mt-1">Live system status and uptime history</p>
         </div>
         <button className="flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-sm text-blue-400 font-medium hover:bg-blue-500/20 transition-colors">
-          <Globe className="w-4 h-4" />
+          <WorldIcon className="w-4 h-4" />
           Public Status Page
-          <ArrowUpRight className="w-3.5 h-3.5" />
+          <ExternalLinkIcon className="w-3.5 h-3.5" />
         </button>
       </div>
 
@@ -50,9 +54,9 @@ export default function StatusPage() {
       <div className={`rounded-2xl text-white bg-neutral-900 border p-6 transition-colors ${overallOk ? 'border-green-500/40' : 'border-red-500/40'}`}>
         <div className="flex items-center gap-3">
           {overallOk ? (
-            <CheckCircle2 className="w-8 h-8 text-green-500" />
+            <CheckedIcon className="w-8 h-8 text-green-500" />
           ) : (
-            <AlertTriangle className="w-8 h-8 text-yellow-500" />
+            <TriangleAlertIcon className="w-8 h-8 text-yellow-500" />
           )}
           <div>
             <h2 className="text-xl font-semibold text-white">
@@ -101,7 +105,7 @@ export default function StatusPage() {
           <h2 className="text-base font-semibold text-white mb-4">Service Status</h2>
           <div className="space-y-2">
             {services.map((svc: any) => {
-              const Icon = statusIcon[svc.status] || CheckCircle2;
+              const Icon = statusIcon[svc.status] || CheckedIcon;
               return (
                 <div key={svc.id} className="flex items-center justify-between py-2.5 border-b border-neutral-800 last:border-0">
                   <div className="flex items-center gap-3">

@@ -2,21 +2,21 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useIncident, useIncidentTimeline } from '@/hooks/useApi';
 import { 
-  ArrowLeft, 
-  AlertTriangle, 
-  Clock, 
-  User, 
   GitPullRequest, 
-  ExternalLink, 
-  FileCode, 
-  Check, 
   Copy, 
-  Sparkles, 
-  Github, 
   Bot,
   BrainCircuit,
   FileDiff
 } from 'lucide-react';
+import ArrowNarrowLeftIcon from '@/components/ui/arrow-narrow-left-icon';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
+import ClockIcon from '@/components/ui/clock-icon';
+import UsersIcon from '@/components/ui/users-icon';
+import ExternalLinkIcon from '@/components/ui/external-link-icon';
+import FileDescriptionIcon from '@/components/ui/file-description-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import SparklesIcon from '@/components/ui/sparkles-icon';
+import GithubIcon from '@/components/ui/github-icon';
 
 export default function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +36,7 @@ export default function IncidentDetail() {
   if (!incident) {
     return (
       <div className="text-center py-12 text-gray-500">
-        <AlertTriangle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+        <TriangleAlertIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
         <p>Incident not found</p>
         <Link to="/incidents" className="text-blue-500 hover:underline mt-2 inline-block">
           Back to incidents
@@ -91,7 +91,7 @@ export default function IncidentDetail() {
   return (
     <div className="space-y-6">
       <Link to="/incidents" className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200">
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowNarrowLeftIcon className="w-4 h-4" />
         Back to incidents
       </Link>
 
@@ -110,28 +110,28 @@ export default function IncidentDetail() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-              <Clock className="w-3 h-3" />
+              <ClockIcon className="w-3 h-3" />
               State
             </div>
             <span className="text-sm font-medium">{incident.state}</span>
           </div>
           <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-              <Clock className="w-3 h-3" />
+              <ClockIcon className="w-3 h-3" />
               Created
             </div>
             <span className="text-sm">{new Date(incident.createdAt).toLocaleString()}</span>
           </div>
           <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-              <User className="w-3 h-3" />
+              <UsersIcon className="w-3 h-3" />
               Assigned To
             </div>
             <span className="text-sm">{incident.assignedTo || 'Unassigned'}</span>
           </div>
           <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-3">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-              <AlertTriangle className="w-3 h-3" />
+              <TriangleAlertIcon className="w-3 h-3" />
               Service
             </div>
             <span className="text-sm">{incident.serviceId}</span>
@@ -168,7 +168,7 @@ export default function IncidentDetail() {
                     className="text-lg font-bold text-white hover:text-purple-300 transition-colors flex items-center gap-1.5 group"
                   >
                     <span>Pull Request #{pr.number}: {pr.title}</span>
-                    <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-purple-300 transition-colors" />
+                    <ExternalLinkIcon className="w-4 h-4 text-gray-400 group-hover:text-purple-300 transition-colors" />
                   </a>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-gray-400 font-mono mt-1">
@@ -185,7 +185,7 @@ export default function IncidentDetail() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl px-4 py-2.5 text-xs shadow-lg shadow-purple-900/40 border border-purple-500/50 transition-all cursor-pointer shrink-0"
             >
-              <Github className="w-4 h-4" />
+              <GithubIcon className="w-4 h-4" />
               <span>View Pull Request on GitHub</span>
             </a>
           </div>
@@ -200,7 +200,7 @@ export default function IncidentDetail() {
                 </div>
                 {pr.aiDiagnosis.confidence && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/30">
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <SparklesIcon className="w-3.5 h-3.5" />
                     {(pr.aiDiagnosis.confidence * 100).toFixed(0)}% AI Confidence
                   </span>
                 )}
@@ -221,7 +221,7 @@ export default function IncidentDetail() {
                 {/* WHY Section */}
                 <div className="bg-neutral-950/80 border border-neutral-800 rounded-xl p-4 space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
-                    <Sparkles className="w-4 h-4" />
+                    <SparklesIcon className="w-4 h-4" />
                     <span>WHY (Causal Machine Learning Explanation)</span>
                   </div>
                   <p className="text-xs text-gray-300 leading-relaxed font-sans">
@@ -239,7 +239,7 @@ export default function IncidentDetail() {
                   <div className="flex flex-wrap gap-2">
                     {pr.aiDiagnosis.impactedFiles.map((file: string, idx: number) => (
                       <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-neutral-950 border border-neutral-800 text-xs font-mono text-gray-300">
-                        <FileCode className="w-3.5 h-3.5 text-purple-400" />
+                        <FileDescriptionIcon className="w-3.5 h-3.5 text-purple-400" />
                         {file}
                       </span>
                     ))}
@@ -261,7 +261,7 @@ export default function IncidentDetail() {
                   onClick={handleCopyDiff}
                   className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors bg-neutral-950 border border-neutral-800 px-2.5 py-1 rounded-lg cursor-pointer"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? <CheckedIcon className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copied ? 'Copied!' : 'Copy Diff'}</span>
                 </button>
               </div>
