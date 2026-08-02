@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
-import { DownChevron } from "@/components/ui/down-chevron";
+import DownChevron from '@/components/ui/down-chevron';
 import { cn } from "@/lib/utils";
 
 const Accordion = AccordionPrimitive.Root;

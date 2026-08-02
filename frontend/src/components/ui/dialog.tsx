@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { XIcon } from '@/components/ui/x-icon';
+import XIcon from '@/components/ui/x-icon';
 
 interface DialogContextValue {
   open: boolean;

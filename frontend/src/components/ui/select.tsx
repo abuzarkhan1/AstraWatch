@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { DownChevron } from '@/components/ui/down-chevron';
+import DownChevron from '@/components/ui/down-chevron';
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   options: Array<{ value: string; label: string }>;

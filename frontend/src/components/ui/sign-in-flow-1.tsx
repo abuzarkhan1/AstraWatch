@@ -6,15 +6,15 @@ import NumberFlow from "@number-flow/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { ShieldCheck } from '@/components/ui/shield-check';
-import { CpuIcon } from '@/components/ui/cpu-icon';
-import { ChartLineIcon } from '@/components/ui/chart-line-icon';
-import { CheckedIcon } from '@/components/ui/checked-icon';
-import { LockIcon } from '@/components/ui/lock-icon';
-import { ArrowNarrowRightIcon } from '@/components/ui/arrow-narrow-right-icon';
-import { ArrowNarrowLeftIcon } from '@/components/ui/arrow-narrow-left-icon';
-import { EyeIcon } from '@/components/ui/eye-icon';
-import { EyeOffIcon } from '@/components/ui/eye-off-icon';
+import ShieldCheck from '@/components/ui/shield-check';
+import CpuIcon from '@/components/ui/cpu-icon';
+import ChartLineIcon from '@/components/ui/chart-line-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import LockIcon from '@/components/ui/lock-icon';
+import ArrowNarrowRightIcon from '@/components/ui/arrow-narrow-right-icon';
+import ArrowNarrowLeftIcon from '@/components/ui/arrow-narrow-left-icon';
+import EyeIcon from '@/components/ui/eye-icon';
+import EyeOffIcon from '@/components/ui/eye-off-icon';
 
 export class CanvasRevealEffect extends React.Component<any> {
   render() {

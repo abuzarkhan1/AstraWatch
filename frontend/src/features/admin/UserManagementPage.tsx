@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { endpoints } from '@/lib/api';
 import { User, UserRole } from '@/types';
-import { UsersIcon } from '@/components/ui/users-icon';
-import { ShieldCheck } from '@/components/ui/shield-check';
-import { GearIcon } from '@/components/ui/gear-icon';
-import { MagnifierIcon } from '@/components/ui/magnifier-icon';
-import { CheckedIcon } from '@/components/ui/checked-icon';
-import { SparklesIcon } from '@/components/ui/sparkles-icon';
-import { DownChevron } from '@/components/ui/down-chevron';
-import { RefreshIcon } from '@/components/ui/refresh-icon';
-import { DotsHorizontalIcon } from '@/components/ui/dots-horizontal-icon';
-import { TriangleAlertIcon } from '@/components/ui/triangle-alert-icon';
-import { EyeIcon } from '@/components/ui/eye-icon';
+import UsersIcon from '@/components/ui/users-icon';
+import ShieldCheck from '@/components/ui/shield-check';
+import GearIcon from '@/components/ui/gear-icon';
+import MagnifierIcon from '@/components/ui/magnifier-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import SparklesIcon from '@/components/ui/sparkles-icon';
+import DownChevron from '@/components/ui/down-chevron';
+import RefreshIcon from '@/components/ui/refresh-icon';
+import DotsHorizontalIcon from '@/components/ui/dots-horizontal-icon';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
+import EyeIcon from '@/components/ui/eye-icon';
 import {
   UserX,
   CreditCard,

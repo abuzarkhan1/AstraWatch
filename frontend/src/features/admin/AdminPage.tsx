@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { endpoints } from '@/lib/api';
-import { GithubIcon } from '@/components/ui/github-icon';
-import { GearIcon } from '@/components/ui/gear-icon';
-import { CheckedIcon } from '@/components/ui/checked-icon';
-import { CodeIcon } from '@/components/ui/code-icon';
+import GithubIcon from '@/components/ui/github-icon';
+import GearIcon from '@/components/ui/gear-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import CodeIcon from '@/components/ui/code-icon';
 import GitHubIntegrationModal from './GitHubIntegrationModal';
 
 export default function AdminPage() {

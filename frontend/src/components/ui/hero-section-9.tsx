@@ -5,15 +5,15 @@ import { Link } from "react-router-dom";
 import { HeroSection as ShadcnHeroSection } from "@/components/ui/hero-section-shadcnui";
 import { SparklesComp } from "@/components/ui/sparkles";
 import { TimelineContent } from "@/components/ui/timeline-animation";
-import { XIcon } from '@/components/ui/x-icon';
-import { CpuIcon } from '@/components/ui/cpu-icon';
-import { RocketIcon } from '@/components/ui/rocket-icon';
-import { ChartLineIcon } from '@/components/ui/chart-line-icon';
-import { GithubIcon } from '@/components/ui/github-icon';
-import { BrandOpenaiIcon } from '@/components/ui/brand-openai-icon';
-import { BrandVercelIcon } from '@/components/ui/brand-vercel-icon';
-import { TerminalIcon } from '@/components/ui/terminal-icon';
-import { PawPrintIcon } from '@/components/ui/paw-print-icon';
+import XIcon from '@/components/ui/x-icon';
+import CpuIcon from '@/components/ui/cpu-icon';
+import RocketIcon from '@/components/ui/rocket-icon';
+import ChartLineIcon from '@/components/ui/chart-line-icon';
+import GithubIcon from '@/components/ui/github-icon';
+import BrandOpenaiIcon from '@/components/ui/brand-openai-icon';
+import BrandVercelIcon from '@/components/ui/brand-vercel-icon';
+import TerminalIcon from '@/components/ui/terminal-icon';
+import PawPrintIcon from '@/components/ui/paw-print-icon';
 
 const navLinksData = [
   { label: 'Features', href: '#features' },

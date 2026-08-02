@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { XIcon } from '@/components/ui/x-icon';
-import { CheckedIcon } from '@/components/ui/checked-icon';
-import { TriangleAlertIcon } from '@/components/ui/triangle-alert-icon';
-import { RefreshIcon } from '@/components/ui/refresh-icon';
-import { GithubIcon } from '@/components/ui/github-icon';
-import { ShieldCheck } from '@/components/ui/shield-check';
-import { SparklesIcon } from '@/components/ui/sparkles-icon';
-import { CodeIcon } from '@/components/ui/code-icon';
+import XIcon from '@/components/ui/x-icon';
+import CheckedIcon from '@/components/ui/checked-icon';
+import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
+import RefreshIcon from '@/components/ui/refresh-icon';
+import GithubIcon from '@/components/ui/github-icon';
+import ShieldCheck from '@/components/ui/shield-check';
+import SparklesIcon from '@/components/ui/sparkles-icon';
+import CodeIcon from '@/components/ui/code-icon';
 import { endpoints } from '@/lib/api';
 
 interface GitHubIntegrationModalProps {

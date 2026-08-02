@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import MagneticButton from "@/components/ui/magnetic-button";
 import { motion, type Variants } from "framer-motion";
-import { ArrowNarrowRightIcon } from "@/components/ui/arrow-narrow-right-icon";
-import { SparklesIcon } from "@/components/ui/sparkles-icon";
+import ArrowNarrowRightIcon from '@/components/ui/arrow-narrow-right-icon';
+import SparklesIcon from '@/components/ui/sparkles-icon';
 
 import { Link } from "react-router-dom";
 import VerticalCutReveal from "@/components/ui/vertical-cut-reveal";
