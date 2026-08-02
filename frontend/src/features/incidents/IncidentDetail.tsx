@@ -45,40 +45,7 @@ export default function IncidentDetail() {
     );
   }
 
-  // Fallback demo PR if incident doesn't have explicit githubPR from backend
-  const pr = incident.githubPR || {
-    number: 42,
-    title: 'astrawatch/fix-incident-123',
-    repo: 'astrawatch/payment-service',
-    url: 'https://github.com/astrawatch/payment-service/pull/42',
-    status: 'OPEN',
-    branch: 'astrawatch/fix-incident-123',
-    aiDiagnosis: {
-      what: 'eBPF socket buffer overflow caused TCP retransmission spikes during high-throughput ingress traffic.',
-      why: 'Socket read buffer pool size (64KB) was undersized for peak 10Gbps ingress burst traffic, forcing TCP window scaling drops and kernel queue exhaustion.',
-      confidence: 0.94,
-      impactedFiles: [
-        'services/payment-service/internal/socket/buffer.go',
-        'services/payment-service/config/sysctl.conf',
-      ],
-    },
-    codeDiff: `--- a/services/payment-service/internal/socket/buffer.go
-+++ b/services/payment-service/internal/socket/buffer.go
-@@ -14,7 +14,7 @@ const (
--   DefaultMaxSocketBuffer = 65536 // 64KB
-+   DefaultMaxSocketBuffer = 4194304 // 4MB dynamic pool buffer
-    TcpWindowScaleFactor  = 7
- )
-
- func ConfigureRingBuffer(conn *net.TCPConn) error {
--   return conn.SetReadBuffer(DefaultMaxSocketBuffer)
-+   if err := conn.SetReadBuffer(DefaultMaxSocketBuffer); err != nil {
-+       log.Warnf("Failed to expand socket buffer: %v", err)
-+       return err
-+   }
-+   return nil
- }`,
-  };
+  const pr = incident.githubPR;
 
   const handleCopyDiff = () => {
     if (pr.codeDiff) {

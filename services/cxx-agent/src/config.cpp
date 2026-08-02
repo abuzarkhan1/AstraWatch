@@ -21,7 +21,9 @@ AgentConfig AgentConfig::from_env() {
     cfg.hostname = get_env("HOSTNAME", "unknown");
     cfg.cluster = get_env("ASTRAWATCH_CLUSTER", "default");
     cfg.tenant_id = get_env("ASTRAWATCH_TENANT", "default");
-    cfg.collector_address = get_env("ASTRAWATCH_COLLECTOR_ADDR", "localhost:8080");
+    // The collector's gRPC ingest server binds GRPC_PORT (default 9090), not the
+    // HTTP port (8080). Pointing gRPC at the HTTP port was a silent config bug.
+    cfg.collector_address = get_env("ASTRAWATCH_COLLECTOR_ADDR", "localhost:9090");
     cfg.use_mtls = get_env("ASTRAWATCH_MTLS_ENABLED", "false") == "true";
     cfg.tls_cert_path = get_env("ASTRAWATCH_TLS_CERT", "");
     cfg.tls_key_path = get_env("ASTRAWATCH_TLS_KEY", "");

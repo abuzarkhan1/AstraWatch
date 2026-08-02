@@ -20,13 +20,7 @@ const statusColor: Record<string, string> = {
   DOWN: 'text-red-500',
 };
 
-const uptimeCategories = [
-  { label: 'All Systems Operational', color: 'bg-green-500', uptime: '99.98%' },
-  { label: 'API Services', color: 'bg-green-500', uptime: '99.95%' },
-  { label: 'Dashboard & UI', color: 'bg-green-500', uptime: '100%' },
-  { label: 'Alerting Pipeline', color: 'bg-yellow-500', uptime: '99.2%' },
-  { label: 'Data Ingestion', color: 'bg-green-500', uptime: '99.87%' },
-];
+const uptimeCategories: any[] = [];
 
 export default function StatusPage() {
   const { data: services = [], isLoading } = useServices();

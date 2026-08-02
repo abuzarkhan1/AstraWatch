@@ -64,58 +64,61 @@ function WaterfallView({ spans }: { spans: Span[] }) {
 export default function TraceExplorerPage() {
   const [search, setSearch] = useState('');
   const now = Date.now();
-  const defaultTraces: Trace[] = [
-    {
-      traceId: 'tr-98a4f12b89c04112a4501b87c001',
-      startTime: now - 3 * 60 * 1000,
-      duration: 345.2,
-      spanCount: 5,
-      serviceCount: 3,
-      spans: [
-        { spanId: 'sp-1', operationName: 'POST /api/v1/billing/checkout-session', service: 'Payment API', duration: 345.2, startTime: now - 3 * 60 * 1000, status: 'OK' },
-        { spanId: 'sp-2', parentSpanId: 'sp-1', operationName: 'SELECT * FROM users WHERE id = $1', service: 'User Service', duration: 12.4, startTime: now - 3 * 60 * 1000 + 15, status: 'OK' },
-        { spanId: 'sp-3', parentSpanId: 'sp-1', operationName: 'Stripe API: POST /v1/checkout/sessions', service: 'Payment API', duration: 280.0, startTime: now - 3 * 60 * 1000 + 35, status: 'OK' },
-        { spanId: 'sp-4', parentSpanId: 'sp-1', operationName: 'Publish Kafka event: billing-checkout', service: 'Payment API', duration: 4.1, startTime: now - 3 * 60 * 1000 + 320, status: 'OK' },
-        { spanId: 'sp-5', parentSpanId: 'sp-1', operationName: 'Audit Log write', service: 'Auth Gateway', duration: 12.0, startTime: now - 3 * 60 * 1000 + 325, status: 'OK' },
-      ],
-    },
-    {
-      traceId: 'tr-55c918a204e19900bb61c201',
-      startTime: now - 14 * 60 * 1000,
-      duration: 1250.8,
-      spanCount: 4,
-      serviceCount: 2,
-      spans: [
-        { spanId: 'sp-10', operationName: 'GET /api/v1/catalog/services', service: 'User Service', duration: 1250.8, startTime: now - 14 * 60 * 1000, status: 'ERROR' },
-        { spanId: 'sp-11', parentSpanId: 'sp-10', operationName: 'PostgreSQL: SELECT * FROM services', service: 'User Service', duration: 1100.2, startTime: now - 14 * 60 * 1000 + 20, status: 'ERROR' },
-        { spanId: 'sp-12', parentSpanId: 'sp-10', operationName: 'Redis GET service_cache', service: 'User Service', duration: 1.5, startTime: now - 14 * 60 * 1000 + 1125, status: 'OK' },
-        { spanId: 'sp-13', parentSpanId: 'sp-10', operationName: 'Fallback: In-Memory Default Catalog', service: 'User Service', duration: 110.0, startTime: now - 14 * 60 * 1000 + 1130, status: 'OK' },
-      ],
-    },
-  ];
-
-  const [traces, setTraces] = useState<Trace[]>(defaultTraces);
-  const [selectedTrace, setSelectedTrace] = useState<Trace | null>(defaultTraces[0]);
+  const [traces, setTraces] = useState<Trace[]>([]);
+  const [selectedTrace, setSelectedTrace] = useState<Trace | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['traces', search],
     queryFn: async () => {
       try {
         const { data } = await endpoints.traces.query({ q: search || 'all' });
-        if (data?.items || Array.isArray(data)) return data;
+        // The collector wraps results in {success, data: {items}, ...} (audit F7);
+        // unwrap defensively so real backend traces render instead of the mock
+        // fallback. Backend startTime/duration arrive as RFC3339 strings and
+        // numbers, so normalize to the numeric epoch-ms shape the UI expects.
+        const items = data?.data?.items ?? data?.data ?? data?.items ?? null;
+        if (Array.isArray(items)) {
+          // Guard against a missing/undefined startTime so the waterfall's
+          // min/max math never sees NaN from a real backend payload.
+          const toMs = (v: any) => (v ? new Date(v).getTime() : 0);
+          const normalized: Trace[] = items.map((t: any) => ({
+            traceId: t.traceId,
+            startTime: toMs(t.startTime),
+            duration: Number(t.duration) || 0,
+            spanCount: Number(t.spanCount) || (t.spans?.length || 0),
+            serviceCount: Number(t.serviceCount) || 0,
+            spans: (t.spans || []).map((s: any) => ({
+              spanId: s.spanId,
+              parentSpanId: s.parentSpanId,
+              operationName: s.operationName,
+              service: s.service,
+              startTime: toMs(s.startTime),
+              duration: Number(s.duration) || 0,
+              status: s.status === 'ERROR' ? 'ERROR' : 'OK',
+              tags: s.tags,
+            })),
+          }));
+          return { items: normalized };
+        }
       } catch (err) {
         console.warn('API fallback to mock traces');
       }
-      return { items: defaultTraces };
+      return { items: [] };
     },
     enabled: true,
   });
 
   useEffect(() => {
-    if (data?.items || Array.isArray(data)) {
-      const items = data.items || data;
-      setTraces(items);
-      if (!selectedTrace && items.length > 0) setSelectedTrace(items[0]);
+    const items = (data as { items?: Trace[] } | Trace[] | null | undefined) as
+      | { items?: Trace[] }
+      | Trace[]
+      | null
+      | undefined;
+    if (!items) return;
+    const list = Array.isArray(items) ? items : items.items;
+    if (Array.isArray(list) && list.length > 0) {
+      setTraces(list);
+      setSelectedTrace((prev) => prev || list[0]);
     }
   }, [data]);
 

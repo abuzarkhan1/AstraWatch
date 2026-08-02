@@ -212,10 +212,13 @@ func main() {
 
 	catalogGroup := router.Group("/api/v1/catalog")
 	{
-		catalogGroup.GET("/services", listServices)
-		catalogGroup.GET("/services/:id", getServiceDetail)
+		// Catalog endpoints are backed by real ingested telemetry (audit V2: they
+		// were hardcoded stubs returning fake services). listServices now reflects
+		// the distinct services the collector actually sees, tenant-scoped.
+		catalogGroup.GET("/services", func(c *gin.Context) { listServices(c, queryService) })
+		catalogGroup.GET("/services/:id", func(c *gin.Context) { getServiceDetail(c, queryService) })
 		catalogGroup.POST("/services", createService)
-		catalogGroup.GET("/services/:id/health", getServiceHealth)
+		catalogGroup.GET("/services/:id/health", func(c *gin.Context) { getServiceHealth(c, queryService) })
 		catalogGroup.PUT("/services/:id", updateService)
 		catalogGroup.GET("/services/:id/dependencies", getServiceDependencies)
 		catalogGroup.POST("/services/:id/scorecard", submitServiceScorecard)
@@ -323,7 +326,10 @@ func corsMiddleware() gin.HandlerFunc {
 func authMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
-		bypassed := path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" || path == "/v1/telemetry" || strings.HasPrefix(path, "/api/v1/catalog") || strings.HasPrefix(path, "/api/v1/metrics")
+		// /api/v1/catalog is intentionally NOT bypassed (audit V2: it was wide open
+		// and returned fake data). Catalog reads now require a valid JWT and are
+		// tenant-scoped like every other protected route.
+		bypassed := path == "/v1/health" || path == "/metrics" || path == "/v1/ingest/metrics/batch" || path == "/v1/ingest/logs" || path == "/v1/ingest/logs/stream" || path == "/v1/ingest/traces" || path == "/v1/agent/metrics" || path == "/v1/agent/health" || path == "/v1/telemetry" || strings.HasPrefix(path, "/api/v1/metrics")
 
 		auth := c.GetHeader("Authorization")
 		if auth == "" {
@@ -377,43 +383,93 @@ func authMiddleware(secret string) gin.HandlerFunc {
 	}
 }
 
-func listServices(c *gin.Context) {
-	writeEnvelopeOuter(c, http.StatusOK, gin.H{
-		"services": []gin.H{
-			{"id": "svc-1", "name": "payment-v2", "team": "payments", "tier": "CRITICAL", "healthScore": 98},
-			{"id": "svc-2", "name": "user-service", "team": "identity", "tier": "CRITICAL", "healthScore": 95},
-			{"id": "svc-3", "name": "notification-svc", "team": "platform", "tier": "HIGH", "healthScore": 87},
-		},
-	}, nil)
+func listServices(c *gin.Context, queryService *query.QueryService) {
+	tenantID := tenantFromClaims(c)
+	services, err := queryService.ListServices(c.Request.Context(), tenantID)
+	if err != nil {
+		writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Enrich each real service with a health score computed from its log stream.
+	result := make([]gin.H, 0, len(services))
+	for _, id := range services {
+		healthScore, err := queryService.ServiceHealth(c.Request.Context(), tenantID, id, 15*time.Minute)
+		if err != nil {
+			healthScore = 0
+		}
+		result = append(result, gin.H{
+			"id":          id,
+			"name":        id,
+			"team":        "",
+			"tier":        "",
+			"healthScore": int(healthScore),
+		})
+	}
+	writeEnvelopeOuter(c, http.StatusOK, gin.H{"services": result}, nil)
 }
 
-func getServiceDetail(c *gin.Context) {
+func getServiceDetail(c *gin.Context, queryService *query.QueryService) {
 	serviceID := c.Param("id")
+	tenantID := tenantFromClaims(c)
+
+	services, err := queryService.ListServices(c.Request.Context(), tenantID)
+	if err != nil {
+		writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
+		return
+	}
+	found := false
+	for _, id := range services {
+		if id == serviceID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		writeEnvelopeOuter(c, http.StatusNotFound, nil, gin.H{"error": "service not found in ingested telemetry"})
+		return
+	}
+
+	healthScore, err := queryService.ServiceHealth(c.Request.Context(), tenantID, serviceID, 15*time.Minute)
+	if err != nil {
+		healthScore = 0
+	}
 	writeEnvelopeOuter(c, http.StatusOK, gin.H{
-		"id":        serviceID,
-		"name":      serviceID,
-		"team":      "unknown",
-		"tier":      "MEDIUM",
-		"endpoints": []string{},
-		"dependencies": []gin.H{
-			{"id": "svc-db", "name": "postgres-primary", "type": "database"},
-		},
+		"id":          serviceID,
+		"name":        serviceID,
+		"team":        "",
+		"tier":        "",
+		"healthScore": int(healthScore),
+		"endpoints":   []string{},
 	}, nil)
 }
 
 func createService(c *gin.Context) {
-	writeEnvelopeOuter(c, http.StatusCreated, gin.H{"id": "svc-new", "message": "service registered"}, nil)
+	// No service-registry persistence exists in the collector — the catalog is a
+	// read-side view of ingested telemetry. Honest failure instead of fake success.
+	writeEnvelopeOuter(c, http.StatusNotImplemented, nil, gin.H{"error": "service registration is not supported; the catalog is derived from ingested telemetry"})
 }
 
-func getServiceHealth(c *gin.Context) {
+func getServiceHealth(c *gin.Context, queryService *query.QueryService) {
 	serviceID := c.Param("id")
+	tenantID := tenantFromClaims(c)
+
+	healthScore, err := queryService.ServiceHealth(c.Request.Context(), tenantID, serviceID, 15*time.Minute)
+	if err != nil {
+		writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
+		return
+	}
+	status := "healthy"
+	if healthScore < 60 {
+		status = "degraded"
+	}
+	if healthScore < 30 {
+		status = "critical"
+	}
 	writeEnvelopeOuter(c, http.StatusOK, gin.H{
 		"id":          serviceID,
-		"status":      "healthy",
-		"healthScore": 95,
-		"uptime":      "72h",
-		"latencyP95":  "45ms",
-		"errorRate":   "0.02%",
+		"status":      status,
+		"healthScore": int(healthScore),
 	}, nil)
 }
 
@@ -424,17 +480,17 @@ func updateService(c *gin.Context) {
 		writeEnvelopeOuter(c, http.StatusBadRequest, nil, gin.H{"error": "invalid payload"})
 		return
 	}
-	writeEnvelopeOuter(c, http.StatusOK, gin.H{"id": serviceID, "message": "service updated", "updated": req}, nil)
+	// No registry store — refuse to fake an update.
+	writeEnvelopeOuter(c, http.StatusNotImplemented, nil, gin.H{"error": "service updates are not supported; the catalog is derived from ingested telemetry", "id": serviceID})
 }
 
 func getServiceDependencies(c *gin.Context) {
 	serviceID := c.Param("id")
+	// No dependency graph is collected — return an honest empty list rather than
+	// fabricated postgres/redis edges.
 	writeEnvelopeOuter(c, http.StatusOK, gin.H{
-		"id": serviceID,
-		"dependencies": []gin.H{
-			{"id": "svc-db", "name": "postgres-primary", "type": "database"},
-			{"id": "svc-redis", "name": "redis-cache", "type": "cache"},
-		},
+		"id":           serviceID,
+		"dependencies": []gin.H{},
 	}, nil)
 }
 
@@ -445,7 +501,8 @@ func submitServiceScorecard(c *gin.Context) {
 		writeEnvelopeOuter(c, http.StatusBadRequest, nil, gin.H{"error": "invalid payload"})
 		return
 	}
-	writeEnvelopeOuter(c, http.StatusOK, gin.H{"id": serviceID, "message": "scorecard submitted", "scorecard": req}, nil)
+	// No scorecard store — refuse to fake a submission.
+	writeEnvelopeOuter(c, http.StatusNotImplemented, nil, gin.H{"error": "scorecards are not supported; no persistence exists", "id": serviceID})
 }
 
 

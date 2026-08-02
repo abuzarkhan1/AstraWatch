@@ -232,6 +232,8 @@ class RealtimeGateway {
     const cacheKey = `${eventType}:${key}`;
     const now = Date.now();
 
+    this.evictExpiredEvents(now);
+
     this.eventCache.set(cacheKey, value);
     this.eventCacheTimestamps.set(cacheKey, now);
 
@@ -240,6 +242,20 @@ class RealtimeGateway {
       if (oldest) {
         this.eventCache.delete(oldest[0]);
         this.eventCacheTimestamps.delete(oldest[0]);
+      }
+    }
+  }
+
+  // TTL-based eviction (audit V2: EVENT_CACHE_TTL_MS was defined in config but
+  // never referenced — replay/dedup would hold stale events forever). Both the
+  // size cap and the TTL now bound the cache.
+  evictExpiredEvents(now) {
+    const ttl = config.EVENT_CACHE_TTL_MS;
+    if (!ttl || ttl <= 0) return;
+    for (const [cacheKey, ts] of this.eventCacheTimestamps.entries()) {
+      if (now - ts > ttl) {
+        this.eventCache.delete(cacheKey);
+        this.eventCacheTimestamps.delete(cacheKey);
       }
     }
   }

@@ -362,6 +362,80 @@ func (qs *QueryService) QueryTracesTenant(ctx context.Context, tenantID, service
 	return results, nil
 }
 
+// ── Service catalog (audit V2: catalog endpoints were hardcoded stubs) ─────
+// The catalog now reflects what the collector actually ingests: distinct
+// service_ids observed across metrics/logs/traces, with a health score derived
+// from recent error-level log ratio. No fabricated services.
+
+// ListServices returns the distinct service_ids seen in telemetry, optionally
+// tenant-scoped. Empty when nothing has been ingested yet.
+func (qs *QueryService) ListServices(ctx context.Context, tenantID string) ([]string, error) {
+	query := `SELECT DISTINCT service_id FROM (
+		SELECT service_id FROM metrics
+		UNION ALL
+		SELECT service_id FROM logs
+		UNION ALL
+		SELECT service_id FROM traces
+	)`
+	args := []interface{}{}
+	if tenantID != "" {
+		query = `SELECT DISTINCT service_id FROM (
+			SELECT service_id FROM metrics WHERE tenant_id = ?
+			UNION ALL
+			SELECT service_id FROM logs WHERE tenant_id = ?
+			UNION ALL
+			SELECT service_id FROM traces WHERE tenant_id = ?
+		)`
+		args = []interface{}{tenantID, tenantID, tenantID}
+	}
+
+	rows, err := qs.conn.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list services failed: %w", err)
+	}
+	defer rows.Close()
+
+	seen := map[string]bool{}
+	var services []string
+	for rows.Next() {
+		var service string
+		if err := rows.Scan(&service); err != nil {
+			return nil, fmt.Errorf("list services scan failed: %w", err)
+		}
+		if service != "" && !seen[service] {
+			seen[service] = true
+			services = append(services, service)
+		}
+	}
+	return services, nil
+}
+
+// ServiceHealth computes a 0-100 health score for a service from the error-level
+// log ratio in the window. Returns 100 when there is no log data (no evidence of
+// errors — not a fabricated number).
+func (qs *QueryService) ServiceHealth(ctx context.Context, tenantID, serviceID string, window time.Duration) (float64, error) {
+	query := `SELECT countIf(level IN ('error','critical','fatal')), count() FROM logs
+		WHERE service_id = ? AND ts >= ? AND ts <= ?`
+	args := []interface{}{serviceID, time.Now().UTC().Add(-window), time.Now().UTC()}
+	if tenantID != "" {
+		query += " AND tenant_id = ?"
+		args = append(args, tenantID)
+	}
+
+	var errCount, total uint64
+	if err := qs.conn.QueryRow(ctx, query, args...).Scan(&errCount, &total); err != nil {
+		return 0, fmt.Errorf("service health query failed: %w", err)
+	}
+	if total == 0 {
+		return 100, nil
+	}
+	score := 100.0 - (float64(errCount)/float64(total))*100.0
+	if score < 0 {
+		score = 0
+	}
+	return score, nil
+}
+
 func statusOfTags(tags map[string]string) string {
 	if tags == nil {
 		return ""

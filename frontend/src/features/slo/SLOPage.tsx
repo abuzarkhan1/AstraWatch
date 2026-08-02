@@ -3,11 +3,7 @@ import ArrowNarrowUpIcon from '@/components/ui/arrow-narrow-up-icon';
 import ArrowNarrowDownIcon from '@/components/ui/arrow-narrow-down-icon';
 import { useServices } from '@/hooks/useApi';
 
-const sloTargets: Record<string, number> = {
-  'Payment API': 99.95,
-  'User Service': 99.5,
-  'Notification Service': 99.0,
-};
+const sloTargets: Record<string, number> = {};
 
 import { useQuery } from '@tanstack/react-query';
 import { endpoints } from '@/lib/api';

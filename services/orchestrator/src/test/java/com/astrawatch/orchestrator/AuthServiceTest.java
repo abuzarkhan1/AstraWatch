@@ -35,15 +35,18 @@ public class AuthServiceTest {
         when(userRepository.findByEmail("user@google.com"))
                 .thenReturn(Optional.empty());
 
-        User newUser = User.builder()
-                .id(UUID.randomUUID())
-                .email("user@google.com")
-                .oauthProvider("google")
-                .oauthProviderId("g_12345")
-                .emailVerified(true)
-                .build();
-
-        when(userRepository.save(any(User.class))).thenReturn(newUser);
+        // JPA's save() returns the persisted entity (the same instance it was
+        // given), including any fields the service set before persisting (name,
+        // avatar, emailVerified...) and an id generated at persist time. Modeling
+        // that here keeps the profile-sync logic exercised on login from
+        // spuriously re-saving, returning null, or NPE-ing on a missing id.
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User persisted = invocation.getArgument(0);
+            if (persisted.getId() == null) {
+                persisted.setId(UUID.randomUUID());
+            }
+            return persisted;
+        });
 
         Map<String, String> result = authService.processOAuth2Login("google", null, null, null, "g_12345", "user@google.com", "Google User", null);
 
@@ -71,8 +74,21 @@ public class AuthServiceTest {
 
         when(userRepository.findByOauthProviderAndOauthProviderId("github", "gh_67890"))
                 .thenReturn(Optional.of(existingUser));
+        // Profile sync on login may persist the existing user (name differs from
+        // the persisted row); save() must return the entity like JPA does, or the
+        // login flow NPEs on user.getId().
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User persisted = invocation.getArgument(0);
+            if (persisted.getId() == null) {
+                persisted.setId(UUID.randomUUID());
+            }
+            return persisted;
+        });
 
-        Map<String, String> result = authService.processOAuth2Login("github", "code123", null, null, "gh_67890", "developer@github.com", "Dev", null);
+        // code=null keeps the test hermetic: no live POST to github.com's token
+        // endpoint. The providerId/email are passed in directly, which still
+        // exercises the existing-user lookup + profile-sync path.
+        Map<String, String> result = authService.processOAuth2Login("github", null, null, null, "gh_67890", "developer@github.com", "Dev", null);
 
         assertNotNull(result.get("accessToken"));
         assertEquals("developer@github.com", result.get("email"));

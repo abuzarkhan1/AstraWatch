@@ -89,14 +89,6 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_log(actor_id, created_at DESC);
 
--- Insert default admin user (password: admin123)
-INSERT INTO users (email, password_hash, email_verified) VALUES
-    ('admin@astrawatch.io', '$2a$10$dummy_hash_for_admin', true)
-ON CONFLICT (email) DO NOTHING;
-
--- Insert default team
-INSERT INTO teams (name) VALUES ('Platform Team')
-ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS slo_definitions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

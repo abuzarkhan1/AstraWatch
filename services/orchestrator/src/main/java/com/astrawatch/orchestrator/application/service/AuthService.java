@@ -350,12 +350,6 @@ public class AuthService {
     }
 
     public Map<String, String> acceptInvite(String inviteToken) {
-        String mockUserId = UUID.randomUUID().toString();
-        String newAccess = generateToken(mockUserId, "invited@astrawatch.io", null, "VIEWER");
-        String newRefresh = generateRefreshToken(mockUserId);
-        Map<String, String> tokens = new HashMap<>();
-        tokens.put("accessToken", newAccess);
-        tokens.put("refreshToken", newRefresh);
-        return tokens;
+        throw new UnsupportedOperationException("acceptInvite not implemented yet. Dummy data generation removed.");
     }
 }

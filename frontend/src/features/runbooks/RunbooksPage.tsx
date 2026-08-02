@@ -6,13 +6,7 @@ import RightChevron from '@/components/ui/right-chevron';
 import ClockIcon from '@/components/ui/clock-icon';
 import HashtagIcon from '@/components/ui/hashtag-icon';
 
-const sampleRunbooks = [
-  { id: '1', title: 'Database Connection Pool Exhaustion', tags: ['database', 'postgresql'], lastUpdated: new Date(Date.now() - 86400000 * 2).toISOString(), severity: 'HIGH', steps: 6 },
-  { id: '2', title: 'K8s Pod CrashLoopBackOff Recovery', tags: ['kubernetes', 'pods'], lastUpdated: new Date(Date.now() - 86400000 * 5).toISOString(), severity: 'CRITICAL', steps: 8 },
-  { id: '3', title: 'High Memory Usage — Node Restart', tags: ['memory', 'nodes'], lastUpdated: new Date(Date.now() - 86400000 * 1).toISOString(), severity: 'STANDARD', steps: 4 },
-  { id: '4', title: 'SSL Certificate Expiry Renewal', tags: ['ssl', 'certificates'], lastUpdated: new Date(Date.now() - 86400000 * 10).toISOString(), severity: 'STANDARD', steps: 5 },
-  { id: '5', title: 'Kafka Consumer Lag Remediation', tags: ['kafka', 'streaming'], lastUpdated: new Date(Date.now() - 86400000 * 3).toISOString(), severity: 'HIGH', steps: 7 },
-];
+const sampleRunbooks: any[] = [];
 
 const severityBadge: Record<string, string> = {
   CRITICAL: 'border-red-500/30 bg-red-500/10 text-red-400',

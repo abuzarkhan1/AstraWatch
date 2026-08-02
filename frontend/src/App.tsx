@@ -25,6 +25,7 @@ const PostmortemsPage = React.lazy(() => import('@/features/postmortems/Postmort
 const SyntheticsPage = React.lazy(() => import('@/features/synthetics/SyntheticsPage'));
 const AdminPage = React.lazy(() => import('@/features/admin/AdminPage'));
 const UserManagementPage = React.lazy(() => import('@/features/admin/UserManagementPage'));
+const NotFoundPage = React.lazy(() => import('@/features/misc/NotFoundPage'));
 
 import CustomCursor from '@/components/ui/custom-cursor';
 import PageTransition from '@/components/ui/page-transition';
@@ -83,6 +84,7 @@ export default function App() {
           <Route path="/admin" element={<Suspense fallback={<LoadingFallback message="Loading Control Plane Admin..." />}><AdminPage /></Suspense>} />
           <Route path="/users" element={<Suspense fallback={<LoadingFallback message="Loading User Management..." />}><UserManagementPage /></Suspense>} />
         </Route>
+          <Route path="*" element={<Suspense fallback={<LoadingFallback message="Lost in space..." />}><NotFoundPage /></Suspense>} />
         </Routes>
       </PageTransition>
     </BrowserRouter>

@@ -106,7 +106,7 @@ void test_config_defaults() {
     std::cout << "test_config_defaults... ";
 
     auto cfg = AgentConfig::defaults();
-    assert(cfg.collector_address == "localhost:8080");
+    assert(cfg.collector_address == "localhost:9090");
     assert(cfg.batch_interval.count() == 500);
     assert(cfg.buffer_size_bytes == 100 * 1024 * 1024);
     assert(cfg.enable_sched_probe == true);

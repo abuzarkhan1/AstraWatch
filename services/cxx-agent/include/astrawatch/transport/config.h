@@ -15,7 +15,7 @@ struct AgentConfig {
     std::string tenant_id = "default";
 
     // Collector connection
-    std::string collector_address = "localhost:8080";
+    std::string collector_address = "localhost:9090";
     bool use_mtls = false;
     std::string tls_cert_path;
     std::string tls_key_path;

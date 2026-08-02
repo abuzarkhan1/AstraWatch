@@ -51,6 +51,26 @@
             <span th:text="${description}">Anomaly score high</span>
         </div>
 
+        <!-- Real root-cause diagnosis from the analyzer (audit F3/F5) — previously
+             the template dropped the rootCause variable entirely and emails carried
+             only generic text. -->
+        <div class="description-box" style="border-color:#1f6beb;background:#0d1a2e">
+            <strong style="color:#58a6ff">Root Cause & Diagnosis:</strong><br/>
+            <span th:text="${rootCause}">Analysis pending — see incident for details.</span>
+        </div>
+
+        <!-- Boundary notes: what AstraWatch did and did NOT do (audit V5 — "no
+             full access"). This is the explicit boundary disclosure the plan
+             requires in every alert email. -->
+        <div style="margin:16px 0;padding:12px;background:#21262d;border-radius:8px;border:1px solid #30363d;font-size:12px;line-height:1.6;color:#8b949e">
+            <strong style="color:#c9d1d9">What was done &amp; boundaries:</strong>
+            <ul style="margin:8px 0 0 0;padding-left:18px">
+                <li>This is a detection alert — no action was taken automatically.</li>
+                <li>Any healing action is risk-scored and approval-gated; the operator only executes approved actions under blast-radius guards.</li>
+                <li>Protected namespaces, critical workloads, restart-loop and replica caps are never crossed — no full cluster access.</li>
+            </ul>
+        </div>
+
         <a th:href="${dashboardUrl}" class="button">View Incident in AstraWatch Dashboard</a>
 
         <div class="footer">

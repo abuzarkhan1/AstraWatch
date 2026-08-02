@@ -1,9 +1,9 @@
-import { CpuIcon } from '@/components/ui/cpu-icon'
-import { SparklesIcon } from '@/components/ui/sparkles-icon'
-import { GearIcon } from '@/components/ui/gear-icon'
-import { PenIcon } from '@/components/ui/pen-icon'
-import { RocketIcon } from '@/components/ui/rocket-icon' // using rocket for Zap
-import { ShieldCheck } from '@/components/ui/shield-check' // using shield-check for Fingerprint
+import CpuIcon from '@/components/ui/cpu-icon'
+import SparklesIcon from '@/components/ui/sparkles-icon'
+import GearIcon from '@/components/ui/gear-icon'
+import PenIcon from '@/components/ui/pen-icon'
+import RocketIcon from '@/components/ui/rocket-icon' // using rocket for Zap
+import ShieldCheck from '@/components/ui/shield-check' // using shield-check for Fingerprint
 
 
 const FEATURES = [

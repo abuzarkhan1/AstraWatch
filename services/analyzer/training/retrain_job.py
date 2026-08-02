@@ -32,7 +32,7 @@ def retrain_model(model_name: str, training_data: Optional[list] = None) -> dict
         mlflow.log_param("retrain_trigger", "scheduled")
 
         if training_data is None:
-            training_data = _generate_training_data(model_name)
+            raise ValueError("training_data must be provided. Dummy data generation has been removed.")
 
         if model_name == "statistical" or model_name == "all":
             mlflow.log_param("detector", "statistical")
@@ -75,9 +75,3 @@ def retrain_model(model_name: str, training_data: Optional[list] = None) -> dict
         }
 
 
-def _generate_training_data(model_name: str) -> list:
-    rng = np.random.default_rng(42)
-    base = 50.0 if "cpu" in model_name else 100.0
-    noise = rng.normal(0, 5, 200)
-    trend = np.linspace(0, 10, 200)
-    return list(base + trend + noise)

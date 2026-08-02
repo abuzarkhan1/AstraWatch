@@ -60,6 +60,19 @@
             </div>
         </div>
 
+        <!-- Boundary notes: explicit disclosure of what was and wasn't done (audit
+             V5 — "no full access"), in every healing status email. -->
+        <div style="margin-top:20px;padding:16px;background:#161b22;border-radius:8px;border:1px solid #30363d;font-size:12px;line-height:1.6;color:#8b949e">
+            <strong style="color:#c9d1d9">Boundaries — what was and wasn't done:</strong>
+            <ul style="margin:8px 0 0 0;padding-left:18px">
+                <li th:if="${status == 'PENDING'}">Nothing was executed — this email is your approval control plane.</li>
+                <li th:if="${status != 'PENDING'}">The action was executed only after orchestrator approval, under blast-radius guards.</li>
+                <li>Protected namespaces, critical/protected workloads, restart-loop and replica caps are never crossed.</li>
+                <li>Dry-run mode (when enabled) never mutates cluster resources.</li>
+                <li>Max 3 healing attempts per incident; beyond that the incident is escalated to a human.</li>
+            </ul>
+        </div>
+
         <a th:href="${dashboardUrl}" class="button">View Healing Details</a>
 
         <div class="footer">

@@ -6,12 +6,7 @@ import ClockIcon from '@/components/ui/clock-icon';
 import RightChevron from '@/components/ui/right-chevron';
 import InfoCircleIcon from '@/components/ui/info-circle-icon';
 
-const samplePostmortems = [
-  { id: '1', title: 'P0 Outage: Payment Service Timeout Storm', date: new Date(Date.now() - 86400000 * 3).toISOString(), severity: 'CRITICAL', status: 'Published', duration: '2h 14m', author: 'SRE Team' },
-  { id: '2', title: 'Database Read Replica Lag Incident', date: new Date(Date.now() - 86400000 * 7).toISOString(), severity: 'HIGH', status: 'Draft', duration: '45m', author: 'Platform Team' },
-  { id: '3', title: 'Kafka Partition Rebalancing Cascade', date: new Date(Date.now() - 86400000 * 12).toISOString(), severity: 'HIGH', status: 'Published', duration: '1h 02m', author: 'Data Infra' },
-  { id: '4', title: 'Memory Leak in Notification Service', date: new Date(Date.now() - 86400000 * 20).toISOString(), severity: 'STANDARD', status: 'Published', duration: '30m', author: 'Backend Team' },
-];
+const samplePostmortems: any[] = [];
 
 const severityBadge: Record<string, string> = {
   CRITICAL: 'border-red-500/30 bg-red-500/10 text-red-400',

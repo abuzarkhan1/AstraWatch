@@ -31,25 +31,14 @@ export default function AlertingCenterPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['alert-rules'],
     queryFn: async () => {
-      const { data } = await endpoints.incidents.list();
-      return data;
+      // TODO: Fetch from actual alerting endpoint when available
+      return { items: [] };
     },
   });
 
   useEffect(() => {
     if (data?.items) {
-      setRules(
-        data.items.slice(0, 10).map((item: any, i: number) => ({
-          id: item.id || `rule-${i}`,
-          name: `Alert Rule ${i + 1}`,
-          serviceId: item.serviceId || 'unknown',
-          metric: 'latency',
-          condition: '>',
-          threshold: 200,
-          status: (['active', 'inactive', 'error'] as const)[i % 3],
-          lastTriggered: item.createdAt,
-        }))
-      );
+      setRules(data.items);
     }
   }, [data]);
 

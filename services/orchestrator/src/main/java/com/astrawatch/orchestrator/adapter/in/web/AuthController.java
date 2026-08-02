@@ -252,25 +252,91 @@ public class AuthController {
     }
 
     // ─── MFA ────────────────────────────────────────────────────────────
+    // Real RFC 6238 TOTP (audit V2: these were fictional — a static secret for
+    // every user and verify always returned "enabled"). Secrets are now generated
+    // per user, persisted on the User row, and codes verified server-side.
+
+    private User resolveCurrentUser(HttpServletRequest request) {
+        String token = null;
+        if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                if ("accessToken".equals(c.getName())) { token = c.getValue(); break; }
+            }
+        }
+        if (token == null) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) token = authHeader.substring(7);
+        }
+        if (token == null || !authService.verifyToken(token)) {
+            return null;
+        }
+        String userId = authService.extractUserId(token);
+        if (userId == null) return null;
+        return userRepository.findById(UUID.fromString(userId)).orElse(null);
+    }
 
     @PostMapping("/mfa/setup")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> setupMfa() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> setupMfa(HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Authentication required"), Map.of()));
+        }
+        String secret = com.astrawatch.orchestrator.infrastructure.security.TotpCodec.generateSecret();
+        user.setMfaSecret(secret);
+        user.setMfaEnabled(false); // enabled only after a successful verify
+        userRepository.save(user);
+
+        String account = user.getEmail() != null ? user.getEmail() : String.valueOf(user.getId());
+        String qrCodeUrl = "otpauth://totp/AstraWatch:" + account + "?secret=" + secret + "&issuer=AstraWatch";
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(Map.of(
-                "secret", "JBSWY3DPEHPK3PXP",
-                "qrCodeUrl", "otpauth://totp/AstraWatch:admin@astrawatch.io?secret=JBSWY3DPEHPK3PXP&issuer=AstraWatch",
-                "backupCodes", List.of("1234567890", "2345678901", "3456789012", "4567890123", "5678901234",
-                                         "6789012345", "7890123456", "8901234567", "9012345678", "0123456789")
+                "secret", secret,
+                "qrCodeUrl", qrCodeUrl,
+                "backupCodes", generateBackupCodes()
         )));
     }
 
     @PostMapping("/mfa/verify")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyMfa(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyMfa(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Authentication required"), Map.of()));
+        }
+        String code = body.get("code");
+        if (user.getMfaSecret() == null || user.getMfaSecret().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, Map.of("error", "MFA not set up — call /mfa/setup first"), Map.of()));
+        }
+        if (!com.astrawatch.orchestrator.infrastructure.security.TotpCodec.verify(user.getMfaSecret(), code)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("enabled", false, "error", "Invalid code"), Map.of()));
+        }
+        user.setMfaEnabled(true);
+        userRepository.save(user);
         return ResponseEntity.ok(ApiResponse.ok(Map.of("enabled", true)));
     }
 
     @PostMapping("/mfa/disable")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> disableMfa(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> disableMfa(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        User user = resolveCurrentUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, Map.of("error", "Authentication required"), Map.of()));
+        }
+        user.setMfaEnabled(false);
+        user.setMfaSecret(null);
+        userRepository.save(user);
         return ResponseEntity.ok(ApiResponse.ok(Map.of("disabled", true)));
+    }
+
+    private List<String> generateBackupCodes() {
+        java.security.SecureRandom rng = new java.security.SecureRandom();
+        List<String> codes = new java.util.ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            codes.add(String.format("%010d", Math.abs(rng.nextLong() % 1_000_000_0000L)));
+        }
+        return codes;
     }
 
     // ─── Lockout Status ─────────────────────────────────────────────────
