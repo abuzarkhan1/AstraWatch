@@ -1,0 +1,30 @@
+replicaCount: 1
+
+image:
+  repository: astrawatch/orchestrator
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8082
+
+env:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/astrawatch
+  SPRING_DATASOURCE_USERNAME: astrawatch
+  SPRING_DATASOURCE_PASSWORD: astrawatch
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  SPRING_DATA_REDIS_HOST: redis
+
+# Set via --set env.JWT_SECRET=... / env.INTERNAL_API_TOKEN=...
+secrets:
+  JWT_SECRET: ""
+  INTERNAL_API_TOKEN: ""
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

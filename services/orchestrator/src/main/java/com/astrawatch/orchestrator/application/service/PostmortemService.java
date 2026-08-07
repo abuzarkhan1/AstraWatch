@@ -19,6 +19,10 @@ public class PostmortemService implements PostmortemPort {
 
     private final PostmortemRepository postmortemRepository;
 
+    public List<Postmortem> listAll() {
+        return postmortemRepository.findAll();
+    }
+
     public Optional<Postmortem> getByIncident(UUID incidentId) {
         return postmortemRepository.findByIncidentId(incidentId);
     }

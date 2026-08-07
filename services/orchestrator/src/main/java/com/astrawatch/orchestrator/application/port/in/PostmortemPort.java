@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface PostmortemPort {
+    List<Postmortem> listAll();
     Optional<Postmortem> getByIncident(UUID incidentId);
     Postmortem createOrUpdate(UUID incidentId, Postmortem postmortem);
     List<ActionItem> getActionItems(UUID postmortemId);

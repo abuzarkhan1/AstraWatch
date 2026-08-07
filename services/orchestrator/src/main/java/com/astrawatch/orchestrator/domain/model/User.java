@@ -47,6 +47,9 @@ public class User {
     @Column(name = "role")
     private String role;
 
+    @Column(name = "plan")
+    private String plan = "free";
+
     @Column(name = "is_active")
     private boolean isActive = true;
 
@@ -90,6 +93,8 @@ public class User {
     public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
     public String getRole() { return role != null ? role : "VIEWER"; }
     public void setRole(String role) { this.role = role; }
+    public String getPlan() { return plan != null ? plan : "free"; }
+    public void setPlan(String plan) { this.plan = plan; }
     public boolean isActive() { return isActive; }
     public void setActive(boolean isActive) { this.isActive = isActive; }
     public UUID getTeamId() { return teamId; }
@@ -109,6 +114,7 @@ public class User {
     public static class UserBuilder {
         private UUID id; private String email; private String name; private String avatarUrl; private String passwordHash; private String oauthProvider; private String oauthProviderId; private String mfaSecret; private boolean mfaEnabled; private boolean emailVerified;
         private String role = "VIEWER"; private boolean isActive = true; private UUID teamId; private String emailVerificationToken; private Instant emailVerificationExpiresAt; private String resetTokenHash; private Instant resetTokenExpiresAt; private Instant createdAt;
+        private String plan = "free";
 
         public UserBuilder id(UUID id) { this.id = id; return this; }
         public UserBuilder email(String email) { this.email = email; return this; }
@@ -121,6 +127,7 @@ public class User {
         public UserBuilder mfaEnabled(boolean mfaEnabled) { this.mfaEnabled = mfaEnabled; return this; }
         public UserBuilder emailVerified(boolean emailVerified) { this.emailVerified = emailVerified; return this; }
         public UserBuilder role(String role) { this.role = role; return this; }
+        public UserBuilder plan(String plan) { this.plan = plan != null ? plan : "free"; return this; }
         public UserBuilder isActive(boolean isActive) { this.isActive = isActive; return this; }
         public UserBuilder teamId(UUID teamId) { this.teamId = teamId; return this; }
         public UserBuilder emailVerificationToken(String emailVerificationToken) { this.emailVerificationToken = emailVerificationToken; return this; }
@@ -131,7 +138,7 @@ public class User {
         public User build() {
             User u = new User();
             u.id = this.id; u.email = this.email; u.name = this.name; u.avatarUrl = this.avatarUrl; u.passwordHash = this.passwordHash; u.oauthProvider = this.oauthProvider; u.oauthProviderId = this.oauthProviderId; u.mfaSecret = this.mfaSecret; u.mfaEnabled = this.mfaEnabled; u.emailVerified = this.emailVerified;
-            u.role = this.role != null ? this.role : "VIEWER"; u.isActive = this.isActive; u.teamId = this.teamId; u.emailVerificationToken = this.emailVerificationToken; u.emailVerificationExpiresAt = this.emailVerificationExpiresAt; u.resetTokenHash = this.resetTokenHash; u.resetTokenExpiresAt = this.resetTokenExpiresAt; u.createdAt = this.createdAt;
+            u.role = this.role != null ? this.role : "VIEWER"; u.plan = this.plan != null ? this.plan : "free"; u.isActive = this.isActive; u.teamId = this.teamId; u.emailVerificationToken = this.emailVerificationToken; u.emailVerificationExpiresAt = this.emailVerificationExpiresAt; u.resetTokenHash = this.resetTokenHash; u.resetTokenExpiresAt = this.resetTokenExpiresAt; u.createdAt = this.createdAt;
             return u;
         }
     }
@@ -143,6 +150,9 @@ public class User {
         }
         if (role == null) {
             role = "VIEWER";
+        }
+        if (plan == null) {
+            plan = "free";
         }
     }
 }

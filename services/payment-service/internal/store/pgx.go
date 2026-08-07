@@ -60,7 +60,74 @@ func ensureSchema(ctx context.Context, pool pgxQuerier) error {
 	if err == nil {
 		idx.Close()
 	}
+
+	// user -> Stripe customer mapping (audit: bind subscriptions/portal to the
+	// JWT subject instead of trusting a client-supplied customer_id).
+	cust, err := pool.Query(ctx, `
+		CREATE TABLE IF NOT EXISTS billing_customers (
+			user_id     TEXT PRIMARY KEY,
+			customer_id TEXT NOT NULL,
+			created_at  BIGINT NOT NULL
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create billing_customers table: %w", err)
+	}
+	cust.Close()
 	return nil
+}
+
+func saveCustomer(ctx context.Context, pool pgxExecutor, m CustomerMapping) error {
+	_, err := pool.Exec(ctx, `
+		INSERT INTO billing_customers (user_id, customer_id, created_at)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id) DO UPDATE SET
+			customer_id = EXCLUDED.customer_id
+	`,
+		m.UserID,
+		m.CustomerID,
+		m.CreatedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to save customer mapping: %w", err)
+	}
+	return nil
+}
+
+func queryCustomer(ctx context.Context, pool pgxQuerier, userID string) (string, error) {
+	rows, err := pool.Query(ctx, `
+		SELECT customer_id FROM billing_customers WHERE user_id = $1
+	`, userID)
+	if err != nil {
+		return "", fmt.Errorf("failed to query customer mapping: %w", err)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		var customerID string
+		if err := rows.Scan(&customerID); err != nil {
+			return "", fmt.Errorf("failed to scan customer mapping: %w", err)
+		}
+		return customerID, nil
+	}
+	return "", rows.Err()
+}
+
+func queryUserByCustomer(ctx context.Context, pool pgxQuerier, customerID string) (string, error) {
+	rows, err := pool.Query(ctx, `
+		SELECT user_id FROM billing_customers WHERE customer_id = $1
+	`, customerID)
+	if err != nil {
+		return "", fmt.Errorf("failed to query customer reverse mapping: %w", err)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		var userID string
+		if err := rows.Scan(&userID); err != nil {
+			return "", fmt.Errorf("failed to scan customer reverse mapping: %w", err)
+		}
+		return userID, nil
+	}
+	return "", rows.Err()
 }
 
 func upsertSubscription(ctx context.Context, pool pgxExecutor, state SubscriptionState) error {

@@ -84,6 +84,7 @@ export const endpoints = {
     get: (id: string) => api.get(`/api/v1/incidents/${id}`),
     create: (data: unknown) => api.post('/api/v1/incidents', data),
     assign: (id: string, userId: string) => api.post(`/api/v1/incidents/${id}/assign`, { userId }),
+    comment: (id: string, text: string) => api.post(`/api/v1/incidents/${id}/comment`, { text }),
     resolve: (id: string, resolutionNote: string) =>
       api.post(`/api/v1/incidents/${id}/resolve`, { resolutionNote }),
     escalate: (id: string, escalateTo: string, reason: string) =>
@@ -105,7 +106,7 @@ export const endpoints = {
     detect: (data: unknown) => api.post('/v1/anomaly/detect', data),
     rootCause: (data: unknown) => api.post('/v1/anomaly/root-cause', data),
     feedback: (anomalyId: string, data: unknown) =>
-      api.post(`/v1/anomaly/${anomalyId}/feedback`, data),
+      api.post(`/v1/anomaly/feedback/${anomalyId}`, data),
   },
   metrics: {
     query: (params: Record<string, string>) => api.get('/v1/query', { params }),
@@ -122,6 +123,7 @@ export const endpoints = {
     refresh: () => api.post('/api/v1/auth/refresh'),
     logout: () => api.post('/api/v1/auth/logout'),
     verifyEmail: (data: unknown) => api.post('/api/v1/auth/verify-email', data),
+    resendVerification: (data: { email: string }) => api.post('/api/v1/auth/resend-verification', data),
     me: () => api.get('/api/v1/auth/me'),
     forgotPassword: (data: { email: string }) => api.post('/api/v1/auth/forgot-password', data),
     oauth2Google: (data: { code?: string; token?: string; credential?: string; idToken?: string; accessToken?: string; email?: string; name?: string; avatarUrl?: string }) =>
@@ -130,11 +132,15 @@ export const endpoints = {
       api.post('/api/v1/auth/oauth2/github', data),
   },
   github: {
-    getIntegration: () => api.get('/api/v1/admin/github-integration'),
-    updateIntegration: (data: { repo: string; autoPR: boolean; token?: string }) =>
-      api.post('/api/v1/admin/github-integration', data),
-    testConnection: (data: { repo: string }) =>
-      api.post('/api/v1/admin/github-integration/test', data),
+    // Audit fix: these previously called /api/v1/admin/github-integration* which
+    // the backend never served (it serves /api/v1/integrations/github/*), so
+    // every call 404'd and the modal faked success on error. Routes now match
+    // the real controller: GET /repos, POST /connect, POST /test.
+    getIntegration: () => api.get('/api/v1/integrations/github/repos'),
+    updateIntegration: (data: { repoOwner: string; repoName: string; accessToken?: string }) =>
+      api.post('/api/v1/integrations/github/connect', data),
+    testConnection: (data: { repoOwner: string; repoName: string; accessToken?: string }) =>
+      api.post('/api/v1/integrations/github/test', data),
   },
   services: {
     list: () => api.get('/api/v1/catalog/services'),
@@ -150,8 +156,80 @@ export const endpoints = {
     orchestrator: () => api.get('/api/v1/health'),
   },
   billing: {
+    // Audit fix: the checkout payload was { planName, price } but the backend
+    // required { price_id, customer_id }. Now the payment-service resolves the
+    // Stripe Price from planName/isYearly and derives the customer from the JWT
+    // subject, so this payload matches the real contract.
     createCheckoutSession: (data: { planName: string; isYearly: boolean; price?: number }) => api.post('/api/v1/billing/checkout-session', data),
     createPortalSession: () => api.post('/api/v1/billing/portal-session'),
+    subscriptions: () => api.get('/api/v1/billing/subscriptions'),
+    // Usage metering (audit P4.15): today's ingested metrics/logs/traces for
+    // the authenticated tenant, served by the collector.
+    usage: () => api.get('/v1/usage/current'),
+    // Usage over time (P4.15 follow-up): last N days per tenant for the
+    // usage-over-time chart.
+    usageHistory: (days = 30) => api.get('/v1/usage/history', { params: { days } }),
+    // Invoice history from Stripe (hosted by payment-service).
+    invoices: () => api.get('/api/v1/billing/invoices'),
+  },
+  runbooks: {
+    list: (params?: Record<string, string>) => api.get('/api/v1/runbooks', { params }),
+    get: (id: string) => api.get(`/api/v1/runbooks/${id}`),
+    create: (data: unknown) => api.post('/api/v1/runbooks', data),
+    update: (id: string, data: unknown) => api.put(`/api/v1/runbooks/${id}`, data),
+    versions: (id: string) => api.get(`/api/v1/runbooks/${id}/versions`),
+    execute: (id: string, data?: unknown) => api.post(`/api/v1/runbooks/${id}/execute`, data ?? {}),
+    executions: (id: string) => api.get(`/api/v1/runbooks/${id}/executions`),
+  },
+  postmortems: {
+    list: () => api.get('/api/v1/postmortems'),
+    get: (incidentId: string) => api.get(`/api/v1/incidents/${incidentId}/postmortem`),
+    create: (incidentId: string, data: unknown) => api.post(`/api/v1/incidents/${incidentId}/postmortem`, data),
+    update: (incidentId: string, data: unknown) => api.put(`/api/v1/incidents/${incidentId}/postmortem`, data),
+    export: (incidentId: string, data?: unknown) => api.post(`/api/v1/incidents/${incidentId}/postmortem/export`, data ?? {}),
+    actionItems: (incidentId: string) => api.get(`/api/v1/incidents/${incidentId}/postmortem/action-items`),
+    createActionItem: (incidentId: string, data: unknown) => api.post(`/api/v1/incidents/${incidentId}/postmortem/action-items`, data),
+  },
+  alerting: {
+    listRules: () => api.get('/api/v1/notifications/rules'),
+    createRule: (data: unknown) => api.post('/api/v1/notifications/rules', data),
+    toggleRule: (id: string, enabled: boolean) => api.put(`/api/v1/notifications/rules/${id}/toggle`, { enabled }),
+    testRule: (id: string, data?: unknown) => api.post(`/api/v1/notifications/rules/${id}/test`, data ?? {}),
+    listChannels: () => api.get('/api/v1/notifications/channels'),
+    createChannel: (data: unknown) => api.post('/api/v1/notifications/channels', data),
+    updateChannel: (id: string, config: string) => api.put(`/api/v1/notifications/channels/${id}`, { config }),
+    deleteChannel: (id: string) => api.delete(`/api/v1/notifications/channels/${id}`),
+    testChannel: (id: string) => api.post(`/api/v1/notifications/channels/${id}/test`),
+    listMaintenanceWindows: () => api.get('/api/v1/notifications/maintenance-windows'),
+    createMaintenanceWindow: (data: unknown) => api.post('/api/v1/notifications/maintenance-windows', data),
+    deleteMaintenanceWindow: (id: string) => api.delete(`/api/v1/notifications/maintenance-windows/${id}`),
+    history: () => api.get('/api/v1/notifications/history'),
+  },
+  oncall: {
+    listSchedules: () => api.get('/api/v1/oncall/schedules'),
+    createSchedule: (data: unknown) => api.post('/api/v1/oncall/schedules', data),
+    updateSchedule: (id: string, data: unknown) => api.put(`/api/v1/oncall/schedules/${id}`, data),
+    deleteSchedule: (id: string) => api.delete(`/api/v1/oncall/schedules/${id}`),
+    whoIsOnCall: () => api.get('/api/v1/oncall/who-is-on-call'),
+    scheduleEntries: (id: string) => api.get(`/api/v1/oncall/schedules/${id}/entries`),
+  },
+  escalation: {
+    listPolicies: () => api.get('/api/v1/escalation/policies'),
+    createPolicy: (data: unknown) => api.post('/api/v1/escalation/policies', data),
+    updatePolicy: (id: string, data: unknown) => api.put(`/api/v1/escalation/policies/${id}`, data),
+    deletePolicy: (id: string) => api.delete(`/api/v1/escalation/policies/${id}`),
+    resolveStep: (id: string, level: number) => api.get(`/api/v1/escalation/policies/${id}/resolve`, { params: { level } }),
+  },
+  statusPage: {
+    get: () => api.get('/api/v1/status-page'),
+    createComponent: (data: unknown) => api.post('/api/v1/status-page/components', data),
+    updateComponentStatus: (id: string, status: string) => api.put(`/api/v1/status-page/components/${id}/status`, { status }),
+    subscribers: () => api.get('/api/v1/status-page/subscribers'),
+    createSubscriber: (data: unknown) => api.post('/api/v1/status-page/subscribers', data),
+    deleteSubscriber: (id: string) => api.delete(`/api/v1/status-page/subscribers/${id}`),
+  },
+  entitlements: {
+    get: () => api.get('/api/v1/entitlements'),
   },
   users: {
     list: () => api.get('/api/v1/users'),
@@ -164,6 +242,20 @@ export const endpoints = {
       api.post('/api/v1/synthetics/checks', data),
     toggle: (id: string) => api.post(`/api/v1/synthetics/checks/${id}/toggle`),
     remove: (id: string) => api.delete(`/api/v1/synthetics/checks/${id}`),
+    // Probe run history (honest: empty until a probe runner records results).
+    results: (id: string) => api.get(`/api/v1/synthetics/checks/${id}/results`),
+  },
+  mfa: {
+    setup: () => api.post('/api/v1/auth/mfa/setup'),
+    verify: (code: string) => api.post('/api/v1/auth/mfa/verify', { code }),
+    disable: () => api.post('/api/v1/auth/mfa/disable'),
+  },
+  invite: {
+    create: (data: { email: string; teamId?: string; role?: string }) =>
+      api.post('/api/v1/auth/invite', data),
+  },
+  team: {
+    switch: (teamId: string) => api.post('/api/v1/auth/switch-team', { teamId }),
   },
   authExtra: {
     acceptInvite: (token: string) => api.post('/api/v1/auth/accept-invite', { token }),

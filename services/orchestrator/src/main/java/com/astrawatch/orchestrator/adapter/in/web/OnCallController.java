@@ -1,6 +1,7 @@
 package com.astrawatch.orchestrator.adapter.in.web;
 
 import com.astrawatch.orchestrator.application.service.OnCallService;
+import com.astrawatch.orchestrator.infrastructure.security.OrgContextResolver;
 import com.astrawatch.orchestrator.domain.model.OnCallRotation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,9 +24,11 @@ import java.util.UUID;
 public class OnCallController {
 
     private final OnCallService onCallService;
+    private final OrgContextResolver orgContextResolver;
 
     @GetMapping("/schedules")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getSchedules(@RequestParam(required = false) UUID orgId) {
+        orgId = orgContextResolver.resolve(orgId);
         List<OnCallRotation> rotations = onCallService.listRotations(orgId);
         List<Map<String, Object>> schedules = rotations.stream().map(r -> {
             UUID current = onCallService.currentOnCall(r, Instant.now()).orElse(null);
@@ -45,6 +48,14 @@ public class OnCallController {
 
     @PostMapping("/schedules")
     public ResponseEntity<ApiResponse<Map<String, Object>>> createSchedule(@RequestBody OnCallRotation rotation) {
+        if (rotation.getOrgId() == null) {
+            UUID org = orgContextResolver.resolveFromPrincipal();
+            if (org == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse<>(
+                        false, Map.of("error", "No organization context for this user — join a team before creating schedules"), Map.of()));
+            }
+            rotation.setOrgId(org);
+        }
         OnCallRotation saved = onCallService.createRotation(rotation);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(Map.of("id", saved.getId().toString(), "name", saved.getName())));
@@ -80,6 +91,7 @@ public class OnCallController {
 
     @GetMapping("/who-is-on-call")
     public ResponseEntity<ApiResponse<Map<String, Object>>> whoIsOnCall(@RequestParam(required = false) UUID orgId) {
+        orgId = orgContextResolver.resolve(orgId);
         Map<String, String> result = onCallService.listRotations(orgId).stream()
                 .filter(OnCallRotation::isEnabled)
                 .collect(java.util.stream.Collectors.toMap(

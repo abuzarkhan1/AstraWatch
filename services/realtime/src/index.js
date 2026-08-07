@@ -184,6 +184,23 @@ class RealtimeGateway {
         }
       });
 
+      // ── Live log tail (audit P2: the Logs Explorer only polled every 10s;
+      // now clients can join the tenant log room to receive log.stream pushes).
+      socket.on('logs:subscribe', ({ serviceId } = {}) => {
+        const room = `tenant:${tenantId}:logs`;
+        socket.join(room);
+        this.trackSubscription(socket.id, room);
+        if (serviceId) {
+          const svcRoom = `tenant:${tenantId}:service:${serviceId}`;
+          socket.join(svcRoom);
+          this.trackSubscription(socket.id, svcRoom);
+        }
+      });
+
+      socket.on('logs:unsubscribe', () => {
+        socket.leave(`tenant:${tenantId}:logs`);
+      });
+
       // ── Replay handler ──────────────────────────────────────────────
       socket.on('replay', ({ eventTypes, since, room }) => {
         const replayTarget = room ? (room.startsWith('tenant:') ? room : `tenant:${tenantId}:${room}`) : tenantDashboardRoom;
@@ -229,13 +246,33 @@ class RealtimeGateway {
   async setupKafkaBridge() {
     await this.kafkaConsumer.connect();
 
-    this.kafkaConsumer.on('*', ({ eventType, key, value, topic, offset, timestamp }) => {
-      const dedupKey = key || `${topic}-${offset}-${timestamp}`;
+    this.kafkaConsumer.on('*', ({ eventType, key, value, topic, partition, offset, timestamp }) => {
+      // Review fix: raw-logs messages use the serviceId as the Kafka key, so
+      // every log from one service within the dedup window would collide on the
+      // same dedup key and be dropped. Log streaming must dedup on the unique
+      // topic-partition-offset instead.
+      const dedupKey =
+        eventType === 'log.stream'
+          ? `${topic}-${partition}-${offset}`
+          : key || `${topic}-${offset}-${timestamp}`;
       if (this.isDuplicate(eventType, dedupKey)) return;
 
       this.cacheEvent(eventType, dedupKey, value);
 
       const tenantId = value.tenantId || 'default';
+
+      // Review fix: log.stream must NOT go to the shared dashboard room — every
+      // connected client would stream every raw log (bandwidth + privacy), and
+      // a live-tail client subscribed to both rooms would receive each entry
+      // twice. Logs are pushed only to the tenant logs room (and optionally the
+      // per-service room), which is exactly what logs:subscribe joins.
+      if (eventType === 'log.stream') {
+        this.io.to(`tenant:${tenantId}:logs`).emit('log.stream', value);
+        if (value.serviceId) {
+          this.io.to(`tenant:${tenantId}:service:${value.serviceId}`).emit('log.stream', value);
+        }
+        return;
+      }
 
       // Broadcast ONLY to tenant-scoped rooms
       this.io.to(`tenant:${tenantId}:dashboard`).emit(eventType, {

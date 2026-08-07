@@ -1,0 +1,31 @@
+replicaCount: 1
+
+image:
+  repository: astrawatch/operator
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8081
+
+env:
+  KAFKA_BROKERS: kafka:9092
+  ORCHESTRATOR_URL: http://orchestrator:8082
+  METRICS_URL: http://collector:8080
+  WATCH_NAMESPACE: ""
+  # Dry-run by default: the operator simulates healing without mutating
+  # resources. Set OPERATOR_DRY_RUN=false to act on a real cluster.
+  OPERATOR_DRY_RUN: "true"
+
+secrets:
+  JWT_SECRET: ""
+  INTERNAL_API_TOKEN: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi

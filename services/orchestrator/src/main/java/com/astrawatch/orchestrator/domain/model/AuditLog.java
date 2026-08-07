@@ -29,7 +29,7 @@ public class AuditLog {
     @Column(name = "resource_id")
     private UUID resourceId;
 
-    @Column(columnDefinition = "jsonb")
+    @Column
     private String metadata;
 
     @Column(name = "created_at", nullable = false, updatable = false)

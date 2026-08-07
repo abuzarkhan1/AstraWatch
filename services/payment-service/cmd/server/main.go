@@ -18,6 +18,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// jwtAuthMiddleware validates the JWT and stamps the subject (user id) into the
+// request context so every billing handler derives the Stripe customer from the
+// authenticated user — never from a client-supplied customer_id (audit: IDOR).
 func jwtAuthMiddleware(jwtSecret string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
@@ -39,7 +42,18 @@ func jwtAuthMiddleware(jwtSecret string, next http.HandlerFunc) http.HandlerFunc
 			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
 			return
 		}
-		next(w, r)
+
+		userID := ""
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			if sub, ok := claims["sub"].(string); ok && sub != "" {
+				userID = sub
+			}
+		}
+		if userID == "" {
+			http.Error(w, "token has no subject claim", http.StatusUnauthorized)
+			return
+		}
+		next(w, handlers.WithUserID(r, userID))
 	}
 }
 
@@ -51,29 +65,39 @@ func main() {
 	if cfg.StripeKey == "" {
 		log.Println("WARNING: STRIPE_SECRET_KEY not set — checkout/portal calls will fail until configured")
 	}
-	
+
 	stripeClient := mystripe.NewClient(cfg.StripeKey)
 
-	// Persistent subscription store (audit F10): webhook-derived subscription
-	// state is written to Postgres when DATABASE_URL is configured, falling back
-	// to in-memory so the service still boots in demo mode.
+	// Persistent stores (audit F10): webhook-derived subscription state and the
+	// user→customer mapping are written to Postgres when DATABASE_URL is
+	// configured, falling back to in-memory so the service still boots in demo
+	// mode.
 	var subscriptionStore store.SubscriptionStore = store.NewMemoryStore()
+	var customerStore store.CustomerStore = store.NewMemoryStore()
 	if cfg.DatabaseURL != "" {
 		pgStore := store.NewPostgresStore(cfg.DatabaseURL)
 		if err := pgStore.Open(); err == nil {
 			subscriptionStore = pgStore
+			customerStore = pgStore
 			defer pgStore.Close()
 		} else {
-			log.Printf("Falling back to in-memory subscription store: %v", err)
+			log.Printf("Falling back to in-memory stores: %v", err)
 		}
 	}
 
-	billingHandler := handlers.NewBillingHandlerWithStore(cfg, stripeClient, subscriptionStore)
+	notifier := &handlers.OrchestratorNotifier{
+		OrchestratorURL: cfg.OrchestratorURL,
+		InternalToken:   cfg.InternalToken,
+		Client:          &http.Client{Timeout: 5 * time.Second},
+	}
+
+	billingHandler := handlers.NewBillingHandlerWithStore(cfg, stripeClient, subscriptionStore, customerStore, notifier)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/v1/billing/checkout-session", jwtAuthMiddleware(cfg.JWTSecret, billingHandler.HandleCheckout))
 	mux.HandleFunc("POST /api/v1/billing/portal-session", jwtAuthMiddleware(cfg.JWTSecret, billingHandler.HandlePortal))
 	mux.HandleFunc("GET /api/v1/billing/subscriptions", jwtAuthMiddleware(cfg.JWTSecret, billingHandler.HandleSubscriptions))
+	mux.HandleFunc("GET /api/v1/billing/invoices", jwtAuthMiddleware(cfg.JWTSecret, billingHandler.HandleInvoices))
 	mux.HandleFunc("POST /api/v1/billing/webhook", billingHandler.HandleWebhook)
 	mux.HandleFunc("GET /healthz", billingHandler.HandleHealthz)
 

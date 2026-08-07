@@ -1,0 +1,82 @@
+# AstraWatch demo override — one command data pipeline.
+#
+#   docker compose -f infra/docker/docker-compose.yml \
+#                 -f infra/docker/docker-compose.demo.yml up -d --build
+#
+# Adds the collector (ingest -> Kafka -> ClickHouse), the operator (healing
+# execution plane; requires a cluster, kept as a live placeholder here) and the
+# telemetry generator which seeds + streams realistic metrics/logs/traces so
+# every page has data out of the box.
+#
+# For the FULL stack (orchestrator, analyzer, realtime, payment, frontend) use
+# scripts/run_all_services.sh instead — those services are started locally so
+# you can iterate on them without rebuilding images.
+
+services:
+  collector:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.collector
+    environment:
+      PORT: "8080"
+      KAFKA_BROKERS: kafka:29092
+      CLICKHOUSE_ADDR: clickhouse:9000
+      CLICKHOUSE_DB: astrawatch
+      CLICKHOUSE_USER: astrawatch
+      CLICKHOUSE_PASSWORD: astrawatch
+      REDIS_ADDR: redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-at-least-32-bytes-long-0123456789}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-internal-dev-token}
+    ports:
+      - "8080:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - astrawatch-net
+
+  operator:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.operator
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      OPERATOR_DRY_RUN: "true"
+    ports:
+      - "8081:8081"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    # The operator is a Kubernetes controller (CRD reconciler + healing
+    # executor). Without a cluster it cannot join one, so it runs as a live
+    # placeholder here so the prometheus scrape target resolves; the real
+    # execution plane is exercised via scripts/run_all_services.sh inside a
+    # cluster.
+    command: ["/bin/sh", "-c", "trap 'exit 0' TERM; while true; do sleep 60; done"]
+    networks:
+      - astrawatch-net
+
+  telemetry-gen:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.telemetry-gen
+    environment:
+      COLLECTOR_URL: http://collector:8080
+      # The demo org's SRE Core Team UUID (V3 seed + DemoDataSeeder). The
+      # collector scopes catalog/query/realtime by the JWT tenantId (= team id),
+      # so telemetry must be written under this tenant or the demo admin's
+      # dashboard/catalog/topology/logs stay empty (audit fix).
+      TENANT: 11111111-1111-1111-1111-111111111111
+      TICK_SECONDS: "5"
+      BACKFILL_MINUTES: "45"
+      ANOMALIES: "1"
+    depends_on:
+      collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - astrawatch-net

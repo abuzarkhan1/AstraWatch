@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # create_kafka_topics.sh — Creates the Kafka topics AstraWatch services depend on.
 # Requires a running Kafka broker (default localhost:9092). Override with KAFKA_BOOTSTRAP_SERVERS.
-set -euo pipefailSCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 BOOTSTRAP="${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}"
@@ -17,6 +18,14 @@ TOPICS=(
   "anomaly-detected"
   "feedback-received"
   "healing-actions"
+  # Event-graph topics (audit: the realtime gateway subscribes to incident-* and
+  # healing-* and the orchestrator/operator publish these — they must exist
+  # before the bridge can carry events to the browser).
+  "incident-created"
+  "incident-updated"
+  "healing-triggered"
+  "healing-completed"
+  "healing-failed"
 )
 
 echo "Creating topics on ${BOOTSTRAP} (partitions=${PARTITIONS}, replication=${REPLICATION})..."

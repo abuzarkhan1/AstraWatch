@@ -1,4 +1,192 @@
 {
-  "title": "AstraWatch Dashboard",
-  "panels": []
+  "title": "AstraWatch Platform",
+  "uid": "astrawatch-platform",
+  "version": 1,
+  "timezone": "utc",
+  "editable": true,
+  "refresh": "15s",
+  "tags": ["astrawatch"],
+  "templating": {
+    "list": [
+      {
+      "name": "datasource",
+      "type": "datasource",
+      "query": "prometheus",
+      "current": { "text": "prometheus", "value": "prometheus" },
+      "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Service Availability",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Up (collector)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "up{job=\"astrawatch-collector\"}",
+          "legendFormat": "collector"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Up (operator)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "up{job=\"astrawatch-operator\"}",
+          "legendFormat": "operator"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Kafka raw-metrics backlog",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "astrawatch_kafka_raw_metrics_backlog_total",
+          "legendFormat": "backlog"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10000 },
+              { "color": "red", "value": 50000 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 }
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Auto-Healing",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Healing actions (rate)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum(rate(astrawatch_healing_actions_total[5m])) by (result)",
+          "legendFormat": "{{result}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Healing action duration (p50/p95, MTTR)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(astrawatch_healing_action_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(astrawatch_healing_action_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 }
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Go Runtime (collector)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Goroutines",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "go_goroutines{job=\"astrawatch-collector\"}", "legendFormat": "goroutines" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Heap (bytes)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "go_memstats_heap_alloc_bytes{job=\"astrawatch-collector\"}", "legendFormat": "heap_alloc" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 }
+    },
+    {
+      "id": 11,
+      "type": "text",
+      "title": "Notes",
+      "datasource": null,
+      "options": {
+        "content": "AstraWatch platform dashboard. Scrapes the Go collector (:8080/metrics) and the operator (:8081/metrics). The Kafka backlog panel is fed by the collector's astrawatch_kafka_raw_metrics_backlog_total gauge (refreshed every 30s). Healing panels use the operator's astrawatch_healing_actions_total counter and astrawatch_healing_action_duration_seconds histogram (MTTR) — these populate only when the operator executes healing actions (requires a real cluster with OPERATOR_DRY_RUN=false + a mounted kubeconfig; the local dry-run stack keeps the operator up but idle).",
+        "mode": "markdown"
+      },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 27 }
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "schemaVersion": 39
 }

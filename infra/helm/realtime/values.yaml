@@ -1,0 +1,28 @@
+replicaCount: 1
+
+image:
+  repository: astrawatch/realtime
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8084
+
+env:
+  PORT: "8084"
+  KAFKA_BROKERS: kafka:9092
+  REDIS_URL: redis://redis:6379/0
+  ORCHESTRATOR_URL: http://orchestrator:8082
+
+secrets:
+  JWT_SECRET: ""
+  INTERNAL_API_TOKEN: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi

@@ -62,6 +62,24 @@ class HealingOrchestrationServiceTest {
     }
 
     @Test
+    void testProcessAutomatedRemediation_NullPatchNeverCreatesPlaceholderPR() {
+        // autoPREnabled defaults to true — the critical guard is that a null
+        // evidence-backed patch must still refuse to open a PR (the audit
+        // explicitly forbade "// AstraWatch Fix Patch" placeholder commits).
+        UUID incidentId = UUID.randomUUID();
+        Incident incident = Incident.builder()
+                .id(incidentId)
+                .serviceId(UUID.randomUUID())
+                .build();
+
+        boolean result = healingService.processAutomatedRemediationIfEligible(incident, "diagnosis", null);
+        assertFalse(result);
+
+        boolean blankResult = healingService.processAutomatedRemediationIfEligible(incident, "diagnosis", "   ");
+        assertFalse(blankResult);
+    }
+
+    @Test
     void testTriggerHealingHighRiskRequiresPending() {
         UUID incidentId = UUID.randomUUID();
         Incident incident = Incident.builder().id(incidentId).build();

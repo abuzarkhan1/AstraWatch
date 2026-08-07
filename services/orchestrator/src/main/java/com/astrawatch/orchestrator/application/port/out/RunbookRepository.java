@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface RunbookRepository {
     List<Runbook> findRunbooksByServiceId(UUID serviceId);
+    List<Runbook> findAllRunbooks();
     Optional<Runbook> findRunbookById(UUID id);
     Runbook saveRunbook(Runbook runbook);
     List<RunbookVersion> findVersionsByRunbookId(UUID runbookId);

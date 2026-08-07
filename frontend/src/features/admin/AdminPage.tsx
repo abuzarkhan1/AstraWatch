@@ -9,14 +9,38 @@ import GitHubIntegrationModal from './GitHubIntegrationModal';
 export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
-  const [githubRepo, setGithubRepo] = useState('astrawatch/payment-service');
+  // Honest initial state: nothing is connected until a real repo is saved
+  // (audit: defaulted to a fabricated 'astrawatch/payment-service' and always
+  // rendered the Connected badge regardless of actual state).
+  const [githubRepo, setGithubRepo] = useState('');
   const [autoPR, setAutoPR] = useState(true);
 
+  const isGitHubConnected = githubRepo.trim().length > 0;
+
+  // Audit 4.4: GitHub state must come from the backend, not localStorage.
+  // GET /api/v1/integrations/github/repos returns the persisted repositories
+  // (repoOwner/repoName); localStorage is only a cache when the API is down.
   useEffect(() => {
-    const savedRepo = localStorage.getItem('astrawatch_github_repo');
-    const savedAutoPR = localStorage.getItem('astrawatch_github_auto_pr');
-    if (savedRepo) setGithubRepo(savedRepo);
-    if (savedAutoPR !== null) setAutoPR(savedAutoPR === 'true');
+    endpoints.github
+      .getIntegration()
+      .then((res: any) => {
+        const unwrapped = res?.data?.data ?? res?.data;
+        const repos = Array.isArray(unwrapped) ? unwrapped : [];
+        if (repos.length > 0 && repos[0]?.repoOwner && repos[0]?.repoName) {
+          setGithubRepo(`${repos[0].repoOwner}/${repos[0].repoName}`);
+        } else {
+          // No repo connected on the server — leave the honest disconnected state.
+          setGithubRepo('');
+        }
+      })
+      .catch(() => {
+        // Fall back to the local cache so the UI still shows the last known
+        // repo during a backend outage (never fabricate a connected state).
+        const savedRepo = localStorage.getItem('astrawatch_github_repo');
+        if (savedRepo) setGithubRepo(savedRepo);
+        const savedAutoPR = localStorage.getItem('astrawatch_github_auto_pr');
+        if (savedAutoPR !== null) setAutoPR(savedAutoPR === 'true');
+      });
   }, []);
 
   const handlePortalRedirect = async () => {
@@ -65,11 +89,17 @@ export default function AdminPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold text-white">GitHub Remediation Bot</h2>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                      <CheckedIcon className="w-3 h-3" /> Connected
-                    </span>
+                    {isGitHubConnected ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <CheckedIcon className="w-3 h-3" /> Connected
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        Not connected
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-gray-400 font-mono mt-0.5">Target Repo: <span className="text-purple-300 font-semibold">{githubRepo}</span></p>
+                  <p className="text-xs text-gray-400 font-mono mt-0.5">Target Repo: <span className="text-purple-300 font-semibold">{githubRepo || '—'}</span></p>
                 </div>
               </div>
 
@@ -121,8 +151,12 @@ export default function AdminPage() {
                   <td className="px-4 py-3"><span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-xs text-blue-400 font-medium">Full Access</span></td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 font-medium text-white">Editor</td>
+                  <td className="px-4 py-3 font-medium text-white">Operator</td>
                   <td className="px-4 py-3"><span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-xs text-blue-400 font-medium">Read/Write</span></td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium text-white">Billing Owner</td>
+                  <td className="px-4 py-3"><span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs text-amber-400 font-medium">Billing Only</span></td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 font-medium text-white">Viewer</td>

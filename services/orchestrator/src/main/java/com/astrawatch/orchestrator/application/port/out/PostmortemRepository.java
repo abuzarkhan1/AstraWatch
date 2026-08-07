@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface PostmortemRepository {
     Optional<Postmortem> findByIncidentId(UUID incidentId);
+    List<Postmortem> findAll();
     Postmortem save(Postmortem postmortem);
     Optional<Postmortem> findById(UUID id);
     List<ActionItem> findActionItemsByPostmortemId(UUID postmortemId);

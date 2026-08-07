@@ -8,9 +8,15 @@ export function useIncidents(filters?: Record<string, string>) {
     queryFn: async () => {
       try {
         const { data } = await endpoints.incidents.list(filters);
-        if (data?.items && data.items.length > 0) return data;
+        // Every backend endpoint wraps in an ApiResponse envelope
+        // {success, data, meta} — unwrap before reading .items (audit: the wired
+        // pages silently rendered empty because they read the envelope top level).
+        const items = Array.isArray(data) ? data : (data?.data ?? data?.items ?? []);
+        if (Array.isArray(items) && items.length > 0) return { items, total: items.length };
       } catch (err) {
-        console.warn('API fallback to mock incidents');
+        // Honest empty state — no fabricated mock data (audit: this log claimed
+        // a mock fallback that no longer exists).
+        console.warn('Failed to load incidents; showing empty state');
       }
       return { items: [], total: 0 };
     },
@@ -25,9 +31,9 @@ export function useIncident(id: string | undefined) {
       if (!id) return null;
       try {
         const { data } = await endpoints.incidents.get(id);
-        if (data) return data;
+        return data?.data ?? data ?? null;
       } catch (err) {
-        console.warn('API fallback to mock incident');
+        console.warn('Failed to load incident; showing empty state');
       }
       return null;
     },
@@ -42,9 +48,10 @@ export function useIncidentTimeline(id: string | undefined) {
       if (!id) return [];
       try {
         const { data } = await endpoints.incidents.timeline(id);
-        if (data && Array.isArray(data) && data.length > 0) return data;
+        const items = Array.isArray(data) ? data : (data?.data ?? []);
+        if (Array.isArray(items) && items.length > 0) return items;
       } catch (err) {
-        console.warn('API fallback to mock timeline');
+        console.warn('Failed to load timeline; showing empty state');
       }
       return [];
     },
@@ -58,9 +65,10 @@ export function useHealingActions() {
     queryFn: async () => {
       try {
         const { data } = await endpoints.healing.history();
-        if (data?.items && data.items.length > 0) return data.items;
+        const items = Array.isArray(data) ? data : (data?.data ?? data?.items ?? []);
+        if (Array.isArray(items) && items.length > 0) return items;
       } catch (err) {
-        console.warn('API fallback to mock healing actions');
+        console.warn('Failed to load healing actions; showing empty state');
       }
       return [];
     },
@@ -75,9 +83,9 @@ export function useSLO(serviceId: string | undefined) {
       if (!serviceId) return null;
       try {
         const { data } = await endpoints.slo.get(serviceId);
-        if (data) return data;
+        return data?.data ?? data ?? null;
       } catch (err) {
-        console.warn('API fallback to mock SLO');
+        console.warn('Failed to load SLO; showing empty state');
       }
       return null;
     },
@@ -97,7 +105,7 @@ export function useAnomalyDetection() {
         });
         if (data) return data;
       } catch (err) {
-        console.warn('API fallback to mock anomaly');
+        console.warn('Failed to load anomaly data; showing empty state');
       }
       return null;
     },
@@ -115,7 +123,7 @@ export function useServices() {
         if (Array.isArray(actualData)) return actualData;
         if (actualData?.services && Array.isArray(actualData.services)) return actualData.services;
       } catch (err) {
-        console.warn('API fallback to mock services');
+        console.warn('Failed to load services; showing empty state');
       }
       return [];
     },
@@ -123,9 +131,9 @@ export function useServices() {
   });
 }
 
-export function useMetrics(serviceId: string, metric: string, from: string, to: string) {
+export function useMetrics(serviceId: string, metric: string, from: string, to: string, refreshKey?: number) {
   return useQuery({
-    queryKey: ['metrics', serviceId, metric, from, to],
+    queryKey: ['metrics', serviceId, metric, from, to, refreshKey],
     queryFn: async () => {
       try {
         const { data } = await endpoints.metrics.query({
@@ -133,11 +141,15 @@ export function useMetrics(serviceId: string, metric: string, from: string, to: 
           metric,
           from,
           to,
-          step: '60',
+          // Go time.ParseDuration format — the collector rejects bare numbers
+          // (audit: this was '60' → 'invalid step duration' 400 on EVERY metric
+          // fetch, so every dashboard chart / catalog sparkline silently fell
+          // into the empty state via the catch below).
+          step: '60s',
         });
-        if (data) return data;
+        return data?.data ?? data ?? null;
       } catch (err) {
-        console.warn('API fallback to mock metrics');
+        console.warn('Failed to load metrics; showing empty state');
       }
       return {
         metric,

@@ -90,13 +90,19 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_log(actor_id, created_at DESC);
 
 
+-- Must mirror Flyway V1 + V14 exactly: with baseline-on-migrate the V1
+-- migration is skipped on a fresh docker boot, so THIS definition is the
+-- effective schema. The previous shape (name NOT NULL, metric_name) diverged
+-- from the JPA entity (name nullable, metric, service_key) and crashed the
+-- DemoDataSeeder on every fresh boot — all seeded pages ended up empty.
 CREATE TABLE IF NOT EXISTS slo_definitions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     service_id UUID REFERENCES services(id),
-    name VARCHAR(150) NOT NULL,
-    metric_name VARCHAR(150) NOT NULL,
-    target_percentage DOUBLE PRECISION NOT NULL DEFAULT 99.9,
-    window_days INTEGER NOT NULL DEFAULT 30,
+    name VARCHAR(200),
+    metric VARCHAR(100),
+    service_key VARCHAR(150),
+    target_percentage NUMERIC(5,2),
+    window_days SMALLINT DEFAULT 30,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 

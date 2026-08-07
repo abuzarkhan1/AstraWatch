@@ -1,0 +1,27 @@
+replicaCount: 1
+
+image:
+  repository: astrawatch/analyzer
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+env:
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  CLICKHOUSE_HOST: clickhouse
+  CLICKHOUSE_PORT: "9000"
+
+secrets:
+  JWT_SECRET: ""
+  INTERNAL_API_TOKEN: ""
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 1Gi

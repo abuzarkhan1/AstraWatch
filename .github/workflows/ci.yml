@@ -125,6 +125,27 @@ jobs:
           bash -n scripts/create_kafka_topics.sh
           bash -n tests/integration_test.sh
 
+  cxx-agent:
+    name: C++ (cxx-agent)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq cmake g++ protobuf-compiler-grpc libgrpc++-dev libprotobuf-dev pkg-config libssl-dev zlib1g-dev clang libbpf-dev
+      - name: Configure + build
+        working-directory: services/cxx-agent
+        run: |
+          mkdir -p build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release 2>&1 | tail -5
+          cmake --build . --target astrawatch-agent 2>&1 | tail -10
+      - name: Run unit tests
+        working-directory: services/cxx-agent/build
+        run: |
+          cmake --build . --target agent_test 2>&1 | tail -5
+          ./agent_test
+
   e2e:
     name: End-to-end smoke (docker compose)
     runs-on: ubuntu-latest
@@ -149,10 +170,13 @@ jobs:
             sleep 10
           done
       - name: Run integration test
+        # Audit fix: the integration test was best-effort (|| true) so CI stayed
+        # green even when the product flow was broken. It now fails the job on a
+        # real failure, and the test itself asserts an auth round-trip + billing
+        # contract so the product flow is actually exercised.
         run: |
           chmod +x tests/integration_test.sh
-          ./tests/integration_test.sh || true
-          echo "Note: integration_test.sh is best-effort; individual failures are inspected via logs."
+          ./tests/integration_test.sh
       - name: Collect service logs on failure
         if: failure()
         working-directory: infra/docker

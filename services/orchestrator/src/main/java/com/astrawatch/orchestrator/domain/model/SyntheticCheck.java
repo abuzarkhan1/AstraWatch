@@ -39,8 +39,10 @@ public class SyntheticCheck {
     @Column(name = "response_time_ms")
     private Integer responseTimeMs;
 
-    @Column(nullable = false)
-    private Double uptime = 100.0;
+    // Nullable: null means "never probed" — a fabricated 100.0 default made an
+    // unmonitored check look perfect (audit fix).
+    @Column(name = "uptime")
+    private Double uptime;
 
     @Column(name = "last_run_at")
     private Instant lastRunAt;
@@ -54,6 +56,6 @@ public class SyntheticCheck {
         if (type == null || type.isBlank()) type = "http";
         if (status == null || status.isBlank()) status = "passing";
         if (intervalSeconds == null || intervalSeconds <= 0) intervalSeconds = 60;
-        if (uptime == null) uptime = 100.0;
+        // uptime intentionally left null until a probe records a real value.
     }
 }

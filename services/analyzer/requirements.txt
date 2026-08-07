@@ -1,6 +1,10 @@
 fastapi>=0.100.0
 uvicorn[standard]>=0.20.0
 aiokafka>=0.8.0
+# cramjam: aiokafka's C-codec layer needs it to decode the collector's
+# zstd-compressed Kafka batches (without it the consumer dies on the first
+# batch and no anomaly ever reaches the anomaly-detected topic).
+cramjam>=2.8.0
 redis>=4.5.0
 numpy>=1.22.0
 scipy>=1.9.0

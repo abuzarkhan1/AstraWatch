@@ -59,13 +59,24 @@
             <span th:text="${rootCause}">Analysis pending — see incident for details.</span>
         </div>
 
+        <!-- Auto-remediation PR link: shown only when the analyzer's evidence-backed
+             fix was actually opened as a PR on the connected repo (Phase 4). -->
+        <div th:if="${prUrl != null and !prUrl.isEmpty()}" style="margin:16px 0;padding:12px;background:#12261a;border-radius:8px;border:1px solid #238636;font-size:13px;line-height:1.6;color:#7ee787">
+            <strong>🤖 Auto-remediation PR opened:</strong><br/>
+            AstraWatch opened a remediation pull request on your connected repository.
+            <div style="margin-top:10px">
+                <a th:href="${prUrl}" style="display:inline-block;background-color:#238636;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600">Review Pull Request</a>
+            </div>
+        </div>
+
         <!-- Boundary notes: what AstraWatch did and did NOT do (audit V5 — "no
              full access"). This is the explicit boundary disclosure the plan
              requires in every alert email. -->
         <div style="margin:16px 0;padding:12px;background:#21262d;border-radius:8px;border:1px solid #30363d;font-size:12px;line-height:1.6;color:#8b949e">
             <strong style="color:#c9d1d9">What was done &amp; boundaries:</strong>
             <ul style="margin:8px 0 0 0;padding-left:18px">
-                <li>This is a detection alert — no action was taken automatically.</li>
+                <li>This is a detection alert — no cluster action was taken automatically.</li>
+                <li th:if="${prUrl != null and !prUrl.isEmpty()}">A remediation PR was opened on the connected repository for human review — the PR is not auto-merged.</li>
                 <li>Any healing action is risk-scored and approval-gated; the operator only executes approved actions under blast-radius guards.</li>
                 <li>Protected namespaces, critical workloads, restart-loop and replica caps are never crossed — no full cluster access.</li>
             </ul>

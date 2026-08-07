@@ -9,6 +9,11 @@ interface AppState {
   healingActions: HealingAction[];
   theme: 'light' | 'dark';
   sidebarOpen: boolean;
+  // Global observability context (SaaS-standard): a single time range and
+  // auto-refresh cadence that every page respects, like Datadog/Grafana.
+  timeRangeMinutes: number;
+  autoRefresh: boolean;
+  lastRefresh: number;
 
   setIncidents: (incidents: Incident[]) => void;
   addIncident: (incident: Incident) => void;
@@ -19,6 +24,9 @@ interface AppState {
   addHealingAction: (action: HealingAction) => void;
   toggleTheme: () => void;
   setSidebarOpen: (open: boolean) => void;
+  setTimeRangeMinutes: (minutes: number) => void;
+  setAutoRefresh: (enabled: boolean) => void;
+  markRefreshed: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -29,6 +37,9 @@ export const useAppStore = create<AppState>((set) => ({
   healingActions: [],
   theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'dark',
   sidebarOpen: true,
+  timeRangeMinutes: Number(localStorage.getItem('timeRangeMinutes')) || 60,
+  autoRefresh: localStorage.getItem('autoRefresh') !== 'false',
+  lastRefresh: Date.now(),
 
   setIncidents: (incidents) => set({ incidents }),
 
@@ -70,4 +81,16 @@ export const useAppStore = create<AppState>((set) => ({
     }),
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+  setTimeRangeMinutes: (minutes) => {
+    localStorage.setItem('timeRangeMinutes', String(minutes));
+    set({ timeRangeMinutes: minutes, lastRefresh: Date.now() });
+  },
+
+  setAutoRefresh: (enabled) => {
+    localStorage.setItem('autoRefresh', String(enabled));
+    set({ autoRefresh: enabled });
+  },
+
+  markRefreshed: () => set({ lastRefresh: Date.now() }),
 }));

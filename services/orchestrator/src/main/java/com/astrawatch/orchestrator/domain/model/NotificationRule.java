@@ -23,10 +23,13 @@ public class NotificationRule {
     @Column(nullable = false)
     private String name;
 
-    @Column(columnDefinition = "jsonb", nullable = false)
+    // Stored as TEXT (see V10 migration): Hibernate binds these plain String
+    // fields as VARCHAR, which Postgres rejects for native jsonb/UUID[] columns
+    // ("column is of type jsonb but expression is of type character varying").
+    @Column(nullable = false)
     private String conditions;
 
-    @Column(name = "channel_ids", columnDefinition = "UUID[]", nullable = false)
+    @Column(name = "channel_ids", nullable = false)
     private String channelIds;
 
     @Column(name = "is_enabled")
@@ -34,6 +37,9 @@ public class NotificationRule {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "last_triggered_at")
+    private Instant lastTriggeredAt;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -49,6 +55,8 @@ public class NotificationRule {
     public void setEnabled(boolean enabled) { isEnabled = enabled; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public Instant getLastTriggeredAt() { return lastTriggeredAt; }
+    public void setLastTriggeredAt(Instant lastTriggeredAt) { this.lastTriggeredAt = lastTriggeredAt; }
 
     @PrePersist
     protected void onCreate() {

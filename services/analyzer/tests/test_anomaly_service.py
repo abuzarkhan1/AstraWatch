@@ -7,8 +7,12 @@ from app.ml.causal import generate_ai_diagnosis
 
 class TestAnomalyService(unittest.TestCase):
     def test_generate_ai_diagnosis(self):
+        # No evidence supplied — the summary must be honest (no invented
+        # exception) and the suggestedFix must still be a real, well-formed
+        # remediation document for the auto-PR pipeline.
         diagnosis = generate_ai_diagnosis(service_id="payment")
-        self.assertIn("NullPointerException", diagnosis["summary"])
+        self.assertIn("payment", diagnosis["summary"])
+        self.assertNotIn("NullPointerException", diagnosis["summary"])
         self.assertIn("targetFile", diagnosis["suggestedFix"])
         self.assertIn("patch", diagnosis["suggestedFix"])
         self.assertIn("explanation", diagnosis["suggestedFix"])

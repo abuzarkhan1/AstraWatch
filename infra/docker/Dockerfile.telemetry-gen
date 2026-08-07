@@ -1,0 +1,9 @@
+FROM golang:1.26-alpine AS builder
+WORKDIR /app
+COPY services/telemetry-gen/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o telemetry-gen .
+
+FROM alpine:3.19
+RUN apk --no-cache add ca-certificates
+COPY --from=builder /app/telemetry-gen /usr/local/bin/telemetry-gen
+CMD ["telemetry-gen"]

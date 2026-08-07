@@ -20,7 +20,7 @@ public class StatusPageMaintenance {
     @Column(name = "org_id")
     private UUID orgId;
 
-    @Column(name = "component_ids", columnDefinition = "UUID[]")
+    @Column(name = "component_ids")
     private String componentIds;
 
     @Column(nullable = false)

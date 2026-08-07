@@ -25,10 +25,11 @@ function createOpenApiSpec(servicesFilter = null, title = "AstraWatch Unified AP
     },
     servers: [
       { url: "http://localhost:8080/v1", description: "Collector Service (:8080)" },
-      { url: "http://localhost:8001/v1", description: "Analyzer Service (:8001)" },
-      { url: "http://localhost:8081/api/v1", description: "Orchestrator Service (:8081)" },
-      { url: "http://localhost:8082/api/v1", description: "K8s Operator Service (:8082)" },
-      { url: "http://localhost:3001", description: "Realtime Gateway (:3001)" }
+      { url: "http://localhost:8000/v1", description: "Analyzer Service (:8000)" },
+      { url: "http://localhost:8082/api/v1", description: "Orchestrator Service (:8082)" },
+      { url: "http://localhost:8081/healthz", description: "K8s Operator Service (:8081 healthz)" },
+      { url: "http://localhost:8084", description: "Realtime Gateway (:8084)" },
+      { url: "http://localhost:8085/api/v1", description: "Payment Service (:8085)" }
     ],
     tags: [],
     paths: {},

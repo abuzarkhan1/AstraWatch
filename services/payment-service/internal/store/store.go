@@ -27,15 +27,41 @@ type SubscriptionStore interface {
 	Close() error
 }
 
+// CustomerMapping binds an AstraWatch user id (JWT sub) to a Stripe customer id
+// (cus_*). This is what lets us derive the Stripe customer from the JWT subject
+// instead of trusting a client-supplied customer_id (audit: IDOR on
+// subscriptions/portal — any authenticated user could read another customer's
+// subscriptions).
+type CustomerMapping struct {
+	UserID     string `json:"user_id"`
+	CustomerID string `json:"customer_id"`
+	CreatedAt  int64  `json:"created_at"`
+}
+
+// CustomerStore persists user→customer mappings.
+type CustomerStore interface {
+	// LookupCustomer returns the Stripe customer id for a user, or "" if none.
+	LookupCustomer(ctx context.Context, userID string) (string, error)
+	// SaveCustomer records a user→customer binding (idempotent).
+	SaveCustomer(ctx context.Context, mapping CustomerMapping) error
+	// LookupUserID returns the user id for a Stripe customer id (reverse map,
+	// used by webhooks that only carry cus_* ids).
+	LookupUserID(ctx context.Context, customerID string) (string, error)
+}
+
 // ── In-memory implementation (fallback when Postgres is unavailable) ───────
 
 type MemoryStore struct {
 	mu   sync.RWMutex
 	subs map[string][]SubscriptionState
+	cust map[string]string // userID -> customerID
 }
 
 func NewMemoryStore() *MemoryStore {
-	return &MemoryStore{subs: make(map[string][]SubscriptionState)}
+	return &MemoryStore{
+		subs: make(map[string][]SubscriptionState),
+		cust: make(map[string]string),
+	}
 }
 
 func (s *MemoryStore) Upsert(_ context.Context, state SubscriptionState) error {
@@ -60,6 +86,30 @@ func (s *MemoryStore) ByCustomer(_ context.Context, customerID string) ([]Subscr
 	return append([]SubscriptionState(nil), s.subs[customerID]...), nil
 }
 
+func (s *MemoryStore) LookupCustomer(_ context.Context, userID string) (string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.cust[userID], nil
+}
+
+func (s *MemoryStore) SaveCustomer(_ context.Context, mapping CustomerMapping) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.cust[mapping.UserID] = mapping.CustomerID
+	return nil
+}
+
+func (s *MemoryStore) LookupUserID(_ context.Context, customerID string) (string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for uid, cid := range s.cust {
+		if cid == customerID {
+			return uid, nil
+		}
+	}
+	return "", nil
+}
+
 func (s *MemoryStore) Close() error { return nil }
 
 // ── Postgres implementation ────────────────────────────────────────────────
@@ -81,7 +131,7 @@ func NewPostgresStore(dsn string) *PostgresStore {
 	}
 }
 
-// Open initializes the pgx pool and creates the table if missing.
+// Open initializes the pgx pool and creates the tables if missing.
 func (p *PostgresStore) Open() error {
 	cfg, err := pgxParseConfig(p.dsn)
 	if err != nil {
@@ -121,6 +171,32 @@ func (p *PostgresStore) ByCustomer(ctx context.Context, customerID string) ([]Su
 		}
 	}
 	return p.MemoryStore.ByCustomer(ctx, customerID)
+}
+
+func (p *PostgresStore) LookupCustomer(ctx context.Context, userID string) (string, error) {
+	if p.dbReady && p.pool != nil {
+		if id, err := queryCustomer(ctx, p.pool, userID); err == nil && id != "" {
+			return id, nil
+		}
+	}
+	return p.MemoryStore.LookupCustomer(ctx, userID)
+}
+
+func (p *PostgresStore) SaveCustomer(ctx context.Context, mapping CustomerMapping) error {
+	_ = p.MemoryStore.SaveCustomer(ctx, mapping)
+	if !p.dbReady || p.pool == nil {
+		return nil
+	}
+	return saveCustomer(ctx, p.pool, mapping)
+}
+
+func (p *PostgresStore) LookupUserID(ctx context.Context, customerID string) (string, error) {
+	if p.dbReady && p.pool != nil {
+		if uid, err := queryUserByCustomer(ctx, p.pool, customerID); err == nil && uid != "" {
+			return uid, nil
+		}
+	}
+	return p.MemoryStore.LookupUserID(ctx, customerID)
 }
 
 func (p *PostgresStore) Close() error {

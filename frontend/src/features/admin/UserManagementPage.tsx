@@ -6,11 +6,7 @@ import ShieldCheck from '@/components/ui/shield-check';
 import GearIcon from '@/components/ui/gear-icon';
 import MagnifierIcon from '@/components/ui/magnifier-icon';
 import CheckedIcon from '@/components/ui/checked-icon';
-import SparklesIcon from '@/components/ui/sparkles-icon';
-import DownChevron from '@/components/ui/down-chevron';
 import RefreshIcon from '@/components/ui/refresh-icon';
-import DotsHorizontalIcon from '@/components/ui/dots-horizontal-icon';
-import TriangleAlertIcon from '@/components/ui/triangle-alert-icon';
 import EyeIcon from '@/components/ui/eye-icon';
 import {
   UserX,
@@ -138,45 +134,6 @@ export default function UserManagementPage() {
     return matchesSearch && matchesRole;
   });
 
-  const getRoleBadge = (role: UserRole) => {
-    switch (role) {
-      case 'ADMIN':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-950/80 text-blue-300 border border-blue-500/50 shadow-[0_0_12px_rgba(32,108,232,0.3)]">
-            <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-            ADMIN
-          </span>
-        );
-      case 'OPERATOR':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
-            <GearIcon className="w-3.5 h-3.5 text-cyan-400" />
-            OPERATOR
-          </span>
-        );
-      case 'VIEWER':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neutral-900 text-gray-300 border border-neutral-700">
-            <EyeIcon className="w-3.5 h-3.5 text-gray-400" />
-            VIEWER
-          </span>
-        );
-      case 'BILLING_OWNER':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-300 border border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]">
-            <CreditCard className="w-3.5 h-3.5 text-amber-400" />
-            BILLING_OWNER
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neutral-900 text-gray-400 border border-neutral-800">
-            {role || 'USER'}
-          </span>
-        );
-    }
-  };
-
   return (
     <div className="space-y-8">
       {/* Header Section */}
@@ -199,28 +156,28 @@ export default function UserManagementPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-sm">
+        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-400">Total Users</span>
             <UsersIcon className="w-5 h-5 text-blue-500" />
           </div>
           <span className="text-3xl font-bold text-white">{totalUsers}</span>
         </div>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-sm">
+        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-400">Admins</span>
             <ShieldCheck className="w-5 h-5 text-purple-500" />
           </div>
           <span className="text-3xl font-bold text-white">{adminCount}</span>
         </div>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-sm">
+        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-400">Operators</span>
             <GearIcon className="w-5 h-5 text-emerald-500" />
           </div>
           <span className="text-3xl font-bold text-white">{operatorCount}</span>
         </div>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-sm">
+        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-400">Viewers & Billing</span>
             <EyeIcon className="w-5 h-5 text-gray-400" />
@@ -230,7 +187,7 @@ export default function UserManagementPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
         {/* Filters */}
         <div className="p-4 border-b border-neutral-800 bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="relative w-full sm:w-96">

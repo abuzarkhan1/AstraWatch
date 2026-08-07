@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-orchestrator
+  labels:
+    app: astrawatch
+    component: orchestrator
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: astrawatch
+      component: orchestrator
+  template:
+    metadata:
+      labels:
+        app: astrawatch
+        component: orchestrator
+    spec:
+      containers:
+        - name: orchestrator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8082
+          env:
+            {{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: astrawatch-secrets
+                  key: JWT_SECRET
+            - name: INTERNAL_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: astrawatch-secrets
+                  key: INTERNAL_API_TOKEN
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-orchestrator
+  labels:
+    app: astrawatch
+    component: orchestrator
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: astrawatch
+    component: orchestrator
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8082

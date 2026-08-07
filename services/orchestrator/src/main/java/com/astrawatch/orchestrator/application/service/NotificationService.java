@@ -111,6 +111,72 @@ public class NotificationService implements NotificationPort {
         return notificationRepository.saveRule(rule);
     }
 
+    /**
+     * Toggles a notification rule's enabled flag (audit: alerting UI had no
+     * backend to persist rule state — the frontend toggled local-only).
+     */
+    public Optional<NotificationRule> setRuleEnabled(UUID id, boolean enabled) {
+        return notificationRepository.findRuleById(id).map(rule -> {
+            rule.setEnabled(enabled);
+            return notificationRepository.saveRule(rule);
+        });
+    }
+
+    /**
+     * Actually dispatches a test payload through a channel adapter and returns
+     * the real result (audit: testChannel returned a fabricated success).
+     */
+    public Map<String, Object> testChannelDelivery(UUID id) {
+        Optional<NotificationChannel> opt = notificationRepository.findChannelById(id);
+        if (opt.isEmpty()) {
+            return Map.of("delivered", false, "error", "Channel not found", "responseCode", 404);
+        }
+        NotificationChannel ch = opt.get();
+        String url = extractUrl(ch.getConfig());
+        if (url == null || url.isBlank()) {
+            return Map.of("delivered", false, "error", "Channel config has no valid url", "responseCode", 0);
+        }
+        try {
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            "{\"text\":\"[AstraWatch] Test notification\",\"message\":\"This is a test from the AstraWatch alerting center.\"}"))
+                    .timeout(java.time.Duration.ofSeconds(10))
+                    .build();
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            boolean ok = resp.statusCode() >= 200 && resp.statusCode() < 300;
+            return Map.of("delivered", ok, "responseCode", resp.statusCode(),
+                    "channel", ch.getName() != null ? ch.getName() : "");
+        } catch (Exception e) {
+            return Map.of("delivered", false, "error", e.getMessage() != null ? e.getMessage() : "delivery failed", "responseCode", 0);
+        }
+    }
+
+    /**
+     * Simulates a rule match and returns the channels that would receive the
+     * alert, with their config state (audit: testRule returned a fabricated
+     * empty summary).
+     */
+    public Map<String, Object> testRuleDelivery(UUID id) {
+        Optional<NotificationRule> opt = notificationRepository.findRuleById(id);
+        if (opt.isEmpty()) {
+            return Map.of("matched", false, "error", "Rule not found", "deliveries", List.of());
+        }
+        NotificationRule rule = opt.get();
+        List<Map<String, Object>> deliveries = new ArrayList<>();
+        for (NotificationChannel ch : notificationRepository.findAllChannels()) {
+            if (ch == null || !ch.isEnabled()) continue;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("channelId", ch.getId() != null ? ch.getId().toString() : "");
+            row.put("name", ch.getName());
+            row.put("type", ch.getType());
+            row.put("configured", ch.getConfig() != null && !ch.getConfig().isBlank());
+            deliveries.add(row);
+        }
+        return Map.of("matched", true, "rule", rule.getName() != null ? rule.getName() : "", "deliveries", deliveries);
+    }
+
     public List<NotificationPreference> getPreferences(UUID userId) {
         return notificationRepository.findPreferencesByUserId(userId);
     }
@@ -187,6 +253,11 @@ public class NotificationService implements NotificationPort {
             String unsubscribeToken = generateUnsubscribeToken(recipient);
             String unsubscribeUrl = dashboardUrl + "/unsubscribe?token=" + unsubscribeToken;
 
+            // When the auto-PR pipeline opened a remediation PR on the connected
+            // repo, surface the link in the alert email (extracted from the
+            // resolution note the GitHub service records).
+            String prUrl = extractPullRequestUrl(incident.getResolutionNote());
+
             String htmlBody;
             if (templateEngine != null) {
                 Context ctx = new Context();
@@ -197,6 +268,7 @@ public class NotificationService implements NotificationPort {
                 ctx.setVariable("description", incident.getDescription() != null ? incident.getDescription() : "No details provided");
                 ctx.setVariable("rootCause", incident.getRootCause() != null ? incident.getRootCause() : "Analysis pending — see incident for details.");
                 ctx.setVariable("dashboardUrl", dashboardUrl + "/incidents/" + (incident.getId() != null ? incident.getId().toString() : ""));
+                ctx.setVariable("prUrl", prUrl != null ? prUrl : "");
                 ctx.setVariable("unsubscribeUrl", unsubscribeUrl);
                 htmlBody = templateEngine.process("email/anomaly-alert", ctx);
             } else {
@@ -412,6 +484,23 @@ public class NotificationService implements NotificationPort {
     }
 
     private final com.fasterxml.jackson.databind.ObjectMapper channelMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    /**
+     * Extracts the GitHub PR URL from an incident's resolution note. The auto-PR
+     * pipeline records it as "GitHub PR: <url>"; returns null when absent so the
+     * alert email only links a PR that actually exists.
+     */
+    private String extractPullRequestUrl(String resolutionNote) {
+        if (resolutionNote == null || resolutionNote.isBlank()) return null;
+        String marker = "GitHub PR: ";
+        int idx = resolutionNote.lastIndexOf(marker);
+        if (idx < 0) return null;
+        String url = resolutionNote.substring(idx + marker.length()).trim();
+        // Cut trailing text on the same line (notes are newline-separated).
+        int nl = url.indexOf('\n');
+        if (nl >= 0) url = url.substring(0, nl).trim();
+        return url.isEmpty() ? null : url;
+    }
 
     private String extractUrl(String config) {
         try {

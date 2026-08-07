@@ -13,8 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
@@ -33,6 +35,13 @@ public class GitHubIntegrationService {
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
 
+    /**
+     * Swappable GitHub API base URL (defaults to the public API). Behavior tests
+     * point this at an in-process HTTP stub so the real REST sequence (refs,
+     * contents, pulls) is exercised over actual HTTP — not a mocked client.
+     */
+    private String githubApiBase = "https://api.github.com";
+
     @Autowired
     public GitHubIntegrationService(GitHubIntegrationRepository integrationRepository,
                                    GitHubRepositoryRepository repositoryRepository,
@@ -41,7 +50,21 @@ public class GitHubIntegrationService {
                                    IncidentCommandService incidentCommandService,
                                    ObjectMapper objectMapper) {
         this(integrationRepository, repositoryRepository, incidentRepository,
-                healingActionRepository, incidentCommandService, objectMapper, new RestTemplate());
+                healingActionRepository, incidentCommandService, objectMapper, buildRestTemplate());
+    }
+
+    /**
+     * Bounded HTTP client. The default RestTemplate has INFINITE connect/read
+     * timeouts — the auto-PR path runs inline on the Kafka consumer thread, so a
+     * hung GitHub connection would stall the entire orchestrator-group consumer
+     * (all partitions, all services) indefinitely. 5s connect / 15s read bounds
+     * the worst case and lets the outer flow fail loudly instead.
+     */
+    private static RestTemplate buildRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5_000);
+        factory.setReadTimeout(15_000);
+        return new RestTemplate(factory);
     }
 
     // Testable constructor: allows injecting a mocked RestTemplate so the GitHub
@@ -60,6 +83,10 @@ public class GitHubIntegrationService {
         this.incidentCommandService = incidentCommandService;
         this.objectMapper = objectMapper;
         this.restTemplate = restTemplate;
+    }
+
+    public void setGitHubApiBase(String base) {
+        this.githubApiBase = base;
     }
 
     @Transactional
@@ -126,7 +153,46 @@ public class GitHubIntegrationService {
         return repositoryRepository.findAll();
     }
 
-    @Transactional
+    /**
+     * Validates read access to a GitHub repo without persisting anything. The
+     * audit found the frontend's GitHub modal faked success ("simulate connection
+     * test feedback") because no real test endpoint existed. This hits the GitHub
+     * API and reports the truth. Falls back to a clean error when GitHub is
+     * unreachable — never a fabricated success.
+     */
+    public Map<String, Object> testConnection(String repoOwner, String repoName, String accessToken) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String token = (accessToken == null || accessToken.isBlank())
+                    ? integrationRepository.findByTenantId(null).map(GitHubIntegration::getAccessToken).orElse("")
+                    : accessToken;
+            String url = githubApiBase + "/repos/" + repoOwner + "/" + repoName;
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setBearerAuth(token);
+            headers.set("Accept", "application/vnd.github+json");
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+            org.springframework.http.ResponseEntity<Map> resp = restTemplate.exchange(
+                    url, org.springframework.http.HttpMethod.GET, entity, Map.class);
+            result.put("success", resp.getStatusCode().is2xxSuccessful());
+            result.put("statusCode", resp.getStatusCode().value());
+            result.put("repoUrl", "https://github.com/" + repoOwner + "/" + repoName);
+            if (resp.getBody() != null) {
+                Object fullName = resp.getBody().get("full_name");
+                result.put("fullName", fullName);
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("error", e.getMessage() != null ? e.getMessage() : "GitHub API unreachable");
+        }
+        return result;
+    }
+
+    // Deliberately NOT @Transactional: the GitHub REST round-trips (refs, contents,
+    // pulls) run inside this method, and a transaction would pin a pooled DB
+    // connection for their full duration. Each repository call below is already
+    // self-transactional, and the PR on GitHub is the source of truth — the
+    // metadata recording here is best-effort, so partial persistence on a crash
+    // is acceptable and never fabricates a PR.
     public String createRemediationPullRequest(UUID incidentId, String aiAnalysis, String codePatch) {
         log.info("Initiating automated remediation PR creation for incidentId={}", incidentId);
 
@@ -208,7 +274,7 @@ public class GitHubIntegrationService {
 
     private String getBranchRefSha(String owner, String repo, String branch, String token) {
         try {
-            String url = String.format("https://api.github.com/repos/%s/%s/git/ref/heads/%s", owner, repo, branch);
+            String url = String.format(githubApiBase + "/repos/%s/%s/git/ref/heads/%s", owner, repo, branch);
             HttpHeaders headers = createHeaders(token);
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
@@ -227,7 +293,7 @@ public class GitHubIntegrationService {
 
     private void createBranchRef(String owner, String repo, String branchName, String baseSha, String token) {
         try {
-            String url = String.format("https://api.github.com/repos/%s/%s/git/refs", owner, repo);
+            String url = String.format(githubApiBase + "/repos/%s/%s/git/refs", owner, repo);
             HttpHeaders headers = createHeaders(token);
             Map<String, Object> body = Map.of(
                     "ref", "refs/heads/" + branchName,
@@ -235,6 +301,20 @@ public class GitHubIntegrationService {
             );
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             restTemplate.postForEntity(url, entity, Map.class);
+        } catch (HttpStatusCodeException e) {
+            // Idempotent retry: a re-run after a partial failure finds the branch
+            // already created (GitHub 422 "Reference already exists") — that is
+            // success, not an error. Any other status stays a warning so the
+            // outer flow still fails loudly at the PR step. The body may be null
+            // on synthesized client-side exceptions — guard before reading it.
+            if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
+                String body = e.getResponseBodyAsString();
+                if (body != null && body.toLowerCase().contains("already exists")) {
+                    log.info("Branch refs/heads/{} already exists (retry after partial failure), continuing", branchName);
+                    return;
+                }
+            }
+            log.warn("Failed to create branch ref refs/heads/{}: {}", branchName, e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to create branch ref refs/heads/{}: {}", branchName, e.getMessage());
         }
@@ -244,7 +324,7 @@ public class GitHubIntegrationService {
         try {
             String existingSha = null;
             try {
-                String getUrl = String.format("https://api.github.com/repos/%s/%s/contents/%s?ref=%s", owner, repo, filePath, branchName);
+                String getUrl = String.format(githubApiBase + "/repos/%s/%s/contents/%s?ref=%s", owner, repo, filePath, branchName);
                 HttpHeaders headers = createHeaders(token);
                 HttpEntity<Void> entity = new HttpEntity<>(headers);
                 ResponseEntity<Map> getResp = restTemplate.exchange(getUrl, HttpMethod.GET, entity, Map.class);
@@ -253,9 +333,18 @@ public class GitHubIntegrationService {
                 }
             } catch (Exception ignored) {}
 
-            String url = String.format("https://api.github.com/repos/%s/%s/contents/%s", owner, repo, filePath);
+            String url = String.format(githubApiBase + "/repos/%s/%s/contents/%s", owner, repo, filePath);
             HttpHeaders headers = createHeaders(token);
-            String base64Content = Base64.getEncoder().encodeToString((codePatch != null ? codePatch : "// AstraWatch Fix Patch").getBytes(StandardCharsets.UTF_8));
+            // The codePatch carries a "File: <path>\n<content>" header used for
+            // extractTargetFile — strip that header line before committing so the
+            // repo file contains only the real patch content, never the marker.
+            String fileContent = codePatch != null ? codePatch : "";
+            if (fileContent.startsWith("File: ")) {
+                int nl = fileContent.indexOf('\n');
+                // Guard the edge case "File: x" with no trailing newline.
+                fileContent = nl >= 0 ? fileContent.substring(nl + 1) : "";
+            }
+            String base64Content = Base64.getEncoder().encodeToString(fileContent.getBytes(StandardCharsets.UTF_8));
 
             Map<String, Object> body = new HashMap<>();
             body.put("message", "AstraWatch AI Remediation for Incident " + incidentId);
@@ -274,7 +363,7 @@ public class GitHubIntegrationService {
 
     private String openPullRequest(String owner, String repo, String branchName, String baseBranch, String title, String body, String token) {
         try {
-            String url = String.format("https://api.github.com/repos/%s/%s/pulls", owner, repo);
+            String url = String.format(githubApiBase + "/repos/%s/%s/pulls", owner, repo);
             HttpHeaders headers = createHeaders(token);
             Map<String, Object> reqBody = Map.of(
                     "title", (title != null ? "[AstraWatch Auto-Remediation] " + title : "[AstraWatch] Auto Remediation PR"),
@@ -288,10 +377,49 @@ public class GitHubIntegrationService {
                 String htmlUrl = (String) response.getBody().get("html_url");
                 if (htmlUrl != null) return htmlUrl;
             }
+        } catch (HttpStatusCodeException e) {
+            // Idempotency / state recovery: a prior attempt may have opened the
+            // PR but crashed before recording the URL. GitHub rejects the second
+            // POST with 422 "A pull request already exists for these branches" —
+            // instead of failing (and leaving a zombie PR unlinked), recover the
+            // existing PR's URL so the incident gets the real link.
+            if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
+                String existing = findExistingPullRequest(owner, repo, branchName, token);
+                if (existing != null) {
+                    log.info("Recovered existing PR for branch {} (prior partial failure): {}", branchName, existing);
+                    return existing;
+                }
+            }
+            log.warn("Failed to open pull request on GitHub: {}", e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to open pull request on GitHub: {}", e.getMessage());
         }
         throw new IllegalStateException("Failed to open pull request on GitHub for " + owner + "/" + repo);
+    }
+
+    /**
+     * Looks up an already-open PR for the remediation branch (head=owner:branch)
+     * and returns its html_url, or null when none exists. Used to recover from a
+     * duplicate-PR 422 so a retry never orphans a real PR from the incident.
+     */
+    private String findExistingPullRequest(String owner, String repo, String branchName, String token) {
+        try {
+            String url = String.format(githubApiBase + "/repos/%s/%s/pulls?head=%s:%s&state=all",
+                    owner, repo, owner, branchName);
+            HttpHeaders headers = createHeaders(token);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, entity, List.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                for (Object item : response.getBody()) {
+                    if (item instanceof Map<?, ?> pr && pr.get("html_url") != null) {
+                        return String.valueOf(pr.get("html_url"));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to look up existing PR for branch {}: {}", branchName, e.getMessage());
+        }
+        return null;
     }
 
     private HttpHeaders createHeaders(String token) {
@@ -305,14 +433,22 @@ public class GitHubIntegrationService {
     }
 
     private String extractTargetFile(String codePatch) {
+        String target = null;
         if (codePatch != null && codePatch.contains("File: ")) {
             int idx = codePatch.indexOf("File: ");
             int end = codePatch.indexOf("\n", idx);
             if (end > idx) {
-                return codePatch.substring(idx + 6, end).trim();
+                target = codePatch.substring(idx + 6, end).trim();
             }
         }
-        return "src/main/java/com/astrawatch/remediation/IncidentFix.java";
+        // Hardening (audit review): reject empty, absolute, or path-traversal
+        // targets — a malicious/LLM-supplied "File: ../../x" must never escape the
+        // repo root via the GitHub contents API.
+        if (target == null || target.isEmpty() || target.startsWith("/")
+                || target.contains("..")) {
+            throw new IllegalStateException("Unsafe remediation target file: '" + target + "'");
+        }
+        return target;
     }
 
     private String buildPullRequestBody(Incident incident, String aiAnalysis, String codePatch) {

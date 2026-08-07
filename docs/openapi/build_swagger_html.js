@@ -303,10 +303,10 @@ const htmlContent = `<!DOCTYPE html>
     const titles = {
       'openapi.json': 'Unified OpenAPI 3.0 Spec',
       'collector.json': 'Collector Service (:8080)',
-      'analyzer.json': 'Analyzer Service (:8001)',
-      'orchestrator.json': 'Orchestrator Service (:8081)',
-      'operator.json': 'Operator Service (:8082)',
-      'realtime.json': 'Realtime Gateway (:3001)'
+      'analyzer.json': 'Analyzer Service (:8000)',
+      'orchestrator.json': 'Orchestrator Service (:8082)',
+      'operator.json': 'Operator Service (:8081 healthz)',
+      'realtime.json': 'Realtime Gateway (:8084)'
     };
     document.getElementById('navService').textContent = titles[key] || key;
     initSwagger(key);

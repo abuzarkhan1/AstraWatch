@@ -23,6 +23,11 @@ public class PostmortemRepositoryAdapter implements PostmortemRepository {
     }
 
     @Override
+    public List<Postmortem> findAll() {
+        return postmortemJpa.findAll();
+    }
+
+    @Override
     public Postmortem save(Postmortem postmortem) {
         return postmortemJpa.save(postmortem);
     }

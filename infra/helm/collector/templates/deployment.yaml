@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-collector
+  labels:
+    app: astrawatch
+    component: collector
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: astrawatch
+      component: collector
+  template:
+    metadata:
+      labels:
+        app: astrawatch
+        component: collector
+    spec:
+      containers:
+        - name: collector
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+            - containerPort: 9090
+          env:
+            {{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: astrawatch-secrets
+                  key: JWT_SECRET
+            - name: INTERNAL_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: astrawatch-secrets
+                  key: INTERNAL_API_TOKEN
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-collector
+  labels:
+    app: astrawatch
+    component: collector
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: astrawatch
+    component: collector
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: 8080
+    - name: grpc
+      port: {{ .Values.service.grpcPort }}
+      targetPort: 9090

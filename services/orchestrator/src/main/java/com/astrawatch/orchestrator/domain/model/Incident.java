@@ -40,7 +40,7 @@ public class Incident {
     @Column(name = "assigned_to")
     private UUID assignedTo;
 
-    @Column(name = "root_cause", columnDefinition = "jsonb")
+    @Column(name = "root_cause")
     private String rootCause;
 
     @Column(name = "resolution_note", columnDefinition = "TEXT")
@@ -54,6 +54,11 @@ public class Incident {
 
     @Column(name = "resolved_at")
     private Instant resolvedAt;
+
+    // Tenant the incident belongs to (V19). The Kafka incident-* events carry
+    // this so the realtime gateway pushes to the correct tenant room.
+    @Column(name = "tenant_id")
+    private String tenantId;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -81,10 +86,12 @@ public class Incident {
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public Instant getResolvedAt() { return resolvedAt; }
     public void setResolvedAt(Instant resolvedAt) { this.resolvedAt = resolvedAt; }
+    public String getTenantId() { return tenantId; }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
 
     public static IncidentBuilder builder() { return new IncidentBuilder(); }
     public static class IncidentBuilder {
-        private UUID id; private UUID serviceId; private UUID anomalyId; private Severity severity; private IncidentState state; private String title; private String description; private UUID assignedTo; private String rootCause; private String resolutionNote;
+        private UUID id; private UUID serviceId; private UUID anomalyId; private Severity severity; private IncidentState state; private String title; private String description; private UUID assignedTo; private String rootCause; private String resolutionNote; private String tenantId;
         public IncidentBuilder id(UUID id) { this.id = id; return this; }
         public IncidentBuilder serviceId(UUID serviceId) { this.serviceId = serviceId; return this; }
         public IncidentBuilder anomalyId(UUID anomalyId) { this.anomalyId = anomalyId; return this; }
@@ -95,9 +102,10 @@ public class Incident {
         public IncidentBuilder assignedTo(UUID assignedTo) { this.assignedTo = assignedTo; return this; }
         public IncidentBuilder rootCause(String rootCause) { this.rootCause = rootCause; return this; }
         public IncidentBuilder resolutionNote(String resolutionNote) { this.resolutionNote = resolutionNote; return this; }
+        public IncidentBuilder tenantId(String tenantId) { this.tenantId = tenantId; return this; }
         public Incident build() {
             Incident i = new Incident();
-            i.id = this.id; i.serviceId = this.serviceId; i.anomalyId = this.anomalyId; i.severity = this.severity; i.state = this.state; i.title = this.title; i.description = this.description; i.assignedTo = this.assignedTo; i.rootCause = this.rootCause; i.resolutionNote = this.resolutionNote;
+            i.id = this.id; i.serviceId = this.serviceId; i.anomalyId = this.anomalyId; i.severity = this.severity; i.state = this.state; i.title = this.title; i.description = this.description; i.assignedTo = this.assignedTo; i.rootCause = this.rootCause; i.resolutionNote = this.resolutionNote; i.tenantId = this.tenantId;
             return i;
         }
     }

@@ -16,33 +16,46 @@ interface GitHubIntegrationModalProps {
 }
 
 export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: GitHubIntegrationModalProps) {
-  const [repo, setRepo] = useState('astrawatch/payment-service');
+  const [repo, setRepo] = useState('');
   const [autoPR, setAutoPR] = useState(true);
-  const [token, setToken] = useState('ghp_************************************');
-  const [connected, setConnected] = useState(true);
+  const [token, setToken] = useState('');
+  const [connected, setConnected] = useState(false);
+
+  // Audit fix: the modal previously faked success on every error and the token
+  // shipped with a fabricated 'ghp_***' default. Now the fields start honest
+  // (empty), the real /test endpoint reports the truth, and save errors are
+  // surfaced instead of being silently converted into 'success'.
+  const splitRepo = (value: string): { owner: string; name: string } => {
+    const parts = value.trim().split('/');
+    return { owner: parts[0] ?? '', name: parts.slice(1).join('/') };
+  };
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      // Load saved settings from API or localStorage fallback
+      // Load saved settings from localStorage fallback
       const savedRepo = localStorage.getItem('astrawatch_github_repo');
       const savedAutoPR = localStorage.getItem('astrawatch_github_auto_pr');
       if (savedRepo) setRepo(savedRepo);
       if (savedAutoPR !== null) setAutoPR(savedAutoPR === 'true');
 
-      // Fetch from API
+      // Fetch connected repos from the real API (GET /api/v1/integrations/github/repos)
       endpoints.github.getIntegration()
-        .then(res => {
-          if (res.data) {
-            if (res.data.repo) setRepo(res.data.repo);
-            if (res.data.autoPR !== undefined) setAutoPR(res.data.autoPR);
-            setConnected(true);
+        .then((res: any) => {
+          const unwrapped = res?.data?.data ?? res?.data;
+          const repos = Array.isArray(unwrapped) ? unwrapped : [];
+          if (repos.length > 0) {
+            const r = repos[0];
+            if (r?.repoOwner && r?.repoName) {
+              setRepo(`${r.repoOwner}/${r.repoName}`);
+              setConnected(true);
+            }
           }
         })
         .catch(() => {
-          // Gracefully fallback to defaults / localStorage
+          // Keep localStorage fallback; connected stays false until a real check passes
         });
     }
   }, [isOpen]);
@@ -52,14 +65,25 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
   const handleTestConnection = async () => {
     setTesting(true);
     setMessage(null);
+    const { owner, name } = splitRepo(repo);
+    if (!owner || !name) {
+      setMessage({ type: 'error', text: 'Enter a repository in owner/repo format.' });
+      setTesting(false);
+      return;
+    }
     try {
-      await endpoints.github.testConnection({ repo });
-      setConnected(true);
-      setMessage({ type: 'success', text: `Successfully connected to repository ${repo}!` });
+      const res: any = await endpoints.github.testConnection({ repoOwner: owner, repoName: name, accessToken: token || undefined });
+      const result = res?.data?.data ?? res?.data;
+      if (result?.success === true) {
+        setConnected(true);
+        setMessage({ type: 'success', text: `Successfully connected to ${owner}/${name}.` });
+      } else {
+        setConnected(false);
+        setMessage({ type: 'error', text: `Connection failed: ${result?.error ?? result?.message ?? 'GitHub rejected the request'}` });
+      }
     } catch (err: any) {
-      // Even if endpoint returns error or dev mock, simulate connection test feedback
-      setConnected(true);
-      setMessage({ type: 'success', text: `Verified access to ${repo} (GitHub App Installed).` });
+      setConnected(false);
+      setMessage({ type: 'error', text: `Connection failed: ${err?.response?.data?.data?.error ?? err?.message ?? 'GitHub API unreachable'}` });
     } finally {
       setTesting(false);
     }
@@ -70,26 +94,32 @@ export default function GitHubIntegrationModal({ isOpen, onClose, onSaved }: Git
     setLoading(true);
     setMessage(null);
 
+    const { owner, name } = splitRepo(repo);
+    if (!owner || !name) {
+      setMessage({ type: 'error', text: 'Enter a repository in owner/repo format.' });
+      setLoading(false);
+      return;
+    }
+    if (!token.trim()) {
+      setMessage({ type: 'error', text: 'A GitHub access token is required to connect.' });
+      setLoading(false);
+      return;
+    }
+
     try {
-      await endpoints.github.updateIntegration({ repo, autoPR, token });
+      await endpoints.github.updateIntegration({ repoOwner: owner, repoName: name, accessToken: token });
       localStorage.setItem('astrawatch_github_repo', repo);
       localStorage.setItem('astrawatch_github_auto_pr', String(autoPR));
-      
+
       setConnected(true);
-      setMessage({ type: 'success', text: 'GitHub integration settings saved successfully!' });
+      setMessage({ type: 'success', text: 'GitHub integration connected successfully!' });
       if (onSaved) onSaved(repo, autoPR);
       setTimeout(() => {
         onClose();
       }, 1200);
     } catch (err: any) {
-      // Dev fallback save
-      localStorage.setItem('astrawatch_github_repo', repo);
-      localStorage.setItem('astrawatch_github_auto_pr', String(autoPR));
-      setMessage({ type: 'success', text: 'GitHub integration settings updated!' });
-      if (onSaved) onSaved(repo, autoPR);
-      setTimeout(() => {
-        onClose();
-      }, 1200);
+      // Honest error surfaced — no fabricated success.
+      setMessage({ type: 'error', text: `Save failed: ${err?.response?.data?.data?.error ?? err?.response?.data?.message ?? err?.message ?? 'GitHub API unreachable'}` });
     } finally {
       setLoading(false);
     }

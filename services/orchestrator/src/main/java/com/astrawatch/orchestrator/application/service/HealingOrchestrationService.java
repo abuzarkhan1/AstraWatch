@@ -37,11 +37,13 @@ public class HealingOrchestrationService {
 
     private boolean healingEnabled = true;
 
-    // Gated auto-PR remediation: off by default. When enabled, an incident whose
-    // service has a strictly-scoped linked repo may generate a remediation PR
-    // (audit F4 boundary: never any-repo fallback, never mock tokens).
-    @Value("${astrawatch.healing.auto-pr.enabled:false}")
-    private boolean autoPREnabled = false;
+    // Gated auto-PR remediation. When enabled, an incident whose service has a
+    // strictly-scoped linked repo may generate a remediation PR (audit F4
+    // boundary: never any-repo fallback, never mock tokens). Enabled by default
+    // since Phase 4 landed real evidence-backed patches from the analyzer — the
+    // flag can be turned off with ASTRAWATCH_AUTO_PR_ENABLED=false.
+    @Value("${astrawatch.healing.auto-pr.enabled:true}")
+    private boolean autoPREnabled = true;
 
     @Autowired
     public HealingOrchestrationService(HealingActionRepository healingActionRepository,
@@ -107,6 +109,24 @@ public class HealingOrchestrationService {
 
         log.info("Healing triggered: actionId={}, incidentId={}, type={}, riskScore={}, status={}",
                 action.getId(), incidentId, actionType, riskScore, initialStatus);
+
+        // Publish healing-triggered to Kafka (audit: the realtime gateway maps
+        // this topic to healing.started but no producer existed — the UI's
+        // "healing started" toast never fired). Tenant default matches the
+        // anomaly-detected convention so the browser room receives it.
+        try {
+            Map<String, Object> healingEvent = new LinkedHashMap<>();
+            healingEvent.put("incidentId", incidentId.toString());
+            healingEvent.put("actionId", action.getId().toString());
+            healingEvent.put("actionType", actionType);
+            healingEvent.put("riskScore", riskScore);
+            healingEvent.put("status", initialStatus.name());
+            healingEvent.put("serviceId", incident.getServiceId() != null ? incident.getServiceId().toString() : null);
+            healingEvent.put("tenantId", "default");
+            kafkaEventProducer.publish("healing-triggered", action.getId().toString(), healingEvent);
+        } catch (Exception e) {
+            log.error("Failed to publish healing-triggered event: {}", e.getMessage());
+        }
 
         try {
             notificationService.sendHealingStatusEmail(action, initialStatus.name());
@@ -285,6 +305,16 @@ public class HealingOrchestrationService {
             return false;
         }
         if (incident == null || incident.getServiceId() == null) {
+            return false;
+        }
+        // Never open a placeholder PR: the analyzer's evidence-backed patch is the
+        // ONLY content we will commit. When it is absent (analyzer down / circuit
+        // breaker fallback / no suggestedFix), no PR is created — the audit
+        // explicitly forbade fabricated "// AstraWatch Fix Patch" commits.
+        if (codePatch == null || codePatch.isBlank()) {
+            log.info("[SKIP] No evidence-backed patch from analyzer for incident {} — "
+                            + "refusing to open a placeholder remediation PR.",
+                    incident.getId());
             return false;
         }
         // Strict service scoping: never fall back to "any repo in the system" — that

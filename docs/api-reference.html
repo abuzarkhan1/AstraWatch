@@ -601,22 +601,22 @@ body{font-family:'Inter',system-ui,sans-serif;background:#000;color:#fff;-webkit
 
             <!-- Analyzer -->
             <rect x="420" y="165" width="160" height="70" rx="12" fill="#7e22ce" fill-opacity="0.15" stroke="#a855f7" stroke-width="1.5"/>
-            <text x="500" y="195" text-anchor="middle" fill="#c084fc" font-weight="700" font-size="13">Analyzer (:8001)</text>
+            <text x="500" y="195" text-anchor="middle" fill="#c084fc" font-weight="700" font-size="13">Analyzer (:8000)</text>
             <text x="500" y="213" text-anchor="middle" fill="#888" font-size="10">Python ML Engine</text>
 
             <!-- Orchestrator -->
             <rect x="210" y="165" width="140" height="70" rx="12" fill="#1d4ed8" fill-opacity="0.15" stroke="#3b82f6" stroke-width="1.5"/>
-            <text x="280" y="195" text-anchor="middle" fill="#60a5fa" font-weight="700" font-size="13">Orchestrator (:8081)</text>
+            <text x="280" y="195" text-anchor="middle" fill="#60a5fa" font-weight="700" font-size="13">Orchestrator (:8082)</text>
             <text x="280" y="213" text-anchor="middle" fill="#888" font-size="10">Java Spring Control</text>
 
             <!-- Operator -->
             <rect x="210" y="290" width="140" height="70" rx="12" fill="#b45309" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1.5"/>
-            <text x="280" y="320" text-anchor="middle" fill="#f59e0b" font-weight="700" font-size="13">Operator (:8082)</text>
+            <text x="280" y="320" text-anchor="middle" fill="#f59e0b" font-weight="700" font-size="13">Operator (:8081)</text>
             <text x="280" y="338" text-anchor="middle" fill="#888" font-size="10">Go K8s Controller</text>
 
             <!-- Realtime -->
             <rect x="640" y="165" width="140" height="70" rx="12" fill="#4338ca" fill-opacity="0.15" stroke="#818cf8" stroke-width="1.5"/>
-            <text x="710" y="195" text-anchor="middle" fill="#818cf8" font-weight="700" font-size="13">Realtime (:3001)</text>
+            <text x="710" y="195" text-anchor="middle" fill="#818cf8" font-weight="700" font-size="13">Realtime (:8084)</text>
             <text x="710" y="213" text-anchor="middle" fill="#888" font-size="10">Node.js Socket.io</text>
 
             <!-- Postgres -->
@@ -662,10 +662,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:#000;color:#fff;-webkit
               <thead><tr><th>Service</th><th>Port</th><th>Base Path</th><th>Protocol</th><th>Role</th></tr></thead>
               <tbody>
                 <tr><td class="t-svc">collector</td><td class="t-port">:8080</td><td class="t-path">/v1</td><td class="t-proto">HTTP REST</td><td>Telemetry Ingestion &amp; Catalog</td></tr>
-                <tr><td class="t-svc">analyzer</td><td class="t-port">:8001</td><td class="t-path">/v1</td><td class="t-proto">HTTP REST</td><td>ML Anomaly Detection &amp; Root Cause</td></tr>
-                <tr><td class="t-svc">orchestrator</td><td class="t-port">:8081</td><td class="t-path">/api/v1</td><td class="t-proto">HTTP REST</td><td>Control Plane, Auth &amp; Incident Engine</td></tr>
-                <tr><td class="t-svc">operator</td><td class="t-port">:8082</td><td class="t-path">/api/v1</td><td class="t-proto">HTTP REST</td><td>K8s Controller &amp; Remediations</td></tr>
-                <tr><td class="t-svc">realtime</td><td class="t-port">:3001</td><td class="t-path">/</td><td class="t-proto">Socket.io WS</td><td>Live WebSocket Telemetry Stream</td></tr>
+                <tr><td class="t-svc">analyzer</td><td class="t-port">:8000</td><td class="t-path">/v1</td><td class="t-proto">HTTP REST</td><td>ML Anomaly Detection &amp; Root Cause</td></tr>
+                <tr><td class="t-svc">orchestrator</td><td class="t-port">:8082</td><td class="t-path">/api/v1</td><td class="t-proto">HTTP REST</td><td>Control Plane, Auth &amp; Incident Engine</td></tr>
+                <tr><td class="t-svc">operator</td><td class="t-port">:8081</td><td class="t-path">/healthz</td><td class="t-proto">HTTP</td><td>K8s Controller &amp; Remediations (Kafka-driven)</td></tr>
+                <tr><td class="t-svc">realtime</td><td class="t-port">:8084</td><td class="t-path">/</td><td class="t-proto">Socket.io WS</td><td>Live WebSocket Telemetry Stream</td></tr>
               </tbody>
             </table>
           </div>

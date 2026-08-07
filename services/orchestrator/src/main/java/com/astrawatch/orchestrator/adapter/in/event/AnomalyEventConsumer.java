@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -32,10 +33,28 @@ public class AnomalyEventConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate redisTemplate;
+    private final JdbcTemplate jdbcTemplate;
     private final GitHubIntegrationService gitHubIntegrationService;
     private final GitHubRepositoryRepository gitHubRepositoryRepository;
     private final HealingOrchestrationService healingOrchestrationService;
     private final AnalyzerClient analyzerClient;
+
+    // Backward-compatible constructor kept for unit tests that predate the
+    // JdbcTemplate wiring (review fix: adding a constructor arg broke the
+    // existing AnomalyEventConsumerTest/AutoRemediationPipelineTest setUp).
+    public AnomalyEventConsumer(IncidentCommandService incidentService,
+                                IncidentRepository incidentRepository,
+                                NotificationService notificationService,
+                                ObjectMapper objectMapper,
+                                StringRedisTemplate redisTemplate,
+                                GitHubIntegrationService gitHubIntegrationService,
+                                GitHubRepositoryRepository gitHubRepositoryRepository,
+                                HealingOrchestrationService healingOrchestrationService,
+                                AnalyzerClient analyzerClient) {
+        this(incidentService, incidentRepository, notificationService, objectMapper,
+                redisTemplate, gitHubIntegrationService, gitHubRepositoryRepository,
+                healingOrchestrationService, analyzerClient, null);
+    }
 
     @Autowired
     public AnomalyEventConsumer(IncidentCommandService incidentService,
@@ -46,7 +65,8 @@ public class AnomalyEventConsumer {
                                 @Autowired(required = false) GitHubIntegrationService gitHubIntegrationService,
                                 @Autowired(required = false) GitHubRepositoryRepository gitHubRepositoryRepository,
                                 @Autowired(required = false) HealingOrchestrationService healingOrchestrationService,
-                                @Autowired(required = false) AnalyzerClient analyzerClient) {
+                                @Autowired(required = false) AnalyzerClient analyzerClient,
+                                @Autowired(required = false) JdbcTemplate jdbcTemplate) {
         this.incidentService = incidentService;
         this.incidentRepository = incidentRepository;
         this.notificationService = notificationService;
@@ -56,6 +76,7 @@ public class AnomalyEventConsumer {
         this.gitHubRepositoryRepository = gitHubRepositoryRepository;
         this.healingOrchestrationService = healingOrchestrationService;
         this.analyzerClient = analyzerClient;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @KafkaListener(topics = "anomaly-detected", groupId = "orchestrator-group")
@@ -97,13 +118,23 @@ public class AnomalyEventConsumer {
                     ? String.join(", ", event.getAffectedMetrics())
                     : "latency";
 
+            // The catalog id is a string ("payment-api"); resolve it to the
+            // registered service UUID when one exists, otherwise leave null (the
+            // column is nullable) — the title keeps the readable service name.
+            UUID serviceUuid = resolveServiceUuid(event.getServiceId());
+            // The analyzer carries the tenant id on every anomaly event — thread it
+            // through so the incident and its Kafka pushes land in the right tenant
+            // room (audit: incidents defaulted to "default" tenant).
+            String tenantId = event.getTenantId() != null && !event.getTenantId().isBlank()
+                    ? event.getTenantId() : "default";
             Incident incident = incidentService.createIncident(
-                    event.getServiceId(),
+                    serviceUuid,
                     anomalyUuid,
                     severity,
                     "Anomaly detected: " + event.getServiceId(),
                     String.format("Anomaly score: %.2f, affected metrics: %s",
-                            event.getAnomalyScore(), metricsStr)
+                            event.getAnomalyScore(), metricsStr),
+                    tenantId
             );
 
             // Root-cause analysis: ask the analyzer for a real diagnosis. If it fails,
@@ -114,8 +145,14 @@ public class AnomalyEventConsumer {
             String codePatch = null;
             try {
                 if (analyzerClient != null) {
+                    // Forward the real serviceId (and tenantId when present) so the
+                    // analyzer mines log evidence for the actual service — the auto-PR
+                    // remediation document depends on it (audit review finding).
                     Map<String, Object> diagnosis = analyzerClient.getRootCause(
-                            incident.getId().toString(), 900).block(Duration.ofSeconds(3));
+                            incident.getId().toString(),
+                            event.getServiceId(),
+                            event.getTenantId(),
+                            900).block(Duration.ofSeconds(3));
                     if (diagnosis != null) {
                         Object diagObj = diagnosis.get("aiDiagnosis");
                         if (diagObj instanceof Map<?, ?> diagMap && diagMap.get("summary") != null) {
@@ -124,6 +161,22 @@ public class AnomalyEventConsumer {
                         Object causes = diagnosis.get("rankedCauses");
                         if (causes != null) {
                             aiAnalysis += " Root causes: " + causes;
+                        }
+                        // Phase 4: the analyzer returns a real evidence-backed
+                        // suggestedFix (targetFile + patch). Build the codePatch
+                        // string in the "File: <path>\n<content>" shape the GitHub
+                        // PR writer parses. When the analyzer has no fix, codePatch
+                        // stays null and no PR is created (never a placeholder).
+                        if (diagObj instanceof Map<?, ?> diagMap) {
+                            Object fixObj = diagMap.get("suggestedFix");
+                            if (fixObj instanceof Map<?, ?> fixMap) {
+                                Object targetFile = fixMap.get("targetFile");
+                                Object patch = fixMap.get("patch");
+                                if (targetFile != null && patch != null
+                                        && !String.valueOf(patch).isBlank()) {
+                                    codePatch = "File: " + targetFile + "\n" + patch;
+                                }
+                            }
                         }
                     }
                 }
@@ -141,21 +194,28 @@ public class AnomalyEventConsumer {
             }
             incidentRepository.save(incident);
 
-            // Automated PR remediation is gated behind astrawatch.healing.auto-pr.enabled
-            // (off by default) and strictly service-scoped — the audit found the previous
-            // path fabricated code patches and could target the wrong repo. When disabled,
-            // processAutomatedRemediationIfEligible logs a dry-run and returns false.
-            // NOTE: codePatch is currently null (real solution generation is Phase 4), so
-            // enabling auto-pr today writes a placeholder patch — keep the flag off until
-            // the gated diagnosis→patch pipeline lands.
+            // Automated PR remediation (Phase 4): when a service has a strictly-scoped
+            // linked GitHub repo, the analyzer's evidence-backed suggestedFix is opened
+            // as a PR on that same repo. Gated by astrawatch.healing.auto-pr.enabled
+            // (default true). When codePatch is null (analyzer down / no suggestedFix),
+            // processAutomatedRemediationIfEligible refuses to open a placeholder PR.
             if (healingOrchestrationService != null) {
                 healingOrchestrationService.processAutomatedRemediationIfEligible(incident, aiAnalysis, codePatch);
             } else if (gitHubIntegrationService != null && gitHubRepositoryRepository != null) {
-                boolean repoLinked = gitHubRepositoryRepository.findByServiceId(event.getServiceId()).isPresent();
+                // The catalog id is a string; resolve to the services-table UUID for
+                // the linked-repo lookup (review fix).
+                UUID resolved = resolveServiceUuid(event.getServiceId());
+                boolean repoLinked = resolved != null
+                        && gitHubRepositoryRepository.findByServiceId(resolved).isPresent();
                 log.info("[DRY-RUN] Auto-remediation PR would have been created for incident {} (service {}, linkedRepo={}) — "
-                                + "auto-PR disabled pending gated solution generation.",
+                                + "auto-PR service unavailable.",
                         incident.getId(), event.getServiceId(), repoLinked);
             }
+
+            // createRemediationPullRequest persists the PR URL on its own fetched
+            // incident instance — re-read ours so the alert email carries the link.
+            Incident latest = incidentRepository.findById(incident.getId()).orElse(incident);
+            incident.setResolutionNote(latest.getResolutionNote());
 
             // Wire email notification trigger
             try {
@@ -166,6 +226,20 @@ public class AnomalyEventConsumer {
 
         } catch (Exception e) {
             log.error("Failed to process anomaly event: {}", e.getMessage(), e);
+        }
+    }
+
+    // Resolve a catalog service name to its registered service UUID (the
+    // services table is seeded by the workspace provisioner). Honest null
+    // when no service row matches — never a fabricated UUID.
+    private UUID resolveServiceUuid(String serviceName) {
+        if (serviceName == null || serviceName.isBlank() || jdbcTemplate == null) return null;
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT id FROM services WHERE name = ? LIMIT 1",
+                    UUID.class, serviceName);
+        } catch (Exception e) {
+            return null;
         }
     }
 

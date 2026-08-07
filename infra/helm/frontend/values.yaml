@@ -1,0 +1,28 @@
+replicaCount: 1
+
+image:
+  repository: astrawatch/frontend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  host: ""
+  annotations: {}
+
+# Public base URLs the SPA talks to (browser-facing).
+env:
+  VITE_API_BASE_URL: /api/v1
+  VITE_WS_URL: /ws
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: "500m"
+    memory: 256Mi

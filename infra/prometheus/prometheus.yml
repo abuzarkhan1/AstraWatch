@@ -5,6 +5,6 @@ scrape_configs:
   - job_name: 'astrawatch-collector'
     static_configs:
       - targets: ['collector:8080']
-  - job_name: 'astrawatch-cxx-agent'
+  - job_name: 'astrawatch-operator'
     static_configs:
-      - targets: ['cxx-agent:8080']
+      - targets: ['operator:8081']

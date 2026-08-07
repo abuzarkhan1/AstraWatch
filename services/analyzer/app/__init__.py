@@ -108,8 +108,12 @@ async def run_periodic_detection():
                     break
 
             try:
+                # The detectors (feature_engineering, statistical) call .hour/
+                # .weekday() on each ts — they need real datetime objects, not
+                # ISO strings (a string here crashed every detection run and no
+                # anomaly ever reached the anomaly-detected topic).
                 metrics_dict = [
-                    {"name": m.name, "value": m.value, "ts": m.ts.isoformat()}
+                    {"name": m.name, "value": m.value, "ts": m.ts}
                     for m in metrics
                 ]
                 result = detector.detect(

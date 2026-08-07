@@ -410,6 +410,75 @@ func (qs *QueryService) ListServices(ctx context.Context, tenantID string) ([]st
 	return services, nil
 }
 
+// ServiceDependency is one edge of the service graph: the service the queried
+// service CALLS (outbound dependency). Type is a best-effort classification
+// derived from the callee id (database / cache / queue / service).
+type ServiceDependency struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// dependencyType classifies a callee from its id. Kept deliberately simple —
+// it is a display hint, not a source of truth.
+func dependencyType(id string) string {
+	lower := strings.ToLower(id)
+	switch {
+	case strings.Contains(lower, "postgres"), strings.Contains(lower, "mysql"), strings.Contains(lower, "db"):
+		return "database"
+	case strings.Contains(lower, "redis"), strings.Contains(lower, "cache"):
+		return "cache"
+	case strings.Contains(lower, "kafka"), strings.Contains(lower, "rabbit"), strings.Contains(lower, "queue"):
+		return "queue"
+	default:
+		return "service"
+	}
+}
+
+// ListDependencies returns the services that serviceID calls, derived from the
+// real trace parent/child span links (span A of service X being the parent of
+// span B of service Y means X depends on Y). Honest empty list when no trace
+// data exists — never fabricated edges.
+func (qs *QueryService) ListDependencies(ctx context.Context, tenantID, serviceID string) ([]ServiceDependency, error) {
+	query := `SELECT DISTINCT t2.service_id
+		FROM traces t1
+		JOIN traces t2 ON t1.span_id = t2.parent_span_id
+		  AND t1.tenant_id = t2.tenant_id
+		WHERE t1.service_id = ?
+		  AND t2.service_id != t1.service_id`
+	args := []interface{}{serviceID}
+	if tenantID != "" {
+		query += " AND t1.tenant_id = ?"
+		args = append(args, tenantID)
+	}
+	query += " LIMIT 50"
+
+	rows, err := qs.conn.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("dependencies query failed: %w", err)
+	}
+	defer rows.Close()
+
+	seen := map[string]bool{}
+	var deps []ServiceDependency
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("dependencies scan failed: %w", err)
+		}
+		if id == "" || seen[id] {
+			continue
+		}
+		seen[id] = true
+		deps = append(deps, ServiceDependency{
+			ID:   id,
+			Name: id,
+			Type: dependencyType(id),
+		})
+	}
+	return deps, nil
+}
+
 // ServiceHealth computes a 0-100 health score for a service from the error-level
 // log ratio in the window. Returns 100 when there is no log data (no evidence of
 // errors — not a fabricated number).

@@ -35,7 +35,7 @@ esac
 
 if [[ "$NO_INFRA" != true ]]; then
   echo "── Infra (docker compose) ───────────────────────────────────"
-  docker compose -f "${ROOT}/infra/docker/docker-compose.yml" up -d
+  docker compose -f "${ROOT}/infra/docker/docker-compose.yml" up -d zookeeper kafka postgres clickhouse redis mailhog
   echo "  Waiting for Kafka, Postgres, ClickHouse, Redis..."
   # Give services a few seconds to become ready; individual services retry on their own.
   sleep 12
@@ -90,7 +90,25 @@ start_bg "realtime" bash -c \
 start_bg "payment" bash -c \
   "cd ${ROOT}/services/payment-service && PORT=8085 JWT_SECRET='${JWT_SECRET}' \
    STRIPE_SECRET_KEY='${STRIPE_SECRET_KEY:-}' STRIPE_WEBHOOK_SECRET='${STRIPE_WEBHOOK_SECRET:-}' \
+   INTERNAL_API_TOKEN='${INTERNAL_API_TOKEN:-internal-dev-token}' \
+   ORCHESTRATOR_URL='http://localhost:8082' DATABASE_URL='postgres://astrawatch:astrawatch@localhost:5432/astrawatch' \
    go run ./cmd/server"
+
+# ── Operator (Go, :8081 healthz; audit 4.1 — was never started) ─────
+start_bg "operator" bash -c \
+  "cd ${ROOT}/services/operator && KAFKA_BROKERS=localhost:9092 \
+   ORCHESTRATOR_URL='http://localhost:8082' METRICS_URL='http://localhost:8080' \
+   OPERATOR_DRY_RUN='${OPERATOR_DRY_RUN:-true}' \
+   go run ./cmd/manager/main.go"
+
+# ── Telemetry generator (seeds + streams demo data; TELEMETRY_GEN=0 to skip) ──
+if [[ "${TELEMETRY_GEN:-1}" != "0" ]]; then
+start_bg "telemetry-gen" bash -c \
+  "cd ${ROOT}/services/telemetry-gen && COLLECTOR_URL='http://localhost:8080' \
+   TENANT='${TELEMETRY_TENANT:-11111111-1111-1111-1111-111111111111}' TICK_SECONDS='${TELEMETRY_TICK:-5}' \
+   BACKFILL_MINUTES='${TELEMETRY_BACKFILL_MINUTES:-45}' ANOMALIES='${TELEMETRY_ANOMALIES:-1}' \
+   go run ."
+fi
 
 # ── Frontend (Vite, :5173) ──────────────────────────────────────────
 start_bg "frontend" bash -c \
@@ -102,7 +120,10 @@ echo "  Frontend:   http://localhost:5173"
 echo "  Orches.:    http://localhost:8082"
 echo "  Collector:  http://localhost:8080"
 echo "  Analyzer:   http://localhost:8000"
-echo "  Realtime:   :8084  |  Payment: :8085"
+echo "  Realtime:   :8084  |  Payment: :8085  |  Operator: dry-run"
+if [[ "${TELEMETRY_GEN:-1}" != "0" ]]; then
+  echo "  Telemetry:  seeding history + streaming demo data (TELEMETRY_GEN=0 to disable)"
+fi
 echo ""
 echo "Press Ctrl-C to stop all services."
 trap 'echo "Stopping all services..."; kill ${PIDS[*]} 2>/dev/null; exit 0' INT TERM

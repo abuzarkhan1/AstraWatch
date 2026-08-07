@@ -23,6 +23,11 @@ public class RunbookRepositoryAdapter implements RunbookRepository {
     }
 
     @Override
+    public List<Runbook> findAllRunbooks() {
+        return runbookJpa.findAll();
+    }
+
+    @Override
     public Optional<Runbook> findRunbookById(UUID id) {
         return runbookJpa.findById(id);
     }

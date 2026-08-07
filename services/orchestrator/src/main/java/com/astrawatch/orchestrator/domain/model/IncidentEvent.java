@@ -24,7 +24,9 @@ public class IncidentEvent {
     @Column(name = "event_type", nullable = false)
     private String eventType;
 
-    @Column(columnDefinition = "jsonb")
+    // V26: was columnDefinition="jsonb" but payload is a plain JSON string —
+    // binding String onto jsonb made every incident-event insert fail.
+    @Column
     private String payload;
 
     @Column(name = "created_at", nullable = false, updatable = false)

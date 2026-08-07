@@ -20,7 +20,7 @@ public class MaintenanceWindow {
     @Column(name = "org_id")
     private UUID orgId;
 
-    @Column(name = "service_ids", columnDefinition = "UUID[]", nullable = false)
+    @Column(name = "service_ids", nullable = false)
     private String serviceIds;
 
     @Column(nullable = false)

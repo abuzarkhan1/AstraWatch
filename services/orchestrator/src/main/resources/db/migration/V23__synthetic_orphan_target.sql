@@ -1,0 +1,11 @@
+-- V23: fresh-boot seeder crash fix (same class as V21). The V2 migration
+-- created synthetic_checks with an ORPHAN `target VARCHAR(500) NOT NULL`
+-- column. V7's CREATE TABLE IF NOT EXISTS silently no-ops on a fresh DB (V2
+-- already made the table), and the JPA entity maps `url` instead (Hibernate
+-- ddl-auto adds it). So inserts that populate `url` but never `target` violate
+-- the NOT NULL constraint and abort the DemoDataSeeder — all synthetic checks
+-- (and with the seeder chained, the pages seeded after it) stay empty.
+--
+-- `target` is dead schema: the entity, controller, frontend and probe runner
+-- all use `url`. Drop it.
+ALTER TABLE synthetic_checks DROP COLUMN IF EXISTS target;

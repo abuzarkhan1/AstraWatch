@@ -11,18 +11,19 @@
     "test": "jest"
   },
   "dependencies": {
-    "socket.io": "^4.7.0",
+    "@godaddy/terminus": "^4.12.1",
+    "@kafkajs/zstd": "^0.1.1",
+    "@opentelemetry/sdk-node": "^0.41.0",
     "@socket.io/redis-adapter": "^8.3.0",
-    "kafkajs": "^2.2.0",
+    "dotenv": "^16.4.0",
     "ioredis": "^5.4.0",
     "jsonwebtoken": "^9.0.0",
     "jwks-rsa": "^3.1.0",
+    "kafkajs": "^2.2.0",
     "pino": "^8.0.0",
-    "zod": "^3.0.0",
-    "@opentelemetry/sdk-node": "^0.41.0",
-    "@godaddy/terminus": "^4.12.1",
     "prom-client": "^15.1.0",
-    "dotenv": "^16.4.0"
+    "socket.io": "^4.7.0",
+    "zod": "^3.0.0"
   },
   "devDependencies": {
     "eslint": "^8.56.0",

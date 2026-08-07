@@ -148,7 +148,14 @@ class AnomalyService:
                 for r in ranked[:5]
             ]
 
-        ai_diagnosis_dict = generate_ai_diagnosis(ranked_causes, service_id=service_id)
+        # Mine the actual log stream so the diagnosis — and the auto-PR remediation
+        # document built from it — carries real error content (audit F5). This is the
+        # path the orchestrator's AnomalyEventConsumer calls before opening a PR.
+        from app.services.log_miner import log_miner
+        tenant_id = getattr(request, 'tenantId', None) or 'default'
+        log_evidence = log_miner.evidence(tenant_id, service_id, window_seconds=300)
+
+        ai_diagnosis_dict = generate_ai_diagnosis(ranked_causes, service_id=service_id, log_evidence=log_evidence)
         # Optional LLM prose pass (strategy gap 3); fails closed.
         from app.services.llm_diagnosis import llm_enhance
         ai_diagnosis_dict = await llm_enhance(ai_diagnosis_dict)

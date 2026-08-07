@@ -1,0 +1,29 @@
+replicaCount: 1
+
+image:
+  repository: astrawatch/collector
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+  grpcPort: 9090
+
+env:
+  KAFKA_BROKERS: kafka:9092
+  CLICKHOUSE_ADDR: clickhouse:9000
+  REDIS_ADDR: redis:6379
+  ALLOWED_ORIGINS: "*"
+
+secrets:
+  JWT_SECRET: ""
+  INTERNAL_API_TOKEN: ""
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

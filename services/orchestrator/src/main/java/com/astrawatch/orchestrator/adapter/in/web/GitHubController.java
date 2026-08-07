@@ -44,6 +44,29 @@ public class GitHubController {
         return ResponseEntity.ok(ApiResponse.ok(repos));
     }
 
+    @PostMapping("/test")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> testConnection(@RequestBody(required = false) Map<String, String> body) {
+        if (body == null) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false,
+                    Map.of("error", "Request body is required"), Map.of()));
+        }
+        String repoOwner = body.get("repoOwner");
+        String repoName = body.get("repoName");
+        String repo = body.get("repo");
+        if ((repoOwner == null || repoName == null) && repo != null && repo.contains("/")) {
+            String[] parts = repo.split("/", 2);
+            repoOwner = parts[0];
+            repoName = parts[1];
+        }
+        String accessToken = body.get("accessToken") != null ? body.get("accessToken") : body.get("token");
+        if (repoOwner == null || repoName == null || repoOwner.isBlank() || repoName.isBlank()) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false,
+                    Map.of("error", "repoOwner and repoName are required"), Map.of()));
+        }
+        Map<String, Object> result = gitHubIntegrationService.testConnection(repoOwner, repoName, accessToken);
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
     @PostMapping("/create-pr")
     public ResponseEntity<ApiResponse<Map<String, String>>> createPR(@RequestBody Map<String, String> body) {
         try {

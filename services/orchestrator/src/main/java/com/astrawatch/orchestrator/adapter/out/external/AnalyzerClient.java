@@ -6,6 +6,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,19 +30,29 @@ public class AnalyzerClient {
      * Analyzer is down or slow). While the breaker is OPEN the fallback returns
      * an empty diagnosis immediately and the incident proceeds without ML.
      * Config: resilience4j.circuitbreaker.configs.default.* in application.properties.
+     *
+     * serviceId is REQUIRED for the auto-PR pipeline: root_cause_analysis mines
+     * log evidence keyed by the real service. Falling back to the incident UUID
+     * would produce a generic (evidence-less) remediation PR, so the consumer
+     * always forwards the actual serviceId (and tenantId when available).
      */
     @CircuitBreaker(name = "analyzer", fallbackMethod = "rootCauseFallback")
-    public Mono<Map> getRootCause(String incidentId, int metricsWindow) {
+    public Mono<Map> getRootCause(String incidentId, String serviceId, String tenantId, int metricsWindow) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("incidentId", incidentId);
+        body.put("metricsWindow", metricsWindow);
+        if (serviceId != null) body.put("serviceId", serviceId);
+        if (tenantId != null) body.put("tenantId", tenantId);
         return webClient.post()
                 .uri("/v1/anomaly/root-cause")
-                .bodyValue(Map.of("incidentId", incidentId, "metricsWindow", metricsWindow))
+                .bodyValue(body)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .timeout(Duration.ofSeconds(3));
     }
 
     @SuppressWarnings("unused")
-    private Mono<Map> rootCauseFallback(String incidentId, int metricsWindow, Throwable e) {
+    private Mono<Map> rootCauseFallback(String incidentId, String serviceId, String tenantId, int metricsWindow, Throwable e) {
         log.warn("Root cause request failed (or circuit open), proceeding without ML: {}", e.getMessage());
         return Mono.just(Map.of("rankedCauses", List.of()));
     }

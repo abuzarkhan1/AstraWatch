@@ -57,6 +57,11 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     }
 
     @Override
+    public Optional<NotificationRule> findRuleById(UUID id) {
+        return ruleJpa.findById(id);
+    }
+
+    @Override
     public List<NotificationPreference> findPreferencesByUserId(UUID userId) {
         return preferenceJpa.findByIdUserId(userId);
     }

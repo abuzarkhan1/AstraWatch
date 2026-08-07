@@ -28,14 +28,31 @@ public class IncidentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<IncidentDTO>> createIncident(@RequestBody CreateIncidentRequest request) {
+        // Manual incident creation: stamp the caller's tenant (JWT) so realtime
+        // pushes reach the right room.
+        String tenantId = resolveCallerTenant();
         Incident incident = incidentService.createIncident(
                 request.serviceId(),
                 request.anomalyId(),
                 request.severity(),
                 request.title(),
-                request.description()
+                request.description(),
+                tenantId
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(IncidentDTO.from(incident)));
+    }
+
+    private String resolveCallerTenant() {
+        try {
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() != null) {
+                UUID userId = UUID.fromString(String.valueOf(auth.getPrincipal()));
+                return incidentService.resolveTenantForUser(userId);
+            }
+        } catch (Exception ignored) {
+        }
+        return "default";
     }
 
     @GetMapping
@@ -45,7 +62,7 @@ public class IncidentController {
         if (serviceId != null) {
             incidents = incidentService.getIncidentsByService(serviceId);
         } else {
-            incidents = List.of();
+            incidents = incidentService.listAllIncidents();
         }
         List<IncidentDTO> dtos = incidents.stream().map(IncidentDTO::from).toList();
         return ResponseEntity.ok(ApiResponse.ok(dtos));

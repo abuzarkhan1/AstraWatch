@@ -7,6 +7,7 @@ build:
 	cd services/collector && go build ./...
 	cd services/operator && go build ./...
 	cd services/payment-service && go build ./...
+	cd services/telemetry-gen && go build ./...
 	cd services/orchestrator && mvn compile -q
 	cd services/realtime && npm install --no-optional && node --check src/server.js
 	cd frontend && npm install --no-optional && npx tsc --noEmit
@@ -31,6 +32,14 @@ dev:
 
 dev-down:
 	docker compose -f infra/docker/docker-compose.yml down
+
+# Full data pipeline via Docker: infra + collector + operator + telemetry-gen
+# (seeds and streams demo metrics/logs/traces so every page has data).
+demo:
+	docker compose -f infra/docker/docker-compose.yml -f infra/docker/docker-compose.demo.yml up -d --build
+
+demo-down:
+	docker compose -f infra/docker/docker-compose.yml -f infra/docker/docker-compose.demo.yml down
 
 clean:
 	cd services/orchestrator && mvn clean

@@ -23,7 +23,7 @@ public class HealingAction {
     @Column(name = "action_type", nullable = false)
     private String actionType;
 
-    @Column(columnDefinition = "jsonb")
+    @Column
     private String parameters;
 
     @Column(name = "risk_score", nullable = false)
@@ -36,10 +36,10 @@ public class HealingAction {
     @Column(name = "approved_by")
     private UUID approvedBy;
 
-    @Column(name = "before_metrics", columnDefinition = "jsonb")
+    @Column(name = "before_metrics")
     private String beforeMetrics;
 
-    @Column(name = "after_metrics", columnDefinition = "jsonb")
+    @Column(name = "after_metrics")
     private String afterMetrics;
 
     @Column(name = "created_at", nullable = false, updatable = false)

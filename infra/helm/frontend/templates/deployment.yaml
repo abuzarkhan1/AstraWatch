@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-frontend
+  labels:
+    app: astrawatch
+    component: frontend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: astrawatch
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: astrawatch
+        component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 80
+          env:
+            {{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-frontend
+  labels:
+    app: astrawatch
+    component: frontend
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: astrawatch
+    component: frontend
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 80
+{{- if .Values.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-frontend
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "astrawatch.fullname" . }}-frontend
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}

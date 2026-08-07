@@ -26,6 +26,7 @@ const SyntheticsPage = React.lazy(() => import('@/features/synthetics/Synthetics
 const AdminPage = React.lazy(() => import('@/features/admin/AdminPage'));
 const UserManagementPage = React.lazy(() => import('@/features/admin/UserManagementPage'));
 const NotFoundPage = React.lazy(() => import('@/features/misc/NotFoundPage'));
+const SettingsPage = React.lazy(() => import('@/features/settings/SettingsPage'));
 
 import CustomCursor from '@/components/ui/custom-cursor';
 import PageTransition from '@/components/ui/page-transition';
@@ -40,6 +41,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage';
+import ResetPasswordPage from '@/features/auth/ResetPasswordPage';
+import VerifyEmailPage from '@/features/auth/VerifyEmailPage';
+import AcceptInvitePage from '@/features/auth/AcceptInvitePage';
+const BillingPage = React.lazy(() => import('@/features/billing/BillingPage'));
+const PublicStatusPage = React.lazy(() => import('@/features/status-page/PublicStatusPage'));
+const OnCallPage = React.lazy(() => import('@/features/oncall/OnCallPage'));
+const EscalationPoliciesPage = React.lazy(() => import('@/features/escalation/EscalationPoliciesPage'));
+const NotificationChannelsPage = React.lazy(() => import('@/features/notifications/NotificationChannelsPage'));
+const MaintenanceWindowsPage = React.lazy(() => import('@/features/maintenance/MaintenanceWindowsPage'));
 
 export default function App() {
   const theme = useAppStore((s) => s.theme);
@@ -57,6 +67,10 @@ export default function App() {
           <Route path="/auth/login" element={<AuthPage />} />
           <Route path="/auth/register" element={<AuthPage />} />
           <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/invite" element={<AcceptInvitePage />} />
+          <Route path="/status" element={<Suspense fallback={<LoadingFallback message="Loading status..." />}><PublicStatusPage /></Suspense>} />
           <Route path="/" element={<Navigate to="/landing" replace />} />
         
         <Route
@@ -83,6 +97,12 @@ export default function App() {
           <Route path="/synthetics" element={<Suspense fallback={<LoadingFallback message="Loading Synthetics..." />}><SyntheticsPage /></Suspense>} />
           <Route path="/admin" element={<Suspense fallback={<LoadingFallback message="Loading Control Plane Admin..." />}><AdminPage /></Suspense>} />
           <Route path="/users" element={<Suspense fallback={<LoadingFallback message="Loading User Management..." />}><UserManagementPage /></Suspense>} />
+          <Route path="/settings" element={<Suspense fallback={<LoadingFallback message="Loading Settings..." />}><SettingsPage /></Suspense>} />
+          <Route path="/billing" element={<Suspense fallback={<LoadingFallback message="Loading Billing..." />}><BillingPage /></Suspense>} />
+          <Route path="/oncall" element={<Suspense fallback={<LoadingFallback message="Loading On-Call..." />}><OnCallPage /></Suspense>} />
+          <Route path="/escalation" element={<Suspense fallback={<LoadingFallback message="Loading Escalation Policies..." />}><EscalationPoliciesPage /></Suspense>} />
+          <Route path="/notifications/channels" element={<Suspense fallback={<LoadingFallback message="Loading Notification Channels..." />}><NotificationChannelsPage /></Suspense>} />
+          <Route path="/notifications/maintenance" element={<Suspense fallback={<LoadingFallback message="Loading Maintenance Windows..." />}><MaintenanceWindowsPage /></Suspense>} />
         </Route>
           <Route path="*" element={<Suspense fallback={<LoadingFallback message="Lost in space..." />}><NotFoundPage /></Suspense>} />
         </Routes>

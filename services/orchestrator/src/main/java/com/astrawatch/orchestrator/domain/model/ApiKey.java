@@ -30,7 +30,7 @@ public class ApiKey {
     private String keyPrefix;
 
     // JSON array of permission strings
-    @Column(columnDefinition = "jsonb", nullable = false)
+    @Column(nullable = false)
     private String permissions = "[\"read\"]";
 
     @Column(name = "tenant_id", nullable = false)

@@ -1,6 +1,7 @@
 package com.astrawatch.orchestrator.adapter.in.web;
 
 import com.astrawatch.orchestrator.application.service.EscalationPolicyService;
+import com.astrawatch.orchestrator.infrastructure.security.OrgContextResolver;
 import com.astrawatch.orchestrator.domain.model.EscalationPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,9 +23,11 @@ import java.util.UUID;
 public class EscalationPolicyController {
 
     private final EscalationPolicyService policyService;
+    private final OrgContextResolver orgContextResolver;
 
     @GetMapping("/policies")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getPolicies(@RequestParam(required = false) UUID orgId) {
+        orgId = orgContextResolver.resolve(orgId);
         List<Map<String, Object>> policies = policyService.listPolicies(orgId).stream()
                 .map(p -> Map.<String, Object>of(
                         "id", p.getId().toString(),
@@ -40,6 +43,14 @@ public class EscalationPolicyController {
 
     @PostMapping("/policies")
     public ResponseEntity<ApiResponse<Map<String, Object>>> createPolicy(@RequestBody EscalationPolicy policy) {
+        if (policy.getOrgId() == null) {
+            UUID org = orgContextResolver.resolveFromPrincipal();
+            if (org == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse<>(
+                        false, Map.of("error", "No organization context for this user — join a team before creating policies"), Map.of()));
+            }
+            policy.setOrgId(org);
+        }
         EscalationPolicy saved = policyService.createPolicy(policy);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(Map.<String, Object>of("id", saved.getId().toString(), "name", saved.getName())));

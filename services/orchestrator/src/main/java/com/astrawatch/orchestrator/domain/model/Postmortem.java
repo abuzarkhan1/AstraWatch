@@ -23,10 +23,10 @@ public class Postmortem {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
-    @Column(name = "timeline_edits", columnDefinition = "jsonb")
+    @Column(name = "timeline_edits")
     private String timelineEdits;
 
-    @Column(name = "contributing_factors", columnDefinition = "TEXT[]")
+    @Column(name = "contributing_factors")
     private String contributingFactors;
 
     @Column(name = "severity_was_accurate")

@@ -1,5 +1,23 @@
+import * as KafkaJS from 'kafkajs';
 import { Kafka } from 'kafkajs';
 import { EventEmitter } from 'events';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
+// The collector produces raw-metrics/raw-logs with zstd compression. KafkaJS
+// does not ship a zstd codec, so without this registration every fetch would
+// crash with KafkaJSNotImplemented: ZSTD compression not implemented — killing
+// the entire WebSocket event bridge (incidents, healing, live logs).
+try {
+  const ZstdCodec = require('@kafkajs/zstd');
+  const { CompressionCodecs, CompressionTypes } = KafkaJS.default;
+  // kafkajs's CompressionCodecs maps compression-type -> factory function
+  // returning { compress, decompress }; ZstdCodec() is exactly that factory.
+  CompressionCodecs[CompressionTypes.ZSTD] = ZstdCodec();
+} catch (err) {
+  console.error('zstd codec unavailable (live logs / raw topics will fail):', err.message);
+}
 
 class KafkaConsumer extends EventEmitter {
   constructor() {
@@ -16,7 +34,12 @@ class KafkaConsumer extends EventEmitter {
   async connect() {
     await this.consumer.connect();
 
-    await this.consumer.subscribe({ topic: /^(anomaly-detected|incident-|healing-|slo-)/, fromBeginning: false });
+    // Audit: slo-* was in this pattern but no service ever produced SLO events.
+    // The pattern now matches only topics that actually have producers
+    // (anomaly-detected, incident-created/updated, healing-triggered/completed)
+    // plus raw-logs, which powers the live log tail in the Logs Explorer (the
+    // collector produces raw-logs on every ingest).
+    await this.consumer.subscribe({ topic: /^(anomaly-detected|incident-|healing-|raw-logs)/, fromBeginning: false });
 
     await this.consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
@@ -48,7 +71,7 @@ class KafkaConsumer extends EventEmitter {
       },
     });
 
-    console.log(`Kafka consumer connected, subscribed to pattern: anomaly-detected|incident-*|healing-*|slo-*`);
+    console.log(`Kafka consumer connected, subscribed to pattern: anomaly-detected|incident-*|healing-*|raw-logs`);
   }
 
   mapTopicToEvent(topic) {
@@ -58,8 +81,7 @@ class KafkaConsumer extends EventEmitter {
       'incident-updated': 'incident.updated',
       'healing-triggered': 'healing.started',
       'healing-completed': 'healing.completed',
-      'slo-breaching': 'slo.breaching',
-      'incident-merged': 'incident.merged',
+      'raw-logs': 'log.stream',
     };
     if (mapping[topic]) return mapping[topic];
 

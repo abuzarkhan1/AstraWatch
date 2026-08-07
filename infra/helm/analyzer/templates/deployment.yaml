@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-analyzer
+  labels:
+    app: astrawatch
+    component: analyzer
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: astrawatch
+      component: analyzer
+  template:
+    metadata:
+      labels:
+        app: astrawatch
+        component: analyzer
+    spec:
+      containers:
+        - name: analyzer
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+            {{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: astrawatch-secrets
+                  key: JWT_SECRET
+            - name: INTERNAL_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: astrawatch-secrets
+                  key: INTERNAL_API_TOKEN
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "astrawatch.fullname" . }}-analyzer
+  labels:
+    app: astrawatch
+    component: analyzer
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: astrawatch
+    component: analyzer
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8000

@@ -11,6 +11,7 @@ public record UserDTO(
         String name,
         String avatarUrl,
         String role,
+        String plan,
         UUID teamId,
         Instant createdAt,
         boolean isActive
@@ -22,6 +23,7 @@ public record UserDTO(
                 u.getName(),
                 u.getAvatarUrl(),
                 u.getRole() != null ? u.getRole() : "VIEWER",
+                u.getPlan() != null ? u.getPlan() : "free",
                 u.getTeamId(),
                 u.getCreatedAt(),
                 u.isActive()

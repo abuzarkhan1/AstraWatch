@@ -17,6 +17,7 @@ public interface NotificationRepository {
     void deleteChannelById(UUID id);
     List<NotificationRule> findRulesByOrgId(UUID orgId);
     NotificationRule saveRule(NotificationRule rule);
+    Optional<NotificationRule> findRuleById(UUID id);
     List<NotificationPreference> findPreferencesByUserId(UUID userId);
     List<MaintenanceWindow> findMaintenanceWindowsByOrgId(UUID orgId);
     MaintenanceWindow saveMaintenanceWindow(MaintenanceWindow window);

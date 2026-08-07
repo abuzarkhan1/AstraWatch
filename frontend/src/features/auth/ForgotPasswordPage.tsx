@@ -28,14 +28,17 @@ export default function ForgotPasswordPage() {
 
     try {
       if (endpoints.auth.forgotPassword) {
-        await endpoints.auth.forgotPassword({ email: email.trim() }).catch(() => {});
+        // Audit fix: the previous `.catch(() => {})` swallowed failures and always
+        // showed success. The endpoint never leaks whether an email exists (by
+        // design), but genuine transport failures must surface to the user.
+        await endpoints.auth.forgotPassword({ email: email.trim() });
       } else {
         const { default: api } = await import('@/lib/api');
-        await api.post('/api/v1/auth/forgot-password', { email: email.trim() }).catch(() => {});
+        await api.post('/api/v1/auth/forgot-password', { email: email.trim() });
       }
       setSubmitted(true);
     } catch (err: any) {
-      setErrorMsg(err?.response?.data?.error || 'Failed to send reset link. Please verify your email and try again.');
+      setErrorMsg(err?.response?.data?.data?.error || err?.response?.data?.error || 'Failed to send reset link. Please verify your email and try again.');
     } finally {
       setLoading(false);
     }

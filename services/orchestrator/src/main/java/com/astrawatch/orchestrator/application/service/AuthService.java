@@ -4,6 +4,7 @@ import com.astrawatch.orchestrator.adapter.out.persistence.ApiKeyRepository;
 import com.astrawatch.orchestrator.adapter.out.persistence.InviteRepository;
 import com.astrawatch.orchestrator.adapter.out.persistence.SessionRepository;
 import com.astrawatch.orchestrator.adapter.out.persistence.UserRepository;
+import com.astrawatch.orchestrator.application.service.WorkspaceProvisioner;
 import com.astrawatch.orchestrator.domain.model.ApiKey;
 import com.astrawatch.orchestrator.domain.model.Invite;
 import com.astrawatch.orchestrator.domain.model.Session;
@@ -48,6 +49,7 @@ public class AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final Key key;
     private final RestTemplate restTemplate;
+    private final WorkspaceProvisioner workspaceProvisioner;
 
     // ── Login lockout (audit: /auth/lockout/status returned canned values) ──
     private static final int MAX_LOGIN_ATTEMPTS = 5;
@@ -57,18 +59,20 @@ public class AuthService {
     // Single-arg constructor kept for unit tests (OAuth paths only); the full
     // constructor is used by Spring and wires the real repositories.
     public AuthService(UserRepository userRepository) {
-        this(userRepository, null, null, null);
+        this(userRepository, null, null, null, null);
     }
 
     @Autowired
     public AuthService(UserRepository userRepository,
                        InviteRepository inviteRepository,
                        ApiKeyRepository apiKeyRepository,
-                       SessionRepository sessionRepository) {
+                       SessionRepository sessionRepository,
+                       @Autowired(required = false) WorkspaceProvisioner workspaceProvisioner) {
         this.userRepository = userRepository;
         this.inviteRepository = inviteRepository;
         this.apiKeyRepository = apiKeyRepository;
         this.sessionRepository = sessionRepository;
+        this.workspaceProvisioner = workspaceProvisioner;
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.restTemplate = new RestTemplate();
         String secret = System.getenv("JWT_SECRET");
@@ -95,7 +99,13 @@ public class AuthService {
         if (userOpt.isPresent() && userOpt.get().getPasswordHash() != null && passwordEncoder.matches(password, userOpt.get().getPasswordHash())) {
             lockoutByEmail.remove(normalizedEmail);
             String userId = userOpt.get().getId().toString();
-            String accessToken = generateToken(userId, userOpt.get().getEmail(), null, userOpt.get().getRole());
+            // Tenant resolution (audit: this passed null for teamId, so EVERY
+            // login got tenantId "default" regardless of the user's real team —
+            // the collector's tenant-scoped catalog then showed the demo admin
+            // nothing. The user's team (if any) becomes the JWT tenant.)
+            UUID userTeamId = userOpt.get().getTeamId();
+            String accessToken = generateToken(userId, userOpt.get().getEmail(),
+                    userTeamId != null ? userTeamId.toString() : null, userOpt.get().getRole());
             String refreshToken = generateRefreshToken(userId);
             Map<String, String> tokens = new HashMap<>();
             tokens.put("accessToken", accessToken);
@@ -122,6 +132,13 @@ public class AuthService {
                 .emailVerificationExpiresAt(Instant.now().plus(Duration.ofHours(24)))
                 .build();
         User saved = userRepository.save(user);
+        // Provision a workspace (org + team + starter services) immediately so a
+        // new user lands on fully-populated pages instead of empty org-scoped
+        // states (audit: users registered with teamId = null and every org page
+        // stayed empty).
+        if (workspaceProvisioner != null) {
+            workspaceProvisioner.provisionForUser(saved.getId(), saved.getEmail());
+        }
         // Dev/MailHog convenience: the verification code is logged so local flows
         // can complete without a real email provider.
         log.info("[VERIFY] Verification code for {} (dev/MailHog): {}", email, code);
@@ -421,7 +438,11 @@ public class AuthService {
                                     .oauthProviderId(finalProviderId)
                                     .emailVerified(true)
                                     .build();
-                            return userRepository.save(newUser);
+                            User savedNew = userRepository.save(newUser);
+                            if (workspaceProvisioner != null) {
+                                workspaceProvisioner.provisionForUser(savedNew.getId(), savedNew.getEmail());
+                            }
+                            return savedNew;
                         }));
 
         // Sync profile fields on every login so they stay up to date
@@ -451,7 +472,9 @@ public class AuthService {
     }
 
     private Map<String, String> issueTokens(User user) {
-        String jwtToken = generateToken(user.getId().toString(), user.getEmail(), null, user.getRole());
+        UUID userTeamId = user.getTeamId();
+        String jwtToken = generateToken(user.getId().toString(), user.getEmail(),
+                userTeamId != null ? userTeamId.toString() : null, user.getRole());
         String refreshJwt = generateRefreshToken(user.getId().toString());
 
         Map<String, String> result = new HashMap<>();
@@ -627,7 +650,9 @@ public class AuthService {
             String userId = claims.getSubject();
             Optional<User> userOpt = userRepository.findById(UUID.fromString(userId));
             if (userOpt.isPresent()) {
-                String newAccess = generateToken(userId, userOpt.get().getEmail(), null, userOpt.get().getRole());
+                UUID userTeamId = userOpt.get().getTeamId();
+                String newAccess = generateToken(userId, userOpt.get().getEmail(),
+                        userTeamId != null ? userTeamId.toString() : null, userOpt.get().getRole());
                 String newRefresh = generateRefreshToken(userId);
                 Map<String, String> tokens = new HashMap<>();
                 tokens.put("accessToken", newAccess);

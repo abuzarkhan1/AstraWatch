@@ -8,7 +8,9 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	corev1 "k8s.io/api/core/v1"
+	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,9 +32,12 @@ func main() {
 	// (audit F2); operators that want in-cluster self-service healing can enable
 	// it explicitly.
 	var standaloneTrigger bool
-	flag.StringVar(&orchestratorURL, "orchestrator-url", "http://orchestrator:8081", "The URL of the Orchestrator service.")
+	// Default matches the orchestrator's real port (8082, not 8081 — 8081 was a
+	// stale value from before the orchestrator moved). ORCHESTRATOR_URL env wins
+	// so compose and run_all_services.sh can override it per environment.
+	flag.StringVar(&orchestratorURL, "orchestrator-url", envOr("ORCHESTRATOR_URL", "http://orchestrator:8082"), "The URL of the Orchestrator service (env: ORCHESTRATOR_URL).")
 	flag.StringVar(&metricsURL, "metrics-url", "http://collector:8080", "The URL of the metrics service.")
-	flag.BoolVar(&dryRun, "dry-run", false, "Enable dry-run mode to simulate healing actions without mutating resources.")
+	flag.BoolVar(&dryRun, "dry-run", envBool("OPERATOR_DRY_RUN", false), "Enable dry-run mode to simulate healing actions without mutating resources (env: OPERATOR_DRY_RUN).")
 	flag.StringVar(&kafkaBrokers, "kafka-brokers", envOr("KAFKA_BROKERS", "localhost:9092"), "Comma-separated Kafka broker list.")
 	flag.StringVar(&watchNamespace, "watch-namespace", os.Getenv("WATCH_NAMESPACE"), "Namespace to watch for AutoHealingRules (empty = cluster-scoped).")
 	flag.BoolVar(&standaloneTrigger, "standalone-trigger", false, "Allow the operator to trigger healing from its own rule evaluation loop. Default false: the orchestrator is the single decision authority.")
@@ -49,11 +54,18 @@ func main() {
 
 	cfg, err := ctrl.GetConfig()
 	if err != nil {
-		logger.Info("running without k8s, starting only healthz on 8081")
-		http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("running without k8s, starting only healthz + /metrics on 8081")
+		mux := http.NewServeMux()
+		mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 		})
-		go http.ListenAndServe(":8081", nil)
+		// Audit: the no-k8s path only served healthz, so Prometheus could never
+		// scrape the operator's healing MTTR metrics in the compose stack. Serve
+		// /metrics from the controller-runtime registry (where telemetry.go
+		// registered astrawatch_healing_*) so the Grafana dashboard's healing
+		// panels at least resolve the series in local dev.
+		mux.Handle("/metrics", promhttp.HandlerFor(ctrlmetrics.Registry, promhttp.HandlerOpts{}))
+		go http.ListenAndServe(":8081", mux)
 		select {}
 	}
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -120,6 +132,18 @@ func main() {
 func envOr(key, fallback string) string {
 	if v, ok := os.LookupEnv(key); ok && v != "" {
 		return v
+	}
+	return fallback
+}
+
+func envBool(key string, fallback bool) bool {
+	if v, ok := os.LookupEnv(key); ok {
+		switch strings.ToLower(strings.TrimSpace(v)) {
+		case "1", "true", "yes", "on":
+			return true
+		case "0", "false", "no", "off":
+			return false
+		}
 	}
 	return fallback
 }

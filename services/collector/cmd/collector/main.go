@@ -104,12 +104,24 @@ func main() {
 
 	enricher := enrich.NewEnricher()
 	validator := validate.NewValidator()
-	limiter := ratelimit.NewRateLimiter(1000, 2000)
+
+	// Distributed rate limiting (audit P4.14): when Redis is reachable, limits
+	// are enforced with a shared fixed-window counter so every collector replica
+	// agrees on throughput; on Redis failure it degrades to an in-memory token
+	// bucket rather than failing open. (The RPS here is per-tenant: 1000 req/s
+	// burst 2000; the Redis path enforces 1000 requests per 1s window.)
+	limiter := ratelimit.NewRedisRateLimiter(rdb, 1000, time.Second, 1000, 2000)
 
 	handler := ingest.NewHandler(producer, enricher, validator, limiter, logger)
 	handler.StartWorkerPool(10)
 
 	queryService := query.NewQueryService(clickConn)
+
+	// Usage metering (audit P4.15): per-tenant counters for metrics/logs/traces
+	// ingested today, surfaced at /v1/usage/current for the billing UI. Best
+	// effort — Redis unavailable means metering is simply skipped.
+	meter := &usageMeter{rdb: rdb}
+	handler.SetMeter(meter)
 
 	// OpenTelemetry tracer initialization
 	_ = otel.Tracer("collector")
@@ -222,6 +234,34 @@ func main() {
 			handleTraceQuery(c, queryService)
 		})
 
+		// Usage metering (audit P4.15): today's ingested metrics/logs/traces for
+		// the authenticated tenant, consumed by the Billing page.
+		v1.GET("/usage/current", func(c *gin.Context) {
+			tenantID := tenantFromClaims(c)
+			if tenantID == "" {
+				writeEnvelopeOuter(c, http.StatusUnauthorized, nil, gin.H{"error": "tenant not resolvable from token"})
+				return
+			}
+			writeEnvelopeOuter(c, http.StatusOK, meter.Current(c.Request.Context(), tenantID), nil)
+		})
+
+		// Usage history (audit P4.15 follow-up): last N days of ingested volume
+		// per tenant, for the Billing page usage-over-time chart.
+		v1.GET("/usage/history", func(c *gin.Context) {
+			tenantID := tenantFromClaims(c)
+			if tenantID == "" {
+				writeEnvelopeOuter(c, http.StatusUnauthorized, nil, gin.H{"error": "tenant not resolvable from token"})
+				return
+			}
+			days := 30
+			if d := c.Query("days"); d != "" {
+				if parsed, err := strconv.Atoi(d); err == nil {
+					days = parsed
+				}
+			}
+			writeEnvelopeOuter(c, http.StatusOK, meter.History(c.Request.Context(), tenantID, days), nil)
+		})
+
 		v1.GET("/health", handler.HealthCheck)
 	}
 
@@ -237,6 +277,23 @@ func main() {
 			}
 			to := time.Now()
 			from := to.Add(-time.Minute)
+			// Optional window (minutes) + aggregation so internal consumers (SLO
+			// attainment, alert rule evaluation) get a real average over a window
+			// instead of a single 1-minute point.
+			if w := c.Query("window"); w != "" {
+				if mins, err := strconv.Atoi(w); err == nil && mins > 0 {
+					from = to.Add(-time.Duration(mins) * time.Minute)
+				}
+			}
+			if agg := c.Query("agg"); agg != "" {
+				val, err := queryService.QueryAggregated(c.Request.Context(), serviceID, metric, from, to, agg)
+				if err != nil {
+					writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
+					return
+				}
+				writeEnvelopeOuter(c, http.StatusOK, gin.H{"value": val, "timestamp": to.Format(time.RFC3339)}, nil)
+				return
+			}
 			result, err := queryService.QueryMetrics(c.Request.Context(), serviceID, metric, from, to)
 			if err != nil {
 				writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
@@ -264,7 +321,7 @@ func main() {
 		catalogGroup.POST("/services", createService)
 		catalogGroup.GET("/services/:id/health", func(c *gin.Context) { getServiceHealth(c, queryService) })
 		catalogGroup.PUT("/services/:id", updateService)
-		catalogGroup.GET("/services/:id/dependencies", getServiceDependencies)
+		catalogGroup.GET("/services/:id/dependencies", func(c *gin.Context) { getServiceDependencies(c, queryService) })
 		catalogGroup.POST("/services/:id/scorecard", submitServiceScorecard)
 	}
 
@@ -293,6 +350,123 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Fatal("server forced to shutdown", zap.Error(err))
 	}
+}
+
+// usageMeter increments per-tenant daily counters in Redis and reads them back
+// for /v1/usage/current and /v1/usage/history. All writes are best-effort: a
+// Redis outage never fails ingestion.
+type usageMeter struct {
+	rdb *redis.Client
+}
+
+// Keys are per-day so the billing UI can render a usage-over-time series
+// (audit P4.15 follow-up). TTL is 30 days to cover a full billing window.
+func (m *usageMeter) keyFor(tenantID, date, kind string) string {
+	return "usage:" + tenantID + ":" + date + ":" + kind
+}
+
+func (m *usageMeter) key(tenantID, kind string) string {
+	return m.keyFor(tenantID, time.Now().UTC().Format("20060102"), kind)
+}
+
+func (m *usageMeter) Add(ctx context.Context, tenantID, kind string, n int64) {
+	if m == nil || m.rdb == nil || n <= 0 {
+		return
+	}
+	cctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	pipe := m.rdb.Pipeline()
+	key := m.key(tenantID, kind)
+	pipe.IncrBy(cctx, key, n)
+	pipe.Expire(cctx, key, 30*24*time.Hour)
+	_, _ = pipe.Exec(cctx)
+}
+
+func (m *usageMeter) Current(ctx context.Context, tenantID string) gin.H {
+	out := gin.H{
+		"tenantId": tenantID,
+		"date":     time.Now().UTC().Format("2006-01-02"),
+		"metrics":  0,
+		"logs":     0,
+		"traces":   0,
+	}
+	if m == nil || m.rdb == nil {
+		return out
+	}
+	cctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	pipe := m.rdb.Pipeline()
+	metricsCmd := pipe.Get(cctx, m.key(tenantID, "metrics"))
+	logsCmd := pipe.Get(cctx, m.key(tenantID, "logs"))
+	tracesCmd := pipe.Get(cctx, m.key(tenantID, "traces"))
+	_, _ = pipe.Exec(cctx)
+
+	if v, err := metricsCmd.Int64(); err == nil {
+		out["metrics"] = v
+	}
+	if v, err := logsCmd.Int64(); err == nil {
+		out["logs"] = v
+	}
+	if v, err := tracesCmd.Int64(); err == nil {
+		out["traces"] = v
+	}
+	return out
+}
+
+// History returns a per-day time series (oldest → newest) of the last `days`
+// days for the tenant, reading the per-day Redis counters. Missing days (no
+// ingestion) are returned as zero so the chart has a complete axis. Clamped to
+// 90 days.
+func (m *usageMeter) History(ctx context.Context, tenantID string, days int) gin.H {
+	out := gin.H{"tenantId": tenantID, "days": []gin.H{}}
+	if m == nil || m.rdb == nil || days <= 0 {
+		return out
+	}
+	if days > 90 {
+		days = 90
+	}
+	cctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	// Read all (date, kind) keys for the window in one pipeline round-trip.
+	type keySpec struct {
+		date string
+		kind string
+		cmd  *redis.StringCmd
+	}
+	now := time.Now().UTC()
+	pipe := m.rdb.Pipeline()
+	var specs []keySpec
+	for i := days - 1; i >= 0; i-- {
+		date := now.AddDate(0, 0, -i).Format("20060102")
+		for _, kind := range []string{"metrics", "logs", "traces"} {
+			specs = append(specs, keySpec{date: date, kind: kind, cmd: pipe.Get(cctx, m.keyFor(tenantID, date, kind))})
+		}
+	}
+	_, _ = pipe.Exec(cctx)
+
+	// Group the reads back into per-day buckets in chronological order.
+	byDate := make(map[string]gin.H, days)
+	var order []string
+	for _, s := range specs {
+		bucket, ok := byDate[s.date]
+		if !ok {
+			bucket = gin.H{"date": s.date, "metrics": 0, "logs": 0, "traces": 0}
+			byDate[s.date] = bucket
+			order = append(order, s.date)
+		}
+		if v, err := s.cmd.Int64(); err == nil && v > 0 {
+			bucket[s.kind] = v
+		}
+	}
+
+	daysOut := make([]gin.H, 0, len(order))
+	for _, date := range order {
+		daysOut = append(daysOut, byDate[date])
+	}
+	out["days"] = daysOut
+	return out
 }
 
 type Config struct {
@@ -440,7 +614,10 @@ func listServices(c *gin.Context, queryService *query.QueryService) {
 		return
 	}
 
-	// Enrich each real service with a health score computed from its log stream.
+	// Enrich each real service with a health score computed from its log stream
+	// and a derived status (audit: the frontend filters on svc.status and the
+	// Status-page banner lies when status is absent). Status mirrors
+	// getServiceHealth so list and detail always agree.
 	result := make([]gin.H, 0, len(services))
 	for _, id := range services {
 		healthScore, err := queryService.ServiceHealth(c.Request.Context(), tenantID, id, 15*time.Minute)
@@ -452,6 +629,7 @@ func listServices(c *gin.Context, queryService *query.QueryService) {
 			"name":        id,
 			"team":        "",
 			"tier":        "",
+			"status":      deriveStatus(healthScore),
 			"healthScore": int(healthScore),
 		})
 	}
@@ -508,16 +686,9 @@ func getServiceHealth(c *gin.Context, queryService *query.QueryService) {
 		writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
 		return
 	}
-	status := "healthy"
-	if healthScore < 60 {
-		status = "degraded"
-	}
-	if healthScore < 30 {
-		status = "critical"
-	}
 	writeEnvelopeOuter(c, http.StatusOK, gin.H{
 		"id":          serviceID,
-		"status":      status,
+		"status":      deriveStatus(healthScore),
 		"healthScore": int(healthScore),
 	}, nil)
 }
@@ -533,13 +704,33 @@ func updateService(c *gin.Context) {
 	writeEnvelopeOuter(c, http.StatusNotImplemented, nil, gin.H{"error": "service updates are not supported; the catalog is derived from ingested telemetry", "id": serviceID})
 }
 
-func getServiceDependencies(c *gin.Context) {
+// deriveStatus maps a 0-100 health score to the status enum the frontend
+// renders (HEALTHY / DEGRADED / CRITICAL). The thresholds mirror the old
+// getServiceHealth logic so list, detail and health endpoints never disagree.
+func deriveStatus(healthScore float64) string {
+	if healthScore >= 60 {
+		return "HEALTHY"
+	}
+	if healthScore >= 30 {
+		return "DEGRADED"
+	}
+	return "CRITICAL"
+}
+
+func getServiceDependencies(c *gin.Context, queryService *query.QueryService) {
 	serviceID := c.Param("id")
-	// No dependency graph is collected — return an honest empty list rather than
-	// fabricated postgres/redis edges.
+	tenantID := tenantFromClaims(c)
+	deps, err := queryService.ListDependencies(c.Request.Context(), tenantID, serviceID)
+	if err != nil {
+		writeEnvelopeOuter(c, http.StatusInternalServerError, nil, gin.H{"error": err.Error()})
+		return
+	}
+	// Real edges derived from trace parent/child span links — honest empty list
+	// when no trace data has been ingested (audit: this endpoint previously
+	// fabricated postgres/redis edges for every service).
 	writeEnvelopeOuter(c, http.StatusOK, gin.H{
 		"id":           serviceID,
-		"dependencies": []gin.H{},
+		"dependencies": deps,
 	}, nil)
 }
 

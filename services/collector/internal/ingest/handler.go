@@ -2,6 +2,7 @@ package ingest
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,6 +22,13 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// UsageMeter records per-tenant ingest counters for billing (audit P4.15). The
+// collector keeps the interface minimal so the meter can be implemented
+// anywhere (Redis today).
+type UsageMeter interface {
+	Add(ctx context.Context, tenantID, kind string, n int64)
+}
+
 type Handler struct {
 	producer  *produce.Producer
 	enricher  *enrich.Enricher
@@ -29,6 +37,7 @@ type Handler struct {
 	batchChan chan pkg.MetricBatch
 	logChan   chan *pkg.LogEntry
 	log       *zap.Logger
+	meter     UsageMeter
 }
 
 func NewHandler(producer *produce.Producer, enricher *enrich.Enricher, validator *validate.Validator, limiter *ratelimit.RateLimiter, log *zap.Logger) *Handler {
@@ -41,6 +50,11 @@ func NewHandler(producer *produce.Producer, enricher *enrich.Enricher, validator
 		logChan:   make(chan *pkg.LogEntry, 10000),
 		log:       log,
 	}
+}
+
+// SetMeter attaches the usage meter used to count ingested events per tenant.
+func (h *Handler) SetMeter(meter UsageMeter) {
+	h.meter = meter
 }
 
 func (h *Handler) StartWorkerPool(numWorkers int) {
@@ -170,6 +184,10 @@ func (h *Handler) IngestMetricsBatch(c *gin.Context) {
 		return
 	}
 
+	if h.meter != nil {
+		h.meter.Add(c.Request.Context(), tenantID, "metrics", int64(len(valid.Metrics)))
+	}
+
 	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": len(valid.Metrics), "rejected": len(rejected)}, nil)
 }
 
@@ -257,6 +275,10 @@ func (h *Handler) IngestLogsStream(c *gin.Context) {
 		}
 	}
 
+	if h.meter != nil {
+		h.meter.Add(c.Request.Context(), tenantID, "logs", int64(accepted))
+	}
+
 	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": accepted, "rejected": rejected}, nil)
 }
 
@@ -299,6 +321,10 @@ func (h *Handler) IngestTraces(c *gin.Context) {
 		if err := h.producer.ProduceTrace(trace); err != nil {
 			h.log.Error("failed to produce trace", zap.Error(err))
 		}
+	}
+
+	if h.meter != nil {
+		h.meter.Add(c.Request.Context(), tenantID, "traces", int64(len(traces)))
 	}
 
 	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": len(traces)}, nil)
@@ -345,6 +371,10 @@ func (h *Handler) IngestOTLPLogs(c *gin.Context) {
 		accepted++
 	}
 
+	if h.meter != nil {
+		h.meter.Add(c.Request.Context(), tenantID, "logs", int64(accepted))
+	}
+
 	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": accepted}, nil)
 }
 
@@ -389,6 +419,10 @@ func (h *Handler) IngestOTLPMetrics(c *gin.Context) {
 			continue
 		}
 		accepted += len(batches[i].Metrics)
+	}
+
+	if h.meter != nil {
+		h.meter.Add(c.Request.Context(), tenantID, "metrics", int64(accepted))
 	}
 
 	writeEnvelope(c, http.StatusAccepted, gin.H{"accepted": accepted}, nil)
